@@ -69,6 +69,7 @@ import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.hep.HepRelVertex;
+import org.apache.calcite.plan.visualizer.RuleMatchVisualizer;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -456,7 +457,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
           JdbcProject.class,
           JdbcSort.class,
           JdbcUnion.class);
-
+  private static AtomicInteger COUNTER = new AtomicInteger();
 
   public CalcitePlanner(QueryState queryState) throws SemanticException {
     super(queryState);
@@ -1617,6 +1618,9 @@ public class CalcitePlanner extends SemanticAnalyzer {
        * recreate cluster, so that it picks up the additional traitDef
        */
       RelOptPlanner planner = createPlanner(conf, statsSource, ctx.isExplainPlan());
+      RuleMatchVisualizer vis = new RuleMatchVisualizer("/home/trebele/tmp/2025-08-26/viz1", "" + COUNTER.incrementAndGet());
+      vis.attachTo(planner);
+
       final RexBuilder rexBuilder = new RexBuilder(new HiveTypeFactory());
       final RelOptCluster optCluster = RelOptCluster.create(planner, rexBuilder);
 
@@ -1759,6 +1763,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Plan after post-join transformations:\n" + RelOptUtil.toString(calcitePlan));
       }
+      vis.writeToFile();
       return calcitePlan;
     }
 
@@ -2546,6 +2551,10 @@ public class CalcitePlanner extends SemanticAnalyzer {
       // Create planner and copy context
       HepPlanner planner =
           new HepPlanner(program, basePlan.getCluster().getPlanner().getContext(), noDag, null, RelOptCostImpl.FACTORY);
+
+      RuleMatchVisualizer vis = new RuleMatchVisualizer("/home/trebele/tmp/2025-08-26/viz1", "" + COUNTER.incrementAndGet());
+      vis.attachTo(planner);
+
       planner.addListener(new RuleEventLogger());
       List<RelMetadataProvider> list = Lists.newArrayList();
       list.add(mdProvider);
@@ -2575,7 +2584,9 @@ public class CalcitePlanner extends SemanticAnalyzer {
       }
       planner.setRoot(basePlan);
 
-      return planner.findBestExp();
+      RelNode bestExp = planner.findBestExp();
+      vis.writeToFile();
+      return bestExp;
     }
 
     @SuppressWarnings("nls")
