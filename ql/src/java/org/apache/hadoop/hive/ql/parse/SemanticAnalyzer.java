@@ -15181,10 +15181,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     return null;
   }
 
-  private Set<Long> getTransactionedTables() throws SemanticException {
+  private Set<Long> getInvolvedTables() throws SemanticException {
     return tablesFromReadEntities(inputs)
             .stream()
-            .filter(AcidUtils::isTransactionalTable)
             .map(Table::getTTable)
             .map(org.apache.hadoop.hive.metastore.api.Table::getId)
             .collect(Collectors.toSet());
@@ -15195,8 +15194,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     String queryString = getQueryStringForCache(astNode);
     if (queryString != null) {
       ValidTxnWriteIdList writeIdList = getQueryValidTxnWriteIdList();
-      Set<Long> txnTables = getTransactionedTables();
-      lookupInfo = new QueryResultsCache.LookupInfo(queryString, () -> writeIdList, txnTables);
+      Set<Long> involvedTables = getInvolvedTables();
+      lookupInfo = new QueryResultsCache.LookupInfo(queryString, () -> writeIdList, involvedTables);
     }
     return lookupInfo;
   }

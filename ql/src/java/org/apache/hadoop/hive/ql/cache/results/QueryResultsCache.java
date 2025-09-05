@@ -66,7 +66,6 @@ import org.apache.hadoop.hive.metastore.messaging.MessageBuilder;
 import org.apache.hadoop.hive.ql.hooks.Entity.Type;
 import org.apache.hadoop.hive.ql.hooks.ReadEntity;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
-import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.metadata.events.EventConsumer;
@@ -87,15 +86,15 @@ public final class QueryResultsCache {
   private static final Logger LOG = LoggerFactory.getLogger(QueryResultsCache.class);
 
   public static class LookupInfo {
-    private String queryText;
-    private Supplier<ValidTxnWriteIdList> txnWriteIdListProvider;
-    private Set<Long> txnTables;
+    private final String queryText;
+    private final Supplier<ValidTxnWriteIdList> txnWriteIdListProvider;
+    private final Set<Long> tableIds;
 
-    public LookupInfo(String queryText, Supplier<ValidTxnWriteIdList> txnWriteIdListProvider, Set<Long> txnTables) {
+    public LookupInfo(String queryText, Supplier<ValidTxnWriteIdList> txnWriteIdListProvider, Set<Long> tableIds) {
       super();
       this.queryText = queryText;
       this.txnWriteIdListProvider = txnWriteIdListProvider;
-      this.txnTables = txnTables;
+      this.tableIds = tableIds;
     }
 
     public String getQueryText() {
@@ -680,7 +679,7 @@ public final class QueryResultsCache {
             .map(ReadEntity::getTable)
             .map(Table::getTTable)
             .map(org.apache.hadoop.hive.metastore.api.Table::getId)
-            .collect(Collectors.toSet()).containsAll(lookupInfo.txnTables))
+            .collect(Collectors.toSet()).containsAll(lookupInfo.tableIds))
         return false;
 
     for (ReadEntity readEntity : queryInfo.getInputs()) {
