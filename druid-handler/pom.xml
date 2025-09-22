@@ -392,7 +392,31 @@
                       <include>org.apache.derby:*</include>
                       <include>org.asynchttpclient:*</include>
                       <include>org.antlr:*</include>
+
+                      <!-- Specify tests jar explicitly. In case it needs to be regenerated,
+                      remove the *:*:jar:tests exclusion, generate the shaded tests.jar file
+                      and execute dev-support/maven-shade-list-included-jars.sh -->
+                      <include>org.apache.commons:commons-collections4:*:jar:tests</include>
+                      <include>org.apache.commons:commons-compress:*:jar:tests</include>
+                      <include>org.apache.commons:commons-configuration2:*:jar:tests</include>
+                      <include>org.apache.commons:commons-dbcp2:*:jar:tests</include>
+                      <include>org.apache.commons:commons-jexl3:*:jar:tests</include>
+                      <include>org.apache.commons:commons-lang3:*:jar:tests</include>
+                      <include>org.apache.commons:commons-math3:*:jar:tests</include>
+                      <include>org.apache.commons:commons-pool2:*:jar:tests</include>
+                      <include>org.apache.commons:commons-text:*:jar:tests</include>
+                      <include>org.apache.druid:druid-core:*:jar:tests</include>
+                      <include>org.apache.druid:druid-hll:*:jar:tests</include>
+                      <include>org.apache.druid:druid-processing:*:jar:tests</include>
+                      <include>org.apache.druid:druid-server:*:jar:tests</include>
+                      <include>org.apache.hive:hive-druid-handler:*:jar:tests</include>
+                      <include>org.asynchttpclient:async-http-client:*:jar:tests</include>
+                      <include>org.jdbi:jdbi:*:jar:tests</include>
+
                     </includes>
+                    <excludes>
+                      <exclude>*:*:tests</exclude>
+                    </excludes>
                   </artifactSet>
                   <filters>
                     <filter>
