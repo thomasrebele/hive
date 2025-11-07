@@ -16,6 +16,10 @@ import java.util.HexFormat;
 import static org.junit.Assert.assertEquals;
 
 public class DecimalComparisonTest {
+
+  static final byte PAD_POS = (byte) 0;
+  static final byte PAD_NEG = (byte) 255;
+
   public static final HexFormat FORMAT = HexFormat.ofDelimiter(" ");
   final Decimal DECIMAL_NEGA = DecimalUtils.getDecimal(-102, 1);
     final Decimal DECIMAL_NEGB = DecimalUtils.getDecimal(-1232, 1);
@@ -91,11 +95,18 @@ public class DecimalComparisonTest {
       return b.length;
   }
 
+  int bitLen(byte[] b, byte pad) {
+      int start = findStart(b, pad);
+      if(start == b.length) return 0;
+      int inv = (byte) (b[start]^pad);
+      return (b.length-start-1)*8 + 32-Integer.numberOfLeadingZeros(inv);
+  }
+
   /** Precondition: scale1 < scale2 */
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2) {
     // TODO: WHERE DOES THE NUMBER START?!? find start!
-    int l1 = b1.length-findStart(b1, pad);
-    int l2 = b2.length-findStart(b2, pad);
+    int l1 = bitLen(b1, pad);
+    int l2 = bitLen(b2, pad);
 
     System.out.println("  " + FORMAT.formatHex(b1));
     System.out.println("  " + FORMAT.formatHex(b2));
@@ -105,29 +116,31 @@ public class DecimalComparisonTest {
 
     int scaleDiff = scale2-scale1;
     // estimate the number of bytes if we would multiply b1 by 10^scaleDiff to make the two arrays comparable
-    // log2(decimal1) = log2(b1*10^scale1) > (l1-1)*8 + log2(10)*scale1
-    // log2(decimal2) = log2(b2*10^scale2) < (l2+1)*8 + log2(10)*scale2
+    // log2(decimal1) = log2(b1*10^scale1) > l1-1 + log2(10)*scale1
+    // log2(decimal2) = log2(b2*10^scale2) < l2+1 + log2(10)*scale2
     // if decimal1 > decimal2, or equivalently log2(decimal1) > log2(decimal2), then:
-    // (l1-1)*8 - (l2+1)*8 + log2(10)*(scale1-scale2) > 0
-    // log2(10) can be approximated with 54426.4699/(2^14)
-    // to be safe, we take a smaller approximation
-    int bitLenDiff = 8 * (l1 - l2);
-    int normScaleDiff = (scaleDiff * 54426) >> 14;
-    int tmp = bitLenDiff - 16 + ((scaleDiff * 54426) >> 14);
+    // l1-1 - l2+1 + log2(10)*(scale1-scale2) > 0
+    // log2(10) can be approximated with 27213.235/(2^13); to be safe, we take a smaller approximation
+    // the numerator needs to be <= 32768 to avoid an int overflow (32768 * 65535) <= (2**31-1)
+    int bitLenDiff = l1 - l2;
+    int multiplied = scaleDiff * 27213;
+    int normScaleDiff = multiplied >> 13;
+    int tmp = bitLenDiff - 2 /*- (pad&0x1)*/ + normScaleDiff;
     String info = " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff + "  bit len diff " + bitLenDiff + "     tmp " + tmp;
     if(tmp > 0) {
       System.out.println("  A " + info);
-      return 1;
+      return pad == PAD_POS ? 1 : -1;
     }
-    // similarly for the other way around, but with a higher approximation for log2(10)/8
-    tmp = -bitLenDiff - 16 + (scaleDiff * 54427 >> 14);
+    // similarly for the other way around, but with a higher approximation for log2(10)/8 < 54427/(2^14)
+    normScaleDiff = (multiplied + scaleDiff) >> 13;
+    tmp = -bitLenDiff - 2 /*- (pad&0x1)*/ + normScaleDiff;
     info = l1 + " " + l2 + " " + scaleDiff + "     tmp " + tmp;
     if(tmp < 0) {
       System.out.println("  B " + info);
-      return -1;
+      return pad == PAD_POS ? -1 : 1;
     }
 
-
+    System.out.println("  fallback");
     return new BigDecimal(new BigInteger(b1), scale1).compareTo(new BigDecimal(new BigInteger(b2), scale2));
   }
 
@@ -217,6 +230,15 @@ public class DecimalComparisonTest {
   }
 
   @Test
+  public void test2() {
+    //checkInner("10", "1");
+    //checkInner("1", "10");
+    checkInner("-10", "-1");
+    checkInner("-1", "-10");
+  }
+
+
+  @Test
   public void scaleConfusion() {
     Decimal decimal = DecimalUtils.getDecimal(10, -1);
     HiveDecimal hiveDecimal = HiveDecimal.create(new BigInteger(decimal.getUnscaled()), decimal.getScale());
@@ -226,5 +248,32 @@ public class DecimalComparisonTest {
 
     Decimal decimal1 = createDecimal(new BigDecimal("10.123"), 100);
     System.out.println(toStr(decimal1));
+  }
+
+  @Test
+  public void bitLen() {
+    assertEquals(0, bitLen(FORMAT.parseHex("00 00 00"), PAD_POS));
+    assertEquals(1, bitLen(FORMAT.parseHex("00 00 01"), PAD_POS));
+    assertEquals(2, bitLen(FORMAT.parseHex("00 00 02"), PAD_POS));
+    assertEquals(3, bitLen(FORMAT.parseHex("00 00 04"), PAD_POS));
+    assertEquals(4, bitLen(FORMAT.parseHex("00 00 08"), PAD_POS));
+    assertEquals(5, bitLen(FORMAT.parseHex("00 00 10"), PAD_POS));
+    assertEquals(5, bitLen(FORMAT.parseHex("00 00 11"), PAD_POS));
+    assertEquals(9, bitLen(FORMAT.parseHex("00 01 11"), PAD_POS));
+    assertEquals(17, bitLen(FORMAT.parseHex("01 11 11"), PAD_POS));
+    assertEquals(17, bitLen(FORMAT.parseHex("01 00 00"), PAD_POS));
+    assertEquals(17, bitLen(FORMAT.parseHex("00 00 00 01 00 00"), PAD_POS));
+
+    assertEquals(0, bitLen(FORMAT.parseHex("FF FF FF"), PAD_NEG));
+    assertEquals(1, bitLen(FORMAT.parseHex("FF FF FE"), PAD_NEG));
+    assertEquals(2, bitLen(FORMAT.parseHex("FF FF FD"), PAD_NEG));
+    assertEquals(3, bitLen(FORMAT.parseHex("FF FF FB"), PAD_NEG));
+    assertEquals(4, bitLen(FORMAT.parseHex("FF FF F7"), PAD_NEG));
+    assertEquals(5, bitLen(FORMAT.parseHex("FF FF EF"), PAD_NEG));
+    assertEquals(5, bitLen(FORMAT.parseHex("FF FF EE"), PAD_NEG));
+    assertEquals(9, bitLen(FORMAT.parseHex("FF FE EE"), PAD_NEG));
+    assertEquals(17, bitLen(FORMAT.parseHex("FE EE EE"), PAD_NEG));
+    assertEquals(17, bitLen(FORMAT.parseHex("FE FF FF"), PAD_NEG));
+    assertEquals(17, bitLen(FORMAT.parseHex("FF FF FF FE FF FF"), PAD_NEG));
   }
 }
