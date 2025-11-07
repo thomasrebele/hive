@@ -19,6 +19,8 @@
 
 package org.apache.hadoop.hive.metastore.columnstats.merge;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.metastore.annotation.MetastoreUnitTest;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
@@ -28,6 +30,8 @@ import org.apache.hadoop.hive.metastore.columnstats.ColStatsBuilder;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.math.BigInteger;
 
 import static org.apache.hadoop.hive.metastore.columnstats.merge.ColumnStatsMergerTest.createColumnStatisticsObj;
 import static org.junit.Assert.assertEquals;
@@ -216,11 +220,66 @@ public class DecimalColumnStatsMergerTest {
     assertEquals(DECIMAL_3, merger.mergeLowValue(merger.getLowValue(data1), merger.getLowValue(data2)));
   }
 
+
+
+  public String toStr(Decimal val) {
+    HiveDecimal hiveDecimal = HiveDecimal.create(new BigInteger(val.getUnscaled()), val.getScale());
+    return hiveDecimal.toString();
+  }
+
+
   @Test
   public void testCompareUnscaledValue() {
     DecimalColumnStatsDataInspector data1 = new DecimalColumnStatsDataInspector(DATA_3);
     DecimalColumnStatsDataInspector data2 = new DecimalColumnStatsDataInspector(DATA_20);
     assertEquals(DECIMAL_20, merger.mergeHighValue(merger.getHighValue(data1), merger.getHighValue(data2)));
+
+    //int d=1;
+    //for(int i=0; i<31; i++) {
+    //  d = d << 1;
+    //  Decimal decimal = DecimalUtils.getDecimal(d, 0);
+    //  System.out.println(i + " num: " + decimal + "    " + toStr(decimal));
+    //}
+
+    for(int i=-70; i<70; i++) {
+      Decimal decimal = DecimalUtils.getDecimal(i, 0);
+      System.out.println(i + " num: " + decimal + "    " + toStr(decimal));
+    }
+
+
+    {
+    final Decimal DECIMAL_NEGA = DecimalUtils.getDecimal(-102, 1);
+    final Decimal DECIMAL_NEGB = DecimalUtils.getDecimal(-1232, 1);
+
+    System.out.println("A: " + toStr(DECIMAL_NEGA));
+    System.out.println("B: " + toStr(DECIMAL_NEGB));
+    System.out.println("min: " + toStr((Decimal) ObjectUtils.min(DECIMAL_NEGA, DECIMAL_NEGB)));
+    System.out.println("max: " + toStr((Decimal) ObjectUtils.max(DECIMAL_NEGA, DECIMAL_NEGB)));
+  }
+
+    {
+    final Decimal DECIMAL_NEGC = DecimalUtils.getDecimal(102, 2);
+    final Decimal DECIMAL_NEGD = DecimalUtils.getDecimal(1232, 1);
+
+    System.out.println("A: " + toStr(DECIMAL_NEGC));
+    System.out.println("B: " + toStr(DECIMAL_NEGD));
+    System.out.println("min: " + toStr((Decimal) ObjectUtils.min(DECIMAL_NEGC, DECIMAL_NEGD)));
+    System.out.println("max: " + toStr((Decimal) ObjectUtils.max(DECIMAL_NEGC, DECIMAL_NEGD)));
+  }
+
+    {
+      final Decimal DECIMAL_NEGC = DecimalUtils.getDecimal(102, 2);
+      final Decimal DECIMAL_NEGD = DecimalUtils.getDecimal(1232, -10);
+
+      System.out.println("A: " + toStr(DECIMAL_NEGC));
+      System.out.println("B: " + toStr(DECIMAL_NEGD));
+      System.out.println("min: " + toStr((Decimal) ObjectUtils.min(DECIMAL_NEGC, DECIMAL_NEGD)));
+      System.out.println("max: " + toStr((Decimal) ObjectUtils.max(DECIMAL_NEGC, DECIMAL_NEGD)));
+    }
+
+    //System.out.println(merger.mergeLowValue(DECIMAL_NEGC, DECIMAL_NEGD));
+    //System.out.println(merger.mergeHighValue(DECIMAL_NEGC, DECIMAL_NEGD));
+    //assertEquals(DECIMAL_NEGD, merger.mergeHighValue(DECIMAL_NEGC, DECIMAL_NEGD));
   }
 
   @Test
