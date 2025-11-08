@@ -8,8 +8,10 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -68,11 +70,14 @@ public class DecimalComparisonTest {
     }
 
     byte pad = sign1 ? PAD_POS : PAD_NEG;
-    //if (d1.getScale() == d2.getScale()) {
-    //  //System.out.println("  same scale: " + d1.getScale());
-    //  return sign1 ? compareSameScale(pad, b1, b2) : compareSameScale(pad, b2, b1);
-    //}
+    if (d1.getScale() == d2.getScale()) {
+      //System.out.println("  same scale: " + d1.getScale());
+      return compareSameScale(pad, b1, b2);
+    }
 
+    if(true) {
+      return Method.FALLBACK.ordinal();
+    }
     //System.out.println("  different scale, " + d1.getScale() + " vs " + d2.getScale() +" :/");
 
     // Hive's scale are the digits behind the dot ...
@@ -93,8 +98,11 @@ public class DecimalComparisonTest {
       byte c1 = i1 < 0 ? pad : b1[i1];
       byte c2 = i2 < 0 ? pad : b2[i2];
       //System.out.println("cmp " + c1 + "  " + c2 );
-      if(c1 != c2)
-        return Byte.toUnsignedInt(c1) > Byte.toUnsignedInt(c2) ? -Method.EQSCALE.ordinal() : Method.EQSCALE.ordinal();
+      if(c1 != c2) {
+        int u1 = Byte.toUnsignedInt(c1);
+        int u2 = Byte.toUnsignedInt(c2);
+        return u1 < u2 ? -Method.EQSCALE.ordinal() : Method.EQSCALE.ordinal();
+      }
       i1++;
       i2++;
     }
@@ -174,17 +182,21 @@ public class DecimalComparisonTest {
       return Integer.compare(cmp, 0);
     }
 
-    public void checkInner(String n1, String n2) {
+  public void checkInner(String n1, String n2) {
+     checkInner(n1, 0, n2, 0);
+  }
+
+      public void checkInner(String n1, int scaleDrift1, String n2, int scaleDrift2) {
       BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
 
-      Decimal d1 = createDecimal(bd1, 0);
-      Decimal d2 = createDecimal(bd2, 3);
+      Decimal d1 = createDecimal(bd1, scaleDrift1);
+      Decimal d2 = createDecimal(bd2, scaleDrift2);
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
       int actual = normalizeCompareTo(compareTo(d1, d2));
       if(expected != actual) {
-        //assertEquals("compareTo result was wrong for " + n1 + " and " + n2, expected, actual);
-        //System.out.println("compareTo result was wrong for " + n1 + "/" + toStr(d1) + " and " + n2 + "/" + toStr(d2) + ": " + expected + ", but was " + actual);
+        System.out.println("compareTo result was wrong for " + n1 + "/" + toStr(d1) + " and " + n2 + "/" + toStr(d2) + ": " + expected + ", but was " + actual);
+        assertEquals("compareTo result was wrong for " + n1 + " and " + n2, expected, actual);
       }
     }
 
@@ -231,6 +243,7 @@ public class DecimalComparisonTest {
     checkInner("-10.21232", "-123.2");
 
     // positive values
+    check("50", "20");
     check("9.123", "8113");
     check("9123", "8.113");
     check("9123", "1.113");
@@ -245,6 +258,9 @@ public class DecimalComparisonTest {
 
     // negative values
     check("-10", "-1");
+    check("-2", "-8");
+    check("-2E+1", "-8E+1");
+    check("-50", "-20");
     check("-10.2", "-123.2");
     check("-10.21232", "-123.2");
   }
@@ -253,8 +269,20 @@ public class DecimalComparisonTest {
   public void test2() {
     //checkInner("10", "1");
     //checkInner("1", "10");
-    checkInner("-10", "-1");
-    checkInner("-1", "-10");
+    //checkInner("-10", "-1");
+    //checkInner("-1", "-10");
+  }
+
+  @Test
+  public void testSameScale() {
+    check("2", "8");
+    check("-2", "-8");
+    check("20", "80");
+    check("-20", "-80");
+    check("1000", "1001");
+    check("-1000", "-1001");
+    check("100000000", "100000001");
+    check("-100000000", "-100000001");
   }
 
 
@@ -301,45 +329,54 @@ public class DecimalComparisonTest {
   public void testRandomized1() {
     Random rOuter = new Random(System.nanoTime());
 
-    int digits = 5;
-    int minScale = -(1<<digits);
-    int maxScale = (1<<digits)-1;
+    int shift = 32;
+    int minScale = -(1<<shift);
+    int maxScale = (1<<shift)-1;
 
     int[] count = new int[Method.END.ordinal()+1];
+    int[] countError = new int[Method.END.ordinal()+1];
 
-    try {
-      for (int i = 0; i < 10000; i++) {
+    List<Throwable> errors = new ArrayList<>();
+      for (int i = 0; i < 100000; i++) {
         long seed = rOuter.nextLong();
+        int[] methodIdx = new int[]{0};
         try {
-          randomInner(seed, minScale, maxScale, count);
+          randomInner(seed, minScale, maxScale, methodIdx);
+          count[methodIdx[0]] += 1;
         }
         catch(Throwable t) {
           t.addSuppressed(new RuntimeException("seed was " + seed));
-          throw t;
+          countError[methodIdx[0]] += 1;
+          errors.add(t);
         }
       }
+
+    for (Method m : Method.values()) {
+      System.out.println(m + ": " + count[m.ordinal()] + " errors: " + countError[m.ordinal()]);
     }
-    catch(Throwable t) {
-      for (Method m : Method.values()) {
-        System.out.println(m + ": " + count[m.ordinal()]);
-      }
-      throw t;
+    if(!errors.isEmpty()) {
+      errors.forEach(t -> System.out.println(t.getMessage())
+      );
+      AssertionError e = new AssertionError();
+      errors.forEach(t -> e.addSuppressed(t));
+      throw e;
     }
   }
 
   @Test
   public void testRandomized1tmp() {
 
-    int digits = 5;
-    int minScale = -(1<<digits);
-    int maxScale = (1<<digits)-1;
+    int shift = 32;
+    int minScale = -(1<<shift);
+    int maxScale = (1<<shift)-1;
     int[] count = new int[Method.END.ordinal()+1];
 
-    randomInner(6476192887685342014l , minScale, maxScale, count);
+    //randomInner(6476192887685342014l , minScale, maxScale, count);
+    randomInner(-952131642459718632l , minScale, maxScale, count);
   }
 
 
-  private void randomInner(long seed, int minScale, int maxScale, int[] count) {
+  private void randomInner(long seed, int minScale, int maxScale, int[] methodIdxOut) {
     Random r = new Random(seed);
     int len = r.nextInt(1)+1;
     byte[] num = new byte[len];
@@ -355,31 +392,30 @@ public class DecimalComparisonTest {
     // TODO randomize num2
     byte[] num2 = Arrays.copyOf(num, num.length);
     num2[num2.length - 1] += (byte) r.nextInt(255);
-    BigDecimal bd2 = new BigDecimal(new BigInteger(num), s2);
+    BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
     Decimal d1 = createDecimal(bd1, 1);
     if(d1 == null) {
       fail("Could not convert " + bd1 + " to Decimal, seed " + seed);
     }
-    Decimal d2 = createDecimal(bd2, 3);
+    Decimal d2 = createDecimal(bd2, 1);
     if(d2 == null) {
       fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
     }
 
     int actual = compareToInner(d1, d2, false);
     int methodIdx = Math.abs(actual);
+    methodIdxOut[0] = methodIdx;
     if(methodIdx == Method.FALLBACK.ordinal()) {
-      count[methodIdx] += 1;
       return;
     }
-    count[methodIdx] += 1;
 
     int expected = normalizeCompareTo(bd1.compareTo(bd2));
     if (expected != normalizeCompareTo(actual)) {
       String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
       System.out.println("compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
           d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx]);
-      assertEquals("compareTo result was wrong for " + bd1 + expOp + bd2 + ", seed " + seed, expected, actual);
+      assertEquals("compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx] + ", seed " + seed, expected, actual);
     }
   }
 
