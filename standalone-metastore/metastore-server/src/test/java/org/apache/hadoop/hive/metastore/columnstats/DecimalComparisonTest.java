@@ -28,6 +28,7 @@ public class DecimalComparisonTest {
     UNKNOWN,
     SIGN,
     EQSCALE,
+    LOG_ZERO,
     BITLEN_A,
     BITLEN_B,
     FALLBACK,
@@ -132,6 +133,12 @@ public class DecimalComparisonTest {
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback) {
     int l1 = bitLen(b1, pad);
     int l2 = bitLen(b2, pad);
+
+    // log of 0 is not defined
+    if(l1 == 0 || l2 == 0) {
+      int cmp = l1 < l2 ? -Method.LOG_ZERO.ordinal() : l1 > l2 ? Method.LOG_ZERO.ordinal() : 0;
+      return pad == PAD_POS ? cmp : -cmp;
+    }
 
     //System.out.println("  " + FORMAT.formatHex(b1));
     //System.out.println("  " + FORMAT.formatHex(b2));
@@ -289,7 +296,8 @@ public class DecimalComparisonTest {
   }
 
   @Test public void testBitlen() {
-    check("-240", 0, "-580", 1);
+    check("0.31", 0, "0E+3", 1);
+    //check("-240", 0, "-580", 1);
   }
 
   @Test
@@ -401,7 +409,7 @@ public class DecimalComparisonTest {
 
     // TODO randomize num2
     byte[] num2 = Arrays.copyOf(num, num.length);
-    num2[0] += (byte) r.nextInt(255);
+    num2[0] = (byte) r.nextInt();
     num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
     BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
