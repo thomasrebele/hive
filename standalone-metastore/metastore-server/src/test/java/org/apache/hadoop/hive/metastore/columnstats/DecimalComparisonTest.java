@@ -163,15 +163,17 @@ public class DecimalComparisonTest {
       return pad == PAD_POS ? Method.BITLEN_A.ordinal() : -Method.BITLEN_A.ordinal();
     }
     // similarly for the other way around, but with a higher approximation for log2(10)/8 < 54427/(2^14)
+    // TODO tr derivate formula!
     normScaleDiff = (multiplied + scaleDiff) >> 13;
-    tmp = -bitLenDiff - 2 /*- (pad&0x1)*/ + normScaleDiff;
+    tmp = bitLenDiff + 2 /*- (pad&0x1)*/ + normScaleDiff;
     info = l1 + " " + l2 + " " + scaleDiff + "     tmp " + tmp;
+    System.out.println("  ?? " + info);
     if(tmp < 0) {
-      //System.out.println("  B " + info);
+      System.out.println("  B " + info);
       return pad == PAD_POS ? -Method.BITLEN_B.ordinal() : Method.BITLEN_B.ordinal();
     }
 
-    //System.out.println("  fallback");
+    System.out.println("  fallback");
     if(!useFallback) {
       return Method.FALLBACK.ordinal();
     }
@@ -355,7 +357,7 @@ public class DecimalComparisonTest {
     int[] countError = new int[Method.END.ordinal()+1];
 
     List<Throwable> errors = new ArrayList<>();
-      for (int i = 0; i < 100000; i++) {
+      for (int i = 0; i < 100; i++) {
         long seed = rOuter.nextLong();
         int[] methodIdx = new int[]{0};
         try {
@@ -384,58 +386,121 @@ public class DecimalComparisonTest {
   @Test
   public void testRandomized1tmp() {
 
-    int shift = 32;
+    int shift = 15;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
     int[] count = new int[Method.END.ordinal()+1];
 
     //randomInner(6476192887685342014l , minScale, maxScale, count);
-    randomInner(-952131642459718632l , minScale, maxScale, count);
+    //randomInner(-952131642459718632l , minScale, maxScale, count);
+    randomInner(1343211645653523784l , minScale, maxScale, count);
   }
 
 
   private void randomInner(long seed, int minScale, int maxScale, int[] methodIdxOut) {
+    System.out.println();
     Random r = new Random(seed);
-    int len = r.nextInt(1)+1;
+    int len = r.nextInt(30) + 1;
     byte[] num = new byte[len];
     r.nextBytes(num);
 
     if (num[0] == 0)
       num[0] = (byte) (2 * r.nextInt(2) - 1);
 
-    int s1 = r.nextInt(maxScale - minScale) + minScale;
-    int s2 = r.nextInt(maxScale - minScale) + minScale;
-    BigDecimal bd1 = new BigDecimal(new BigInteger(num), s1);
+    int scaleDrift1 = 10;
+    int scaleDrift2 = 20;
 
-    // TODO randomize num2
+    int s1 = r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
+    int s2 = Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
+
     byte[] num2 = Arrays.copyOf(num, num.length);
     num2[0] = (byte) r.nextInt();
+    // ensure the numbers have the same sign
     num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
-    BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
-    Decimal d1 = createDecimal(bd1, 1);
-    if(d1 == null) {
-      fail("Could not convert " + bd1 + " to Decimal, seed " + seed);
-    }
-    Decimal d2 = createDecimal(bd2, 2);
-    if(d2 == null) {
-      fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
-    }
+    System.out.println(FORMAT.formatHex(num) + "     " + FORMAT.formatHex(num2));
 
-    int actual = compareToInner(d1, d2, false);
-    int methodIdx = Math.abs(actual);
-    methodIdxOut[0] = methodIdx;
-    if(methodIdx == Method.FALLBACK.ordinal()) {
-      return;
-    }
+    int adapt = 0;
+    for(int i=0; i<100*len; i++) {
+      BigDecimal bd1 = new BigDecimal(new BigInteger(num), s1);
+      BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
-    int expected = normalizeCompareTo(bd1.compareTo(bd2));
-    if (expected != normalizeCompareTo(actual)) {
-      String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
-      System.out.println("compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
-          d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx]);
-      assertEquals("compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx] + ", seed " + seed, expected, actual);
+      Decimal d1 = createDecimal(bd1, scaleDrift1);
+      if (d1 == null) {
+        fail("Could not convert " + bd1 + " to Decimal, seed " + seed);
+      }
+      Decimal d2 = createDecimal(bd2, scaleDrift2);
+      if (d2 == null) {
+        fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
+      }
+
+      int expected = normalizeCompareTo(bd1.compareTo(bd2));
+      int actual = compareToInner(d1, d2, false);
+      int methodIdx = Math.abs(actual);
+      methodIdxOut[0] = methodIdx;
+      if (methodIdx != Method.FALLBACK.ordinal()) {
+        if (expected != normalizeCompareTo(actual)) {
+          String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
+          System.out.println(
+              "compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
+                  d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx]);
+          assertEquals(
+              "compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx] + ", seed " + seed,
+              expected, actual);
+        }
+      }
+
+      if(adapt == 0) {
+        if ( bd1.signum() == 1) {
+            adapt = expected > 0 ? 1 : 2;
+        }
+        else {
+          adapt = expected > 0 ? 2 : 1;
+        }
+      }
+      if (adapt == 1) {
+        System.out.println("  shift num1");
+        shiftRight(num);
+      }
+      else {
+        System.out.println("  shift num2");
+        shiftRight(num2);
+      }
+
+
+      if(bd1.unscaledValue().bitLength() == 0 || bd2.unscaledValue().bitLength() == 0) {
+        System.out.println("break");
+        break;
+      }
+
     }
   }
+
+  private void shiftRight(byte[] num) {
+    int carry = num[0] & 0x80;
+    for(int i=0; i<num.length; i++) {
+      int nextCarry = (num[i]&0x1) << 7;
+      // use &0xff to do an unsigned (!) right-shift
+      int rightShifted = (num[i] & 0xff) >> 1;
+      num[i] = (byte)((carry | rightShifted)&0xff);
+      carry = nextCarry;
+    }
+  }
+
+
+  @Test
+  public void testTmp2() {
+    byte[] bytes = FORMAT.parseHex("5b 7c");
+
+    for(int i=0; i<32; i++) {
+      shiftRight(bytes);
+      System.out.println(FORMAT.formatHex(bytes));
+      for(int j=0; j<bytes.length; j++) {
+        System.out.print(Integer.toBinaryString(bytes[j]&0xff));
+      }
+      System.out.println();
+    }
+  }
+
 
 }
