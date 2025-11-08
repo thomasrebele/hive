@@ -75,9 +75,6 @@ public class DecimalComparisonTest {
       return compareSameScale(pad, b1, b2);
     }
 
-    if(true) {
-      return Method.FALLBACK.ordinal();
-    }
     //System.out.println("  different scale, " + d1.getScale() + " vs " + d2.getScale() +" :/");
 
     // Hive's scale are the digits behind the dot ...
@@ -125,8 +122,10 @@ public class DecimalComparisonTest {
   int bitLen(byte[] b, byte pad) {
       int start = findStart(b, pad);
       if(start == b.length) return 0;
-      int inv = (byte) (b[start]^pad);
-      return (b.length-start-1)*8 + 32-Integer.numberOfLeadingZeros(inv);
+      int first = b[start];
+      int inv = (first^pad)&0xff;
+      int bits = 32-Integer.numberOfLeadingZeros(inv);
+      return (b.length-start-1)*8 + bits;
   }
 
   /** Precondition: scale1 < scale2 */
@@ -153,7 +152,7 @@ public class DecimalComparisonTest {
     int tmp = bitLenDiff - 2 /*- (pad&0x1)*/ + normScaleDiff;
     String info = " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff + "  bit len diff " + bitLenDiff + "     tmp " + tmp;
     if(tmp > 0) {
-      //System.out.println("  A " + info);
+      System.out.println("  A " + info);
       return pad == PAD_POS ? Method.BITLEN_A.ordinal() : -Method.BITLEN_A.ordinal();
     }
     // similarly for the other way around, but with a higher approximation for log2(10)/8 < 54427/(2^14)
@@ -173,9 +172,13 @@ public class DecimalComparisonTest {
   }
 
   public void check(String n1, String n2) {
+    check(n1, 0, n2, 0);
+  }
+
+    public void check(String n1, int scaleDrift1, String n2, int scaleDrift2) {
       //System.out.println();
-      checkInner(n1, n2);
-      checkInner(n2, n1);
+      checkInner(n1, scaleDrift1, n2, scaleDrift2);
+      checkInner(n2, scaleDrift2, n1, scaleDrift1);
     }
 
     public int normalizeCompareTo(int cmp) {
@@ -285,6 +288,9 @@ public class DecimalComparisonTest {
     check("-100000000", "-100000001");
   }
 
+  @Test public void testBitlen() {
+    check("-240", 0, "-580", 1);
+  }
 
   @Test
   public void scaleConfusion() {
@@ -300,6 +306,10 @@ public class DecimalComparisonTest {
 
   @Test
   public void bitLen() {
+    assertEquals(8, bitLen(FORMAT.parseHex("FF 16"), PAD_NEG));
+    assertEquals(13, bitLen(FORMAT.parseHex("E9 58"), PAD_NEG));
+
+
     assertEquals(0, bitLen(FORMAT.parseHex("00 00 00"), PAD_POS));
     assertEquals(1, bitLen(FORMAT.parseHex("00 00 01"), PAD_POS));
     assertEquals(2, bitLen(FORMAT.parseHex("00 00 02"), PAD_POS));
@@ -329,7 +339,7 @@ public class DecimalComparisonTest {
   public void testRandomized1() {
     Random rOuter = new Random(System.nanoTime());
 
-    int shift = 32;
+    int shift = 15;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
 
@@ -391,14 +401,15 @@ public class DecimalComparisonTest {
 
     // TODO randomize num2
     byte[] num2 = Arrays.copyOf(num, num.length);
-    num2[num2.length - 1] += (byte) r.nextInt(255);
+    num2[0] += (byte) r.nextInt(255);
+    num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
     BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
     Decimal d1 = createDecimal(bd1, 1);
     if(d1 == null) {
       fail("Could not convert " + bd1 + " to Decimal, seed " + seed);
     }
-    Decimal d2 = createDecimal(bd2, 1);
+    Decimal d2 = createDecimal(bd2, 2);
     if(d2 == null) {
       fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
     }
