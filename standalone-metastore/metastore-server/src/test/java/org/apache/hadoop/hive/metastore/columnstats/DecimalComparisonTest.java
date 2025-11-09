@@ -146,10 +146,9 @@ public class DecimalComparisonTest {
   }
 
   /**
-   * Calculate the logirthm of the integer value represented by the two's complement stored in the byte array.
-   * @param num
-   * @param pad
-   * @return floor(log(abs(num))) + 1
+   * Calculate the logarithm of the integer value represented by the two's complement stored in the byte array.
+   * It holds that bitLog(abs(num))-1 <= log(abs(num)) < bitLog(abs(num)).
+   * @return 0 if num is zero, else floor(log(abs(num))) + 1
    */
   int bitLog(byte[] num, byte pad) {
       int start = findStart(num, pad);
@@ -166,45 +165,60 @@ public class DecimalComparisonTest {
 
   /** Precondition: scale1 < scale2 */
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback) {
-    int l1 = bitLog(b1, pad);
-    int l2 = bitLog(b2, pad);
+    int bl1 = bitLog(b1, pad);
+    int bl2 = bitLog(b2, pad);
 
     // log of 0 is not defined
-    if(pad == PAD_POS && (l1 == 0 || l2 == 0)) {
-      int cmp = l1 < l2 ? -Method.LOG_ZERO.ordinal() : l1 > l2 ? Method.LOG_ZERO.ordinal() : 0;
+    if(pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
+      int cmp = bl1 < bl2 ? -Method.LOG_ZERO.ordinal() : bl1 > bl2 ? Method.LOG_ZERO.ordinal() : 0;
       return cmp;
     }
 
     //System.out.println("  " + FORMAT.formatHex(b1));
     //System.out.println("  " + FORMAT.formatHex(b2));
-    //System.out.println("  l1 " + l1 + "     b1.len " + b1.length + "   scale1 " + scale1);
-    //System.out.println("  l2 " + l2 + "     b2.len " + b2.length + "   scale2 " + scale2);
+    //System.out.println("  bl1 " + bl1 + "     b1.len " + b1.length + "   scale1 " + scale1);
+    //System.out.println("  bl2 " + bl2 + "     b2.len " + b2.length + "   scale2 " + scale2);
 
-    int scaleDiff = scale2-scale1;
-    // estimate the number of bytes if we would multiply b1 by 10^scaleDiff to make the two arrays comparable
-    // log2(decimal1) = log2(b1*10^-scale1) > l1-1 - log2(10)*scale1
-    // log2(decimal2) = log2(b2*10^-scale2) < l2+1 - log2(10)*scale2
-    // if decimal1 > decimal2, or equivalently log2(decimal1) > log2(decimal2), then:
-    // l1-1 - l2+1 - log2(10)*scale1 + log2(10)*scale2 = l1-l2 -2 + log2(10)*(scale2-scale1) > 0
+    // if b1 and b2 are negative, we consider both their absolute value; the result needs to be negated
+    // idea: estimate the number of bits if we multiplied b1 by 10^x to make the two arrays comparable
+    // inequality in the continuous domain:
+    // if decimal1 > decimal2 (eq1), or as both are positive, log2(decimal1) > log2(decimal2), then:
+    // log2(decimal1) > log2(decimal2)
+    // log2(b1*10^-scale1) > log2(b2*10^-scale2)
+    // log2(b1) + log2(10)*(-scale1) > log2(b2) + log2(10)*(-scale2)
+    // log2(b1)-log2(b2) + log2(10)*(scale2-scale1) > 0 (eq2)
+
+    // discrete domain:
+    // we want to get from (eq2) a condition (eq3) so that (eq3) => (eq1) holds,
+    // or in other words: if eq3 holds, we surely know that decimal1 > decimal2
+    // to get eq3, we may only lower the LHS of eq2
+
     // log2(10) can be approximated with 27213.235/(2^13); so the inequality log2(10) > 27213/(1<<13) holds
     // the numerator needs to be <= 32768 to avoid an int overflow; (32768 * 65535) is still below (2**31-1)
-    int bitLenDiff = l1 - l2;
+
+    // with bitLog(num)-1 <= log(num) < bitLog(num)
+    // log2(b1)-log2(b2) > bitLog(b1)-1 - bitLog(b2)
+    // so bitLog(b1)-bitLog(b2) -1 + log2(10)*(scale2-scale1) > 0 (eq3)
+
+
+    int bitLogDiff = bl1 - bl2;
+    int scaleDiff = scale2-scale1;
     int multiplied = scaleDiff * 27213;
     int normScaleDiff = multiplied >> 13;
-    int tmp = bitLenDiff /*- 1 /*- (pad&0x1)*/ + normScaleDiff;
-    //String info = " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff + "  bit len diff " + bitLenDiff + "     tmp " + tmp;
+    int tmp = bitLogDiff /*- 1 */ + normScaleDiff;
+    //String info = " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff + "  bit len diff " + bitLogDiff + "     tmp " + tmp;
     if(tmp > 0) {
       //System.out.println("  A " + info);
       return pad == PAD_POS ? Method.BITLEN_A.ordinal() : -Method.BITLEN_A.ordinal();
     }
 
-    // switch 1 and 2: l2-l1 -2 + log2(10)*(scale1-scale2) > 0
-    // multiply by -1: l1-l2 +2 + log2(10)*(scale2-scale1) < 0
+    // switch 1 and 2: bl2-bl1 -1 + log2(10)*(scale1-scale2) > 0
+    // multiply by -1: bl1-bl2 +1 + log2(10)*(scale2-scale1) < 0
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
     // TODO tr derivate formula!
-    tmp = bitLenDiff + 1 /*+ (pad&0x1)*/ + normScaleDiff;
-    //info = l1 + " " + l2 + " " + scaleDiff + "     tmp " + tmp;
+    tmp = bitLogDiff + 1 + normScaleDiff;
+    //info = bl1 + " " + bl2 + " " + scaleDiff + "     tmp " + tmp;
     // TODO tr can we make the adjustments (+1) vs (+2), and (0) vs (-2) more restrictive?
     // With the proposed values randomized test passes and we get fallbacks for 2 binary orders of magnitude (as expected)
     //System.out.println("  ?? " + info);
@@ -423,6 +437,10 @@ public class DecimalComparisonTest {
           if(log+1 != bl) {
             fail(x.toString());
           }
+          // check inequalities
+
+          if(!(bl-1 <= log)) fail(x.toString());
+          if(!(log < bl)) fail(x.toString());
         }
       }
     }
