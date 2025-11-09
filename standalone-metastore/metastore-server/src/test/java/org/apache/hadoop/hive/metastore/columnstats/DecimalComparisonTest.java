@@ -5,7 +5,6 @@ import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.metastore.api.Decimal;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.junit.Test;
-import wiremock.org.eclipse.jetty.http2.hpack.NBitInteger;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -54,7 +53,7 @@ public class DecimalComparisonTest {
      */
     private boolean positive(byte[] unscaled) {
       if(unscaled.length == 0) return true;
-      return 0 == ((unscaled[0]&0xff)>>7);
+      return 0 == (toIntUnsigned(unscaled[0])>>7);
     }
 
     public int compareTo(Decimal d1, Decimal d2) {
@@ -122,21 +121,53 @@ public class DecimalComparisonTest {
       return b.length;
   }
 
-  int bitLen(byte[] b, byte pad) {
-      int start = findStart(b, pad);
-      if(start == b.length) return 0;
-      int first = b[start];
+  int toIntUnsigned(byte b) {
+      return b&0xff;
+  }
+
+  boolean isNegPowTwo(byte[] b, int start) {
+    byte first = b[start];
+
+    //System.out.println(Integer.toBinaryString(toIntUnsigned(first)));
+    //System.out.println(Integer.toBinaryString((toIntUnsigned(first))^0xff));
+    //System.out.println(Integer.numberOfTrailingZeros(first) + "  " + Integer.numberOfLeadingZeros((toIntUnsigned(first))^0xff));
+
+    for(int i=start+1; i<b.length; i++) {
+      if (b[i] != 0) return false;
+    }
+
+    // power of two if trailingZeros + leadingOnes == 8
+    // calculate trailing zeros relative to a byte; OR with 0x100 to ensure its <=8
+    int trailingZeros = Integer.numberOfTrailingZeros(first | 0x100);
+    // calculate "complement relative to 8 bits = 1 byte" of leadingOnes
+    // example: 0b11000000, invert bits 0b00111111, leading ones is 2, its complement is 8-2=6
+    int leadingOnesComplement = 32 - Integer.numberOfLeadingZeros((toIntUnsigned(first))^0xff);
+    return trailingZeros == leadingOnesComplement;
+  }
+
+  /**
+   * Calculate the logirthm of the integer value represented by the two's complement stored in the byte array.
+   * @param num
+   * @param pad
+   * @return floor(log(abs(num))) + 1
+   */
+  int bitLog(byte[] num, byte pad) {
+      int start = findStart(num, pad);
+      if(start == num.length) return pad == PAD_POS ? 0 : 1;
+      int first = num[start];
       int inv = (first^pad)&0xff;
       int bits = 32-Integer.numberOfLeadingZeros(inv);
-    int result = (b.length - start - 1) * 8 + bits;
-    //System.out.println(FORMAT.formatHex(b) + " pad " + FORMAT.toHexDigits(pad) + ": " + result);
-    return result;
+    int result = (num.length - start - 1) * 8 + bits;
+    //System.out.println(FORMAT.formatHex(num) + " pad " + FORMAT.toHexDigits(pad) + ": " + result);
+    // adjust bit log for value = -2^n
+    boolean isNegPowTwo = pad == PAD_NEG && isNegPowTwo(num, start);
+    return result + (isNegPowTwo ? 1 : 0);
   }
 
   /** Precondition: scale1 < scale2 */
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback) {
-    int l1 = bitLen(b1, pad);
-    int l2 = bitLen(b2, pad);
+    int l1 = bitLog(b1, pad);
+    int l2 = bitLog(b2, pad);
 
     // log of 0 is not defined
     if(pad == PAD_POS && (l1 == 0 || l2 == 0)) {
@@ -331,33 +362,33 @@ public class DecimalComparisonTest {
 
   @Test
   public void bitLen() {
-    assertEquals(8, bitLen(FORMAT.parseHex("FF 16"), PAD_NEG));
-    assertEquals(13, bitLen(FORMAT.parseHex("E9 58"), PAD_NEG));
+    assertEquals(8, bitLog(FORMAT.parseHex("FF 16"), PAD_NEG));
+    assertEquals(13, bitLog(FORMAT.parseHex("E9 58"), PAD_NEG));
 
 
-    assertEquals(0, bitLen(FORMAT.parseHex("00 00 00"), PAD_POS));
-    assertEquals(1, bitLen(FORMAT.parseHex("00 00 01"), PAD_POS));
-    assertEquals(2, bitLen(FORMAT.parseHex("00 00 02"), PAD_POS));
-    assertEquals(3, bitLen(FORMAT.parseHex("00 00 04"), PAD_POS));
-    assertEquals(4, bitLen(FORMAT.parseHex("00 00 08"), PAD_POS));
-    assertEquals(5, bitLen(FORMAT.parseHex("00 00 10"), PAD_POS));
-    assertEquals(5, bitLen(FORMAT.parseHex("00 00 11"), PAD_POS));
-    assertEquals(9, bitLen(FORMAT.parseHex("00 01 11"), PAD_POS));
-    assertEquals(17, bitLen(FORMAT.parseHex("01 11 11"), PAD_POS));
-    assertEquals(17, bitLen(FORMAT.parseHex("01 00 00"), PAD_POS));
-    assertEquals(17, bitLen(FORMAT.parseHex("00 00 00 01 00 00"), PAD_POS));
+    assertEquals(0, bitLog(FORMAT.parseHex("00 00 00"), PAD_POS));
+    assertEquals(1, bitLog(FORMAT.parseHex("00 00 01"), PAD_POS));
+    assertEquals(2, bitLog(FORMAT.parseHex("00 00 02"), PAD_POS));
+    assertEquals(3, bitLog(FORMAT.parseHex("00 00 04"), PAD_POS));
+    assertEquals(4, bitLog(FORMAT.parseHex("00 00 08"), PAD_POS));
+    assertEquals(5, bitLog(FORMAT.parseHex("00 00 10"), PAD_POS));
+    assertEquals(5, bitLog(FORMAT.parseHex("00 00 11"), PAD_POS));
+    assertEquals(9, bitLog(FORMAT.parseHex("00 01 11"), PAD_POS));
+    assertEquals(17, bitLog(FORMAT.parseHex("01 11 11"), PAD_POS));
+    assertEquals(17, bitLog(FORMAT.parseHex("01 00 00"), PAD_POS));
+    assertEquals(17, bitLog(FORMAT.parseHex("00 00 00 01 00 00"), PAD_POS));
 
-    assertEquals(0, bitLen(FORMAT.parseHex("FF FF FF"), PAD_NEG));
-    assertEquals(1, bitLen(FORMAT.parseHex("FF FF FE"), PAD_NEG));
-    assertEquals(2, bitLen(FORMAT.parseHex("FF FF FD"), PAD_NEG));
-    assertEquals(3, bitLen(FORMAT.parseHex("FF FF FB"), PAD_NEG));
-    assertEquals(4, bitLen(FORMAT.parseHex("FF FF F7"), PAD_NEG));
-    assertEquals(5, bitLen(FORMAT.parseHex("FF FF EF"), PAD_NEG));
-    assertEquals(5, bitLen(FORMAT.parseHex("FF FF EE"), PAD_NEG));
-    assertEquals(9, bitLen(FORMAT.parseHex("FF FE EE"), PAD_NEG));
-    assertEquals(17, bitLen(FORMAT.parseHex("FE EE EE"), PAD_NEG));
-    assertEquals(17, bitLen(FORMAT.parseHex("FE FF FF"), PAD_NEG));
-    assertEquals(17, bitLen(FORMAT.parseHex("FF FF FF FE FF FF"), PAD_NEG));
+    assertEquals(0, bitLog(FORMAT.parseHex("FF FF FF"), PAD_NEG));
+    assertEquals(1, bitLog(FORMAT.parseHex("FF FF FE"), PAD_NEG));
+    assertEquals(2, bitLog(FORMAT.parseHex("FF FF FD"), PAD_NEG));
+    assertEquals(3, bitLog(FORMAT.parseHex("FF FF FB"), PAD_NEG));
+    assertEquals(4, bitLog(FORMAT.parseHex("FF FF F7"), PAD_NEG));
+    assertEquals(5, bitLog(FORMAT.parseHex("FF FF EF"), PAD_NEG));
+    assertEquals(5, bitLog(FORMAT.parseHex("FF FF EE"), PAD_NEG));
+    assertEquals(9, bitLog(FORMAT.parseHex("FF FE EE"), PAD_NEG));
+    assertEquals(17, bitLog(FORMAT.parseHex("FE EE EE"), PAD_NEG));
+    assertEquals(17, bitLog(FORMAT.parseHex("FE FF FF"), PAD_NEG));
+    assertEquals(17, bitLog(FORMAT.parseHex("FF FF FF FE FF FF"), PAD_NEG));
   }
 
   @Test
@@ -365,15 +396,15 @@ public class DecimalComparisonTest {
     for(int i=-18; i<18; i+=1) {
       if(i==0) continue;
       BigInteger x = BigInteger.valueOf(i);
-      int bl = bitLen(x.toByteArray(), i < 0 ? PAD_NEG : PAD_POS);
+      int bl = bitLog(x.toByteArray(), i < 0 ? PAD_NEG : PAD_POS);
       int log = BigIntegerMath.log2(x.abs(), RoundingMode.DOWN);
       if(log<0) fail("unexpected");
 
-      System.out.println(x + "  bit length " + bl + " log " + log);
-      assertTrue(bl >= log);
+      assertEquals(log+1, bl);
     }
 
-    for(int i=0; i<5; i++) {
+
+    for(int i=0; i<100; i++) {
       System.out.println();
       BigInteger p = BigInteger.TWO.pow(i);
       for(int neg=0; neg<2; neg++) {
@@ -384,13 +415,14 @@ public class DecimalComparisonTest {
         for(int j=-2; j<=2; j++) {
           BigInteger x = p.add(BigInteger.valueOf(j));
           if(x.compareTo(BigInteger.ZERO) == 0) continue;
-          int bl = bitLen(x.toByteArray(), x.signum() == -1 ? PAD_NEG : PAD_POS);
+          int bl = bitLog(x.toByteArray(), x.signum() == -1 ? PAD_NEG : PAD_POS);
           int log = BigIntegerMath.log2(x.abs(), RoundingMode.DOWN);
           if(log<0) fail("unexpected");
 
-          System.out.println(x + "  bit length " + bl + " log " + log);
-          assertTrue(bl-1 <= log);
-          assertTrue(bl+1 > log);
+          System.out.println(x + "  bit log " + bl + " log " + log);
+          if(log+1 != bl) {
+            fail(x.toString());
+          }
         }
       }
     }
