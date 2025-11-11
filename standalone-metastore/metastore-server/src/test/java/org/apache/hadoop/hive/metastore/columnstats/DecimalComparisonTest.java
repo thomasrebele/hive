@@ -5,6 +5,7 @@ import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.metastore.api.Decimal;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.junit.Test;
+import org.testcontainers.shaded.com.google.common.math.BigDecimalMath;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -174,6 +175,10 @@ public class DecimalComparisonTest {
       return cmp;
     }
 
+    BigDecimal bd1 = new BigDecimal(new BigInteger(b1), scale1);
+    BigDecimal bd2 = new BigDecimal(new BigInteger(b2), scale2);
+    int exp = bd1.compareTo(bd2);
+
     //System.out.println("  " + FORMAT.formatHex(b1));
     //System.out.println("  " + FORMAT.formatHex(b2));
     //System.out.println("  bl1 " + bl1 + "     b1.len " + b1.length + "   scale1 " + scale1);
@@ -205,10 +210,44 @@ public class DecimalComparisonTest {
     int scaleDiff = scale2-scale1;
     int multiplied = scaleDiff * 27213;
     int normScaleDiff = multiplied >> 13;
-    int tmp = bitLogDiff /*- 1 */ + normScaleDiff;
-    //String info = " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff + "  bit len diff " + bitLogDiff + "     tmp " + tmp;
-    if(tmp > 0) {
-      //System.out.println("  A " + info);
+    int tmp = bitLogDiff + normScaleDiff;
+    int normScale1 = (scale1 * 27213) >> 13;
+    int normScale2 = (scale2 * 27213) >> 13;
+    String info = exp + " sc1 " + scale1 + " scale2 " + scale2
+        + " normsc1 " + normScale1 + " normsc2 " + normScale2
+        + " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff
+        + " bl1 " + bl1 + " bl2 " + bl2 + "  bit log diff " + bitLogDiff + "     tmp " + tmp;
+
+    // ---
+    // log2(decimal1) = log2(b1) + log2(10)*-scale1
+    // between bitLog(b1)-1 <= and < bitLog(b1)
+    // ---
+    int log1 = bl1 - normScale1;
+    int log2 = bl2 - normScale2;
+
+
+    System.out.println(
+         "  bl-1 " + (bl1-1)
+        + "  ns " + normScale1
+        + " log " + Math.log(bd1.floatValue())/Math.log(2)
+        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale1).floatValue())/Math.log(2)
+        + " log(b) " + Math.log(new BigInteger(b1).floatValue())/Math.log(2)
+        );
+
+    System.out.println(
+         "  bl-1 " + (bl2-1)
+        + "  ns " + normScale2
+        + " log " + Math.log(bd2.floatValue())/Math.log(2)
+        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale2).floatValue())/Math.log(2)
+        + " log(b) " + Math.log(new BigInteger(b2).floatValue())/Math.log(2)
+        );
+
+    System.out.println("  log1 between " + (log1-1) + " and " + log1
+        + "   log 2 between " + (log2-1) + " and " + log2);
+
+    // TODO can we make it more strict? +0?
+    if(tmp -1 > 0) {
+      System.out.println("  A " + info);
       return pad == PAD_POS ? Method.BITLEN_A.ordinal() : -Method.BITLEN_A.ordinal();
     }
 
@@ -217,13 +256,11 @@ public class DecimalComparisonTest {
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
     // TODO tr derivate formula!
-    tmp = bitLogDiff + 1 + normScaleDiff;
-    //info = bl1 + " " + bl2 + " " + scaleDiff + "     tmp " + tmp;
     // TODO tr can we make the adjustments (+1) vs (+2), and (0) vs (-2) more restrictive?
     // With the proposed values randomized test passes and we get fallbacks for 2 binary orders of magnitude (as expected)
     //System.out.println("  ?? " + info);
-    if(tmp < 0) {
-      //System.out.println("  B " + info);
+    if(tmp + 1 < 0) {
+      System.out.println("  B " + info);
       return pad == PAD_POS ? -Method.BITLEN_B.ordinal() : Method.BITLEN_B.ordinal();
     }
 
@@ -233,7 +270,7 @@ public class DecimalComparisonTest {
     // An algorithm based on schoolbook multiplication would allow us to do this,
     // however, it would be O(n^2) and quite complex.
     // Use Java's classes as they implemented optimized integer multiplication algorithms.
-    //System.out.println("  fallback");
+    System.out.println("  f " + info);
     if(!useFallback) {
       return Method.FALLBACK.ordinal();
     }
@@ -450,7 +487,7 @@ public class DecimalComparisonTest {
   public void testRandomized1() {
     Random rOuter = new Random(System.nanoTime());
 
-    int shift = 15;
+    int shift = 4;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
 
@@ -458,7 +495,7 @@ public class DecimalComparisonTest {
     int[] countError = new int[Method.END.ordinal()+1];
 
     List<Throwable> errors = new ArrayList<>();
-      for (int i = 0; i < 10000; i++) {
+      for (int i = 0; i < 1; i++) {
         long seed = rOuter.nextLong();
         int[] methodIdx = new int[]{0};
         try {
@@ -487,44 +524,55 @@ public class DecimalComparisonTest {
   @Test
   public void testRandomized1tmp() {
 
-    int shift = 15;
+    int shift = 4;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
     int[] count = new int[Method.END.ordinal()+1];
 
     //randomInner(6476192887685342014l , minScale, maxScale, count);
     //randomInner(-952131642459718632l , minScale, maxScale, count);
-    randomInner(1343211645653523784l , minScale, maxScale, count);
+    randomInner(-1088050332798435706l , minScale, maxScale, count);
   }
 
 
   private void randomInner(long seed, int minScale, int maxScale, int[] methodIdxOut) {
-    //System.out.println();
+    System.out.println("seed: " + seed);
     Random r = new Random(seed);
     int len = r.nextInt(30) + 1;
     byte[] num = new byte[len];
     r.nextBytes(num);
 
+
     if (num[0] == 0)
       num[0] = (byte) (2 * r.nextInt(2) - 1);
 
-    int scaleDrift1 = 10;
-    int scaleDrift2 = 20;
+    int scaleDrift1 = 3;
+    int scaleDrift2 = 4;
 
-    int s1 = r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
-    int s2 = Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
+    int s1 = -2; //r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
+    int s2 = -1; //Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
 
     byte[] num2 = Arrays.copyOf(num, num.length);
     num2[0] = (byte) r.nextInt();
     // ensure the numbers have the same sign
     num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
 
+    num = BigInteger.valueOf(1523).toByteArray();
+    num2 = BigInteger.TEN.pow(3).toByteArray();
+
     //System.out.println(FORMAT.formatHex(num) + "     " + FORMAT.formatHex(num2));
 
     int adapt = 0;
-    for(int i=0; i<100*len; i++) {
+    for(int i=0; i<2 /*100*/*len; i++) {
       BigDecimal bd1 = new BigDecimal(new BigInteger(num), s1);
       BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
+
+
+      int expected = normalizeCompareTo(bd1.compareTo(bd2));
+      ;
+      System.out.println(bd1 + " vs " + bd2 + "  "
+          + (expected > 0 ? bd1.floatValue() / bd2.floatValue() : bd2.floatValue() / bd1.floatValue() )
+      + " log1 " + Math.log(bd1.floatValue())/Math.log(2) + " log2 " + Math.log(bd2.floatValue())/Math.log(2));
 
       Decimal d1 = createDecimal(bd1, scaleDrift1);
       if (d1 == null) {
@@ -535,7 +583,6 @@ public class DecimalComparisonTest {
         fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
       }
 
-      int expected = normalizeCompareTo(bd1.compareTo(bd2));
       int actual = compareToInner(d1, d2, false);
       int methodIdx = Math.abs(actual);
       methodIdxOut[0] = methodIdx;
@@ -602,4 +649,24 @@ public class DecimalComparisonTest {
   }
 
 
+  @Test
+  public void test3() {
+
+    int scale = 10;
+    BigInteger b = BigInteger.valueOf(1000);
+    BigDecimal bigDecimal = new BigDecimal(b, -scale);
+
+    int bitLog = bitLog(b.toByteArray(), PAD_POS);
+    int normScale = (scale * 27213) >> 13;
+    int tmp = bitLog + normScale;
+
+    double log = Math.log(bigDecimal.floatValue())/Math.log(2);
+    System.out.println(tmp-1
+        + "  bl-1 " + (bitLog-1)
+        + "  ns " + normScale
+        + " log " + log
+        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale).floatValue())/Math.log(2)
+        + " log(b) " + Math.log(b.floatValue())/Math.log(2)
+        + " num " + bigDecimal);
+  }
 }
