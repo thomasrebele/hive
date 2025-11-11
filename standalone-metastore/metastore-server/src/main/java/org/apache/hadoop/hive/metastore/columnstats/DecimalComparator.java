@@ -13,18 +13,13 @@ public class DecimalComparator implements Comparator<Decimal> {
   public static final byte PAD_NEG = (byte) 255;
 
   public enum Approach {
-    UNKNOWN,
-    SIGN,
-    EQSCALE,
-    LOG_ZERO,
-    BITLOG_A,
-    BITLOG_B,
-    FALLBACK,
+    UNKNOWN, SIGN, EQSCALE, LOG_ZERO, BITLOG_A, BITLOG_B, FALLBACK,
 
     END
   }
 
-  interface ApproachInfoCallback extends Consumer<Approach> {}
+  interface ApproachInfoCallback extends Consumer<Approach> {
+  }
 
   @Override
   public int compare(Decimal o1, Decimal o2) {
@@ -35,8 +30,9 @@ public class DecimalComparator implements Comparator<Decimal> {
    * Note: 0 is interpreted as positive
    */
   private boolean positive(byte[] unscaled) {
-    if(unscaled.length == 0) return true;
-    return 0 == (Byte.toUnsignedInt(unscaled[0]) >>7);
+    if (unscaled.length == 0)
+      return true;
+    return 0 == (Byte.toUnsignedInt(unscaled[0]) >> 7);
   }
 
   int compareInner(Decimal d1, Decimal d2, boolean useFallback, ApproachInfoCallback aic) {
@@ -46,7 +42,8 @@ public class DecimalComparator implements Comparator<Decimal> {
     boolean sign2 = positive(b2);
 
     if (sign1 != sign2) {
-      if(aic != null) aic.accept(Approach.SIGN);
+      if (aic != null)
+        aic.accept(Approach.SIGN);
       return (sign1 ? 1 : -1);
     }
 
@@ -58,8 +55,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // Hive's scale are the digits behind the dot ...
     if (d1.getScale() < d2.getScale()) {
       return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback, aic);
-    }
-    else {
+    } else {
       return -compareToScaleDiff(pad, b2, d2.getScale(), b1, d1.getScale(), useFallback, aic);
     }
   }
@@ -69,15 +65,16 @@ public class DecimalComparator implements Comparator<Decimal> {
    * we just need to compute their unscaled value (or significand).
    */
   private static int compareSameScale(byte pad, byte[] b1, byte[] b2, ApproachInfoCallback aic) {
-    if(aic != null) aic.accept(Approach.EQSCALE);
+    if (aic != null)
+      aic.accept(Approach.EQSCALE);
     int len = Math.max(b1.length, b2.length);
-    int i1 = b1.length-len;
-    int i2 = b2.length-len;
-    for(int i=0; i<len; i++) {
+    int i1 = b1.length - len;
+    int i2 = b2.length - len;
+    for (int i = 0; i < len; i++) {
       // TODO: test case
       byte c1 = i1 < 0 ? pad : b1[i1];
       byte c2 = i2 < 0 ? pad : b2[i2];
-      if(c1 != c2) {
+      if (c1 != c2) {
         int u1 = Byte.toUnsignedInt(c1);
         int u2 = Byte.toUnsignedInt(c2);
         return u1 < u2 ? -1 : 1;
@@ -89,15 +86,17 @@ public class DecimalComparator implements Comparator<Decimal> {
   }
 
   static int findStart(byte[] b, byte pad) {
-    for(int i=0; i<b.length; i++) {
-      if (b[i] != pad) return i;
+    for (int i = 0; i < b.length; i++) {
+      if (b[i] != pad)
+        return i;
     }
     return b.length;
   }
 
   static boolean isNegPowTwo(byte[] b, int start) {
-    for(int i=start+1; i<b.length; i++) {
-      if (b[i] != 0) return false;
+    for (int i = start + 1; i < b.length; i++) {
+      if (b[i] != 0)
+        return false;
     }
 
     // power of two if trailingZeros + leadingOnes == 8
@@ -106,7 +105,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     int trailingZeros = Integer.numberOfTrailingZeros(first | 0x100);
     // calculate "complement relative to 8 bits = 1 byte" of leadingOnes
     // example: 0b11000000, invert bits 0b00111111, leading ones is 2, its complement is 8-2=6
-    int leadingOnesComplement = 32 - Integer.numberOfLeadingZeros((Byte.toUnsignedInt(first))^0xff);
+    int leadingOnesComplement = 32 - Integer.numberOfLeadingZeros((Byte.toUnsignedInt(first)) ^ 0xff);
     return trailingZeros == leadingOnesComplement;
   }
 
@@ -117,10 +116,11 @@ public class DecimalComparator implements Comparator<Decimal> {
    */
   public static int bitLog(byte[] num, byte pad) {
     int start = findStart(num, pad);
-    if(start == num.length) return pad == PAD_POS ? 0 : 1;
+    if (start == num.length)
+      return pad == PAD_POS ? 0 : 1;
     int first = num[start];
-    int inv = (first^pad)&0xff;
-    int bits = 32-Integer.numberOfLeadingZeros(inv);
+    int inv = (first ^ pad) & 0xff;
+    int bits = 32 - Integer.numberOfLeadingZeros(inv);
     int result = (num.length - start - 1) * 8 + bits;
     // adjust bit log for value = -2^n
     boolean isNegPowTwo = pad == PAD_NEG && isNegPowTwo(num, start);
@@ -155,13 +155,14 @@ public class DecimalComparator implements Comparator<Decimal> {
     int bl2 = bitLog(b2, pad);
 
     // log of 0 is not defined, so deal with it first
-    if(pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
-      if(aic != null) aic.accept(Approach.LOG_ZERO);
+    if (pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
+      if (aic != null)
+        aic.accept(Approach.LOG_ZERO);
       return Integer.compare(bl1, bl2);
     }
 
     int bitLogDiff = bl1 - bl2;
-    int scaleDiff = scale2-scale1;
+    int scaleDiff = scale2 - scale1;
     int multiplied = scaleDiff * 27213;
     int normScaleDiff = multiplied >> 13;
     int diff = bitLogDiff + normScaleDiff;
@@ -169,8 +170,9 @@ public class DecimalComparator implements Comparator<Decimal> {
     // the randomized test passes with diff>0 as well;
     // however, as it is unknown whether diff>0 is a necessary condition
     // for decimal1>decimal2, keep it safe and stick to the derived inequality
-    if(diff - 1 > 0) {
-      if(aic != null) aic.accept(Approach.BITLOG_A);
+    if (diff - 1 > 0) {
+      if (aic != null)
+        aic.accept(Approach.BITLOG_A);
       return pad == PAD_POS ? 1 : -1;
     }
 
@@ -178,8 +180,9 @@ public class DecimalComparator implements Comparator<Decimal> {
     // multiply by -1: bl1-bl2 +1 + log2(10)*(scale2-scale1) < 0
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
-    if(diff + 1 < 0) {
-      if(aic != null) aic.accept(Approach.BITLOG_B);
+    if (diff + 1 < 0) {
+      if (aic != null)
+        aic.accept(Approach.BITLOG_B);
       return pad == PAD_POS ? -1 : 1;
     }
 
@@ -189,8 +192,9 @@ public class DecimalComparator implements Comparator<Decimal> {
     // An algorithm based on schoolbook multiplication would allow us to do this,
     // however, it would be O(n^2) and quite complex.
     // Use Java's classes as they implemented optimized integer multiplication algorithms.
-    if(!useFallback) {
-      if(aic != null) aic.accept(Approach.FALLBACK);
+    if (!useFallback) {
+      if (aic != null)
+        aic.accept(Approach.FALLBACK);
       return Approach.FALLBACK.ordinal();
     }
     return new BigDecimal(new BigInteger(b1), scale1).compareTo(new BigDecimal(new BigInteger(b2), scale2));
