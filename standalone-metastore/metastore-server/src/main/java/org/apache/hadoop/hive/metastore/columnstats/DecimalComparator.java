@@ -17,11 +17,11 @@ public class DecimalComparator implements Comparator<Decimal> {
     SIGN,
     EQSCALE,
     LOG_ZERO,
-    BITLEN_A,
-    BITLEN_B,
+    BITLOG_A,
+    BITLOG_B,
     FALLBACK,
 
-    END,
+    END
   }
 
   interface ApproachInfoCallback extends Consumer<Approach> {}
@@ -69,6 +69,7 @@ public class DecimalComparator implements Comparator<Decimal> {
    * we just need to compute their unscaled value (or significand).
    */
   private static int compareSameScale(byte pad, byte[] b1, byte[] b2, ApproachInfoCallback aic) {
+    if(aic != null) aic.accept(Approach.EQSCALE);
     int len = Math.max(b1.length, b2.length);
     int i1 = b1.length-len;
     int i2 = b2.length-len;
@@ -79,7 +80,6 @@ public class DecimalComparator implements Comparator<Decimal> {
       if(c1 != c2) {
         int u1 = Byte.toUnsignedInt(c1);
         int u2 = Byte.toUnsignedInt(c2);
-        if(aic != null) aic.accept(Approach.EQSCALE);
         return u1 < u2 ? -1 : 1;
       }
       i1++;
@@ -170,7 +170,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // however, as it is unknown whether diff>0 is a necessary condition
     // for decimal1>decimal2, keep it safe and stick to the derived inequality
     if(diff - 1 > 0) {
-      if(aic != null) aic.accept(Approach.BITLEN_A);
+      if(aic != null) aic.accept(Approach.BITLOG_A);
       return pad == PAD_POS ? 1 : -1;
     }
 
@@ -179,7 +179,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
     if(diff + 1 < 0) {
-      if(aic != null) aic.accept(Approach.BITLEN_B);
+      if(aic != null) aic.accept(Approach.BITLOG_B);
       return pad == PAD_POS ? -1 : 1;
     }
 

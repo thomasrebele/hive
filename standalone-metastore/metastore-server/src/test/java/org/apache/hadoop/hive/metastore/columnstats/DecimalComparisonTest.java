@@ -55,89 +55,90 @@ public class DecimalComparisonTest {
   }
 
 
-  public void check(String n1, String n2) {
-    check(n1, 0, n2, 0);
+  public void check(String n1, String n2, Approach expectedApproach) {
+    check(n1, 0, n2, 0, expectedApproach);
   }
 
-    public void check(String n1, int scaleDrift1, String n2, int scaleDrift2) {
+    public void check(String n1, int scaleDrift1, String n2, int scaleDrift2, Approach expectedApproach) {
       BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
-      checkInner(bd1, scaleDrift1, bd2, scaleDrift2);
-      checkInner(bd2, scaleDrift2, bd1, scaleDrift1);
+      checkInner(bd1, scaleDrift1, bd2, scaleDrift2, expectedApproach);
+      checkInner(bd2, scaleDrift2, bd1, scaleDrift1, expectedApproach);
     }
 
     public int normalizeCompareTo(int cmp) {
       return Integer.compare(cmp, 0);
     }
 
-  public void checkInner(String n1, String n2) {
-    BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
-     checkInner(bd1, 0, bd1, 0);
-  }
-
-      public void checkInner(BigDecimal bd1, int scaleDrift1, BigDecimal bd2, int scaleDrift2) {
+      public void checkInner(BigDecimal bd1, int scaleDrift1, BigDecimal bd2, int scaleDrift2, Approach expectedApproach) {
       Decimal d1 = createDecimal(bd1, scaleDrift1);
       Decimal d2 = createDecimal(bd2, scaleDrift2);
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
-      int actual = normalizeCompareTo(new DecimalComparator().compare(d1, d2));
+      int actual = normalizeCompareTo(new DecimalComparator().compareInner(d1, d2, false, expectedApproach == null ? null : new ExpectApproach(expectedApproach)));
       if(expected != actual) {
         System.out.println("compareTo result was wrong for " + toStr(d1) + " and " + toStr(d2) + ": " + expected + ", but was " + actual);
         assertEquals("compareTo result was wrong for " + bd1 + " and " + bd2, expected, actual);
       }
     }
 
+    @Test public void testApproachSign() {
+      check("1", "-1", Approach.SIGN);
+      check("123", "-123", Approach.SIGN);
+      check("123", "-11.1", Approach.SIGN);
+      check("123.23", "-11.1", Approach.SIGN);
+      check("123.23", "-11", Approach.SIGN);
+    }
+
   @Test
-  public void test1() {
+  public void testApproachSameScale() {
+    check("2", "8", Approach.EQSCALE);
+    check("-2", "-8", Approach.EQSCALE);
+    check("20", "80", Approach.EQSCALE);
+    check("50", "20", Approach.EQSCALE);
+    check("-20", "-80", Approach.EQSCALE);
+    check("-50", "-20", Approach.EQSCALE);
+    check("1000", "1001", Approach.EQSCALE);
+    check("-1000", "-1001", Approach.EQSCALE);
+    check("100000000", "100000001", Approach.EQSCALE);
+    check("-100000000", "-100000001", Approach.EQSCALE);
 
-    checkInner("-1", "-10");
-    checkInner("-10.2", "-123.2");
-    checkInner("-123.2", "-10.21232");
+    check("10", "1", Approach.EQSCALE);
+    check("1", "10", Approach.EQSCALE);
+    check("-10", "-1", Approach.EQSCALE);
+    check("-1", "-10", Approach.EQSCALE);
 
-    checkInner("-10", "-1");
-    checkInner("-123.2", "-10.2");
-    checkInner("-10.21232", "-123.2");
+    check("-10.2", "-123.2", Approach.EQSCALE);
+    check("-123.2", "-10.2", Approach.EQSCALE);
 
+    check("-2E+1", "-8E+1", Approach.EQSCALE);
+  }
+
+  @Test
+  public void testApproachBitLog() {
     // positive values
-    check("50", "20");
-    check("9.123", "8113");
-    check("9123", "8.113");
-    check("9123", "1.113");
-    check("1123", "9.113");
+    check("9.123", "8113", Approach.BITLOG_A);
+    check("9123", "8.113", Approach.BITLOG_A);
+    check("9123", "1.113", Approach.BITLOG_A);
+    check("1123", "9.113", Approach.BITLOG_A);
+    check("10.21232", "123.2", Approach.BITLOG_A);
 
-    // mixed values
-    check("1", "-1");
-    check("123", "-123");
-    check("123", "-11.1");
-    check("123.23", "-11.1");
-    check("123.23", "-11");
+    check("9.1", "8113.123", Approach.BITLOG_B);
+    check("9123.123", "8.1", Approach.BITLOG_B);
+    check("9123.123", "1.1", Approach.BITLOG_B);
+    check("1123.123", "9.1", Approach.BITLOG_B);
 
     // negative values
-    check("-10", "-1");
-    check("-2", "-8");
-    check("-2E+1", "-8E+1");
-    check("-50", "-20");
-    check("-10.2", "-123.2");
-    check("-10.21232", "-123.2");
-  }
+    check("-9.123", "-8113", Approach.BITLOG_A);
+    check("-9123", "-8.113", Approach.BITLOG_A);
+    check("-9123", "-1.113", Approach.BITLOG_A);
+    check("-1123", "-9.113", Approach.BITLOG_A);
+    check("-10.21232", "-123.2", Approach.BITLOG_A);
 
-  @Test
-  public void test2() {
-    checkInner("10", "1");
-    checkInner("1", "10");
-    checkInner("-10", "-1");
-    checkInner("-1", "-10");
-  }
+    check("-9.1", "-8113.123", Approach.BITLOG_B);
+    check("-9123.123", "-8.1", Approach.BITLOG_B);
+    check("-9123.123", "-1.1", Approach.BITLOG_B);
+    check("-1123.123", "-9.1", Approach.BITLOG_B);
 
-  @Test
-  public void testSameScale() {
-    check("2", "8");
-    check("-2", "-8");
-    check("20", "80");
-    check("-20", "-80");
-    check("1000", "1001");
-    check("-1000", "-1001");
-    check("100000000", "100000001");
-    check("-100000000", "-100000001");
   }
 
   @Test public void testBitLog1() {
@@ -204,7 +205,7 @@ public class DecimalComparisonTest {
   }
 
   @Test
-  public void bitLenPostcondition() {
+  public void testBitLenPostcondition() {
     // define helper which executes the asserts
     Consumer<BigInteger> check = x -> {
       int bl = bitLog(x.toByteArray(), x.signum() == -1 ? PAD_NEG : PAD_POS);
