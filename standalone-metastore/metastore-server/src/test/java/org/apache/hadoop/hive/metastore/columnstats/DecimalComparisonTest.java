@@ -315,7 +315,7 @@ public class DecimalComparisonTest {
     num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
 
     int adapt = 0;
-    for(int i=0; i<2 /*100*/*len; i++) {
+    for(int i=0; i<100; i++) {
       BigDecimal bd1 = new BigDecimal(new BigInteger(num), s1);
       BigDecimal bd2 = new BigDecimal(new BigInteger(num2), s2);
 
