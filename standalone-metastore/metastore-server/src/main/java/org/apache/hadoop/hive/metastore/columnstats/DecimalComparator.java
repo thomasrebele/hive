@@ -13,9 +13,9 @@ public class DecimalComparator implements Comparator<Decimal> {
   public static final byte PAD_NEG = (byte) 255;
 
   public enum Approach {
-    UNKNOWN, SIGN, EQSCALE, LOG_ZERO, BITLOG_A, BITLOG_B, FALLBACK,
+    UNKNOWN, SIGN, EQSCALE, LOG_ZERO, BITLOG_A, BITLOG_B, FALLBACK;
 
-    END
+    public static final int LEN = Approach.values().length;
   }
 
   interface ApproachInfoCallback extends Consumer<Approach> {

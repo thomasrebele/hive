@@ -3,6 +3,7 @@ package org.apache.hadoop.hive.metastore.columnstats;
 import com.google.common.math.BigIntegerMath;
 import org.apache.hadoop.hive.metastore.api.Decimal;
 import org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.Approach;
+import org.apache.hadoop.hive.metastore.utils.MetaStoreServerUtils;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
@@ -36,10 +38,15 @@ public class DecimalComparisonTest {
   public static final HexFormat FORMAT = HexFormat.ofDelimiter(" ");
 
   public String toStr(Decimal val) {
-    // Hive's scale are the digits behind the dot ...
-    return Objects.toString(new BigDecimal(new BigInteger(val.getUnscaled()), -val.getScale()));
+    return Objects.toString(new BigDecimal(new BigInteger(val.getUnscaled()), val.getScale()));
   }
 
+  /**
+   * Create a Decimal.
+   * @param bigDecimal the value
+   * @param scaleDrift multiply by 10^scaleDrift * 10^-scaleDrift; the former goes to the significand, the latter to the exponent
+   * @return the Decimal
+   */
   public static Decimal createDecimal(BigDecimal bigDecimal, int scaleDrift) {
     byte[] byteArray = bigDecimal.multiply(BigDecimal.TEN.pow(scaleDrift)).unscaledValue().toByteArray();
     ByteBuffer wrap = ByteBuffer.wrap(byteArray);
@@ -72,6 +79,24 @@ public class DecimalComparisonTest {
           d2) + ": " + expected + ", but was " + actual);
       assertEquals("compareTo result was wrong for " + bd1 + " and " + bd2, expected, actual);
     }
+  }
+
+  @Test
+  public void testDecimal() {
+    interface Helper {void check(String input, int scaleDrift, double expectedDouble, String expectedHiveStr,
+        String expectedJavaStr);}
+    Helper helper = (input, scaleDrift, expectedDouble, expectedHiveStr, expectedJavaStr) -> {
+      Decimal d3 = createDecimal(new BigDecimal(input), scaleDrift);
+      assertEquals(expectedDouble, MetaStoreServerUtils.decimalToDouble(d3), Double.MIN_VALUE);
+      assertEquals(expectedHiveStr, MetaStoreServerUtils.decimalToString(d3));
+      assertEquals(expectedJavaStr, toStr(d3));
+    };
+
+    helper.check("1.2", 0, 1.2, "1.2", "1.2");
+    helper.check("123.45", 0, 123.45, "123.45", "123.45");
+    helper.check("123.45", 1, 123.45, "123.45", "123.450");
+    helper.check("123.45", 10, 123.45, "123.45", "123.450000000000");
+    helper.check("1", 2, 1, "1", "1.00");
   }
 
   @Test
@@ -133,6 +158,15 @@ public class DecimalComparisonTest {
     check("-9123.123", "-1.1", Approach.BITLOG_B);
     check("-1123.123", "-9.1", Approach.BITLOG_B);
 
+    // with scale drift
+    check("10.21232", 2, "123.2", 0, Approach.BITLOG_A);
+    check("10.21232", 10, "123.2", 0, Approach.BITLOG_A);
+    check("10.21232", 0, "123.2", 3, Approach.BITLOG_A);
+    // scale (digits after dots) of n1 is 5, scale of n2 is 1,
+    // with a drift of 4 the second number also has 5 digits after the dot
+    check("10.21232", 0, "123.2", 4, Approach.EQSCALE);
+    check("10.21232", 0, "123.2", 5, Approach.BITLOG_B);
+    check("10.21232", 0, "123.2", 10, Approach.BITLOG_B);
   }
 
   @Test
@@ -255,8 +289,8 @@ public class DecimalComparisonTest {
     int minScale = -(1 << shift);
     int maxScale = (1 << shift) - 1;
 
-    int[] count = new int[Approach.END.ordinal() + 1];
-    int[] countError = new int[Approach.END.ordinal() + 1];
+    int[] count = new int[Approach.LEN];
+    int[] countError = new int[Approach.LEN];
 
     List<Throwable> errors = new ArrayList<>();
     for (int i = 0; i < 10000; i++) {
