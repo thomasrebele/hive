@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 public class DecimalComparator implements Comparator<Decimal> {
 
   public static final byte PAD_POS = (byte) 0;
-  public static final byte PAD_NEG = (byte) 255;
+  public static final byte PAD_NEG = (byte) -1; // or 0xff in hexadecimal
 
   public enum Approach {
     UNKNOWN, SIGN, EQSCALE, LOG_ZERO, BITLOG_A, BITLOG_B, FALLBACK;
@@ -18,6 +18,9 @@ public class DecimalComparator implements Comparator<Decimal> {
     public static final int LEN = Approach.values().length;
   }
 
+  /**
+   * Lets the caller know which approach was chosen (used by tests).
+   */
   interface ApproachInfoCallback extends Consumer<Approach> {
   }
 
@@ -26,10 +29,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     return compareInner(o1, o2, true, null);
   }
 
-  /**
-   * Note: 0 is interpreted as positive
-   */
-  private boolean positive(byte[] unscaled) {
+  private boolean isNotNegative(byte[] unscaled) {
     if (unscaled.length == 0)
       return true;
     return 0 == (Byte.toUnsignedInt(unscaled[0]) >> 7);
@@ -38,21 +38,20 @@ public class DecimalComparator implements Comparator<Decimal> {
   int compareInner(Decimal d1, Decimal d2, boolean useFallback, ApproachInfoCallback aic) {
     byte[] b1 = d1.getUnscaled();
     byte[] b2 = d2.getUnscaled();
-    boolean sign1 = positive(b1);
-    boolean sign2 = positive(b2);
+    boolean notNegative1 = isNotNegative(b1);
+    boolean notNegative2 = isNotNegative(b2);
 
-    if (sign1 != sign2) {
+    if (notNegative1 != notNegative2) {
       if (aic != null)
         aic.accept(Approach.SIGN);
-      return (sign1 ? 1 : -1);
+      return (notNegative1 ? 1 : -1);
     }
 
-    byte pad = sign1 ? PAD_POS : PAD_NEG;
+    byte pad = notNegative1 ? PAD_POS : PAD_NEG;
     if (d1.getScale() == d2.getScale()) {
       return compareSameScale(pad, b1, b2, aic);
     }
 
-    // Hive's scale are the digits behind the dot ...
     if (d1.getScale() < d2.getScale()) {
       return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback, aic);
     } else {
@@ -85,6 +84,10 @@ public class DecimalComparator implements Comparator<Decimal> {
     return 0;
   }
 
+  /**
+   * Search where the number actually starts.
+   * @return index of the first non-pad byte, or b.length if there's none
+   */
   static int findStart(byte[] b, byte pad) {
     for (int i = 0; i < b.length; i++) {
       if (b[i] != pad)
@@ -93,6 +96,10 @@ public class DecimalComparator implements Comparator<Decimal> {
     return b.length;
   }
 
+  /**
+   * @param b a negative value (leftmost bit of b[0] is 1)
+   * @return true if b represents -2^x for any value of x
+   */
   static boolean isNegPowTwo(byte[] b, int start) {
     for (int i = start + 1; i < b.length; i++) {
       if (b[i] != 0)
@@ -130,17 +137,18 @@ public class DecimalComparator implements Comparator<Decimal> {
   /** Precondition: scale1 < scale2 */
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback,
       ApproachInfoCallback aic) {
-    // if b1 and b2 are negative, we consider both their absolute value; the result needs to be negated
+    // if b1 and b2 are negative, consider their absolute value; in that case, the comparison result needs to be negated
     // idea: estimate the number of bits if we multiplied b1 by 10^x to make the two arrays comparable
+
     // inequality in the continuous domain:
-    // if decimal1 > decimal2 (eq1), or as both are positive, log2(decimal1) > log2(decimal2), then:
+    // decimal1 > decimal2 (eq1), as both are positive:
     // log2(decimal1) > log2(decimal2)
     // log2(b1*10^-scale1) > log2(b2*10^-scale2)
     // log2(b1) + log2(10)*(-scale1) > log2(b2) + log2(10)*(-scale2)
     // log2(b1)-log2(b2) + log2(10)*(scale2-scale1) > 0 (eq2)
 
     // discrete domain:
-    // we want to get from (eq2) a condition (eq3) so that (eq3) => (eq1) holds,
+    // we want to get from (eq2) a sufficient condition (eq3) so that (eq3) => (eq1) holds,
     // or in other words: if eq3 holds, we surely know that decimal1 > decimal2
     // to get eq3, we may only lower the LHS of eq2
 
@@ -168,15 +176,16 @@ public class DecimalComparator implements Comparator<Decimal> {
     int diff = bitLogDiff + normScaleDiff;
 
     // the randomized test passes with diff>0 as well;
-    // however, as it is unknown whether diff>0 is a necessary condition
-    // for decimal1>decimal2, keep it safe and stick to the derived inequality
+    // however, as it is unknown whether diff>0 is a sufficient condition
+    // for decimal1>decimal2, so play it safe and stick to the derived inequality
     if (diff - 1 > 0) {
       if (aic != null)
         aic.accept(Approach.BITLOG_A);
       return pad == PAD_POS ? 1 : -1;
     }
 
-    // switch 1 and 2: bl2-bl1 -1 + log2(10)*(scale1-scale2) > 0
+    // handle the inverse case, decimal2 > decimal1
+    // switch 1 and 2 in eq3: bl2-bl1 -1 + log2(10)*(scale1-scale2) > 0
     // multiply by -1: bl1-bl2 +1 + log2(10)*(scale2-scale1) < 0
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
@@ -191,7 +200,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // We could try to evaluate b1*10^scaleDiff from left to right and compare it with b2.
     // An algorithm based on schoolbook multiplication would allow us to do this,
     // however, it would be O(n^2) and quite complex.
-    // Use Java's classes as they implemented optimized integer multiplication algorithms.
+    // Use Java's BigDecimal as it likely uses optimized integer multiplication algorithms.
     if (!useFallback) {
       if (aic != null)
         aic.accept(Approach.FALLBACK);

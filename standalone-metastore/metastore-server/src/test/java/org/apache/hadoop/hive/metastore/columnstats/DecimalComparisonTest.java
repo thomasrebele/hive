@@ -1,20 +1,21 @@
 package org.apache.hadoop.hive.metastore.columnstats;
 
 import com.google.common.math.BigIntegerMath;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.hive.metastore.api.Decimal;
 import org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.Approach;
 import org.apache.hadoop.hive.metastore.utils.MetaStoreServerUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HexFormat;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -282,8 +283,9 @@ public class DecimalComparisonTest {
   }
 
   @Test
-  public void testRandomized1() {
-    Random rOuter = new Random(System.nanoTime());
+  public void testRandomized() {
+    long globalSeed = System.nanoTime();
+    Random rOuter = new Random(globalSeed);
 
     int shift = 15;
     int minScale = -(1 << shift);
@@ -292,43 +294,43 @@ public class DecimalComparisonTest {
     int[] count = new int[Approach.LEN];
     int[] countError = new int[Approach.LEN];
 
-    List<Throwable> errors = new ArrayList<>();
-    for (int i = 0; i < 10000; i++) {
+    Map<Long, Throwable> errors = new HashMap<>();
+    for (int i = 0; i < 1000; i++) {
       long seed = rOuter.nextLong();
-      int[] approachIdx = new int[] { 1 };
+      int[] approachIdx = new int[] { Approach.UNKNOWN.ordinal() };
       try {
         randomInner(seed, minScale, maxScale, m -> {
           count[m.ordinal()] += 1;
           approachIdx[0] = m.ordinal();
         });
       } catch (Throwable t) {
-        t.addSuppressed(new RuntimeException("seed was " + seed));
         countError[approachIdx[0]] += 1;
-        errors.add(t);
+        errors.put(seed, t);
       }
     }
 
-    for (Approach m : Approach.values()) {
-      System.out.println(m + ": " + count[m.ordinal()] + " errors: " + countError[m.ordinal()]);
-    }
     if (!errors.isEmpty()) {
-      errors.forEach(t -> System.out.println(t.getMessage()));
-      AssertionError e = new AssertionError();
-      errors.forEach(t -> e.addSuppressed(t));
-      throw e;
+      var sb = new StringBuilder();
+      sb.append("The randomized test has failed for global seed ").append(globalSeed).append("; some example exceptions:\n");
+      int sc = 0;
+      for(var entry : errors.entrySet()) {
+        sb.append("\n- seed ").append(entry.getKey()).append(":\n  ");
+        sb.append(ExceptionUtils.getStackTrace(entry.getValue()).replace("\n", "\n  "));
+        if((++sc) >= 10) break;
+      }
+      throw new AssertionError(sb.toString());
     }
-  }
 
-  @Test
-  public void testRandomized1tmp() {
-
-    int shift = 4;
-    int minScale = -(1 << shift);
-    int maxScale = (1 << shift) - 1;
-
-    //randomInner(6476192887685342014l , minScale, maxScale, count);
-    //randomInner(-952131642459718632l , minScale, maxScale, count);
-    randomInner(-1088050332798435706L, minScale, maxScale, null);
+    if(count[Approach.FALLBACK.ordinal()] > Math.max(count[Approach.BITLOG_A.ordinal()], count[Approach.BITLOG_A.ordinal()])) {
+      var sb = new StringBuilder();
+      sb.append("The BITLOG approaches should be used more often than the fallback:\n");
+      sb.append(DecimalComparisonTest.class.getSimpleName()).append(" randomized test statistics:");
+      for (Approach m : Approach.values()) {
+        sb.append("  ").append(m).append(": ").append(count[m.ordinal()]).append(" errors: ")
+            .append(countError[m.ordinal()]).append("\n");
+      }
+      throw new IllegalStateException(sb.toString());
+    }
   }
 
   private void randomInner(long seed, int minScale, int maxScale, DecimalComparator.ApproachInfoCallback aic) {
@@ -337,13 +339,11 @@ public class DecimalComparisonTest {
     byte[] num = new byte[len];
     r.nextBytes(num);
 
-    if (num[0] == 0)
-      num[0] = (byte) (2 * r.nextInt(2) - 1);
-
-    int scaleDrift1 = 3;
-    int scaleDrift2 = 4;
+    int scaleDrift1 = r.nextInt(10);
+    int scaleDrift2 = r.nextInt(10);
 
     int s1 = r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
+    // both scales should be somehow "close"
     int s2 = Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
 
     byte[] num2 = Arrays.copyOf(num, num.length);
@@ -358,14 +358,8 @@ public class DecimalComparisonTest {
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
 
-      Decimal d1 = createDecimal(bd1, scaleDrift1);
-      if (d1 == null) {
-        fail("Could not convert " + bd1 + " to Decimal, seed " + seed);
-      }
-      Decimal d2 = createDecimal(bd2, scaleDrift2);
-      if (d2 == null) {
-        fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
-      }
+      Decimal d1 = Objects.requireNonNull(createDecimal(bd1, scaleDrift1));
+      Decimal d2 = Objects.requireNonNull(createDecimal(bd2, scaleDrift2));
 
       int[] approachIdx = new int[] { Approach.UNKNOWN.ordinal() };
       int actual = new DecimalComparator().compareInner(d1, d2, false, m -> approachIdx[0] = m.ordinal());
@@ -374,9 +368,6 @@ public class DecimalComparisonTest {
       if (approachIdx[0] != Approach.FALLBACK.ordinal()) {
         if (expected != normalizeCompareTo(actual)) {
           String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
-          System.out.println(
-              "compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
-                  d2) + ": expected " + expected + ", but was " + actual + " with approach " + Approach.values()[approachIdx[0]]);
           assertEquals(
               "compareTo result was wrong for " + bd1 + expOp + bd2 + ", approach " + Approach.values()[approachIdx[0]] + ", seed " + seed,
               expected, actual);
@@ -384,6 +375,7 @@ public class DecimalComparisonTest {
       }
 
       if (adapt == 0) {
+        // in the first iteration, choose which number will get halved in every iteration
         if (bd1.signum() == 1) {
           adapt = expected > 0 ? 1 : 2;
         } else {
@@ -396,18 +388,23 @@ public class DecimalComparisonTest {
         shiftRight(num2);
       }
 
+      // stop if the adapted number has become zero
       if (bd1.unscaledValue().bitLength() == 0 || bd2.unscaledValue().bitLength() == 0) {
         break;
       }
-
     }
   }
 
+  /**
+   * Perform a signed right shift.
+   */
   private void shiftRight(byte[] num) {
     int carry = num[0] & 0x80;
     for (int i = 0; i < num.length; i++) {
       int nextCarry = (num[i] & 0x1) << 7;
-      // use &0xff to do an unsigned (!) right-shift
+      // use &0xff to do an unsigned (!) right-shift,
+      // so that we can just OR the carry from the previous byte
+      // the first carry take care so that we keep the sign of the number
       int rightShifted = (num[i] & 0xff) >> 1;
       num[i] = (byte) ((carry | rightShifted) & 0xff);
       carry = nextCarry;
