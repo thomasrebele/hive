@@ -16,6 +16,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -154,11 +156,6 @@ public class DecimalComparisonTest {
     check("-100000000", "-100000001");
   }
 
-  @Test public void testBitlen() {
-    check("0.31", 0, "0E+3", 1);
-    //check("-240", 0, "-580", 1);
-  }
-
   @Test
   public void scaleConfusion() {
     Decimal decimal = DecimalUtils.getDecimal(10, -1);
@@ -171,73 +168,102 @@ public class DecimalComparisonTest {
     System.out.println(toStr(decimal1));
   }
 
+  @Test public void testBitLog1() {
+    interface Helper { void accept(int expected, int input);}
+    Helper check = (expected, input) -> assertEquals(expected,
+        bitLog(BigInteger.valueOf(input).toByteArray(), input >= 0 ? PAD_POS : PAD_NEG));
+
+    check.accept(1, 1);
+    check.accept(2, 2);
+    check.accept(2, 3);
+    check.accept(8, 255);
+    check.accept(9, 256);
+    check.accept(9, 511);
+    check.accept(10, 512);
+    check.accept(10, 1023);
+    check.accept(11, 1024);
+
+    check.accept(1, -1);
+    check.accept(2, -2);
+    check.accept(2, -3);
+    check.accept(8, -255);
+    check.accept(9, -256);
+    check.accept(9, -511);
+    check.accept(10, -512);
+    check.accept(10, -1023);
+    check.accept(11, -1024);
+
+    // log2(5800) is about 12.5, bitLog floor(log(...))+1
+    check.accept(13, 5800);
+    check.accept(13, -5800);
+  }
+
   @Test
-  public void bitLen() {
-    assertEquals(8, bitLog(FORMAT.parseHex("FF 16"), PAD_NEG));
-    assertEquals(13, bitLog(FORMAT.parseHex("E9 58"), PAD_NEG));
+  public void testBitLog2() {
+    interface Helper { void accept(int expected, String input, byte pad);}
+    Helper check = (expected, input, pad) ->
+        assertEquals(expected, bitLog(FORMAT.parseHex(input), pad));
 
+    check.accept(8, "FF 16", PAD_NEG);
 
-    assertEquals(0, bitLog(FORMAT.parseHex("00 00 00"), PAD_POS));
-    assertEquals(1, bitLog(FORMAT.parseHex("00 00 01"), PAD_POS));
-    assertEquals(2, bitLog(FORMAT.parseHex("00 00 02"), PAD_POS));
-    assertEquals(3, bitLog(FORMAT.parseHex("00 00 04"), PAD_POS));
-    assertEquals(4, bitLog(FORMAT.parseHex("00 00 08"), PAD_POS));
-    assertEquals(5, bitLog(FORMAT.parseHex("00 00 10"), PAD_POS));
-    assertEquals(5, bitLog(FORMAT.parseHex("00 00 11"), PAD_POS));
-    assertEquals(9, bitLog(FORMAT.parseHex("00 01 11"), PAD_POS));
-    assertEquals(17, bitLog(FORMAT.parseHex("01 11 11"), PAD_POS));
-    assertEquals(17, bitLog(FORMAT.parseHex("01 00 00"), PAD_POS));
-    assertEquals(17, bitLog(FORMAT.parseHex("00 00 00 01 00 00"), PAD_POS));
+    check.accept(0, "00 00 00", PAD_POS);
+    check.accept(1, "00 00 01", PAD_POS);
+    check.accept(2, "00 00 02", PAD_POS);
+    check.accept(3, "00 00 04", PAD_POS);
+    check.accept(4, "00 00 08", PAD_POS);
+    check.accept(5, "00 00 10", PAD_POS);
+    check.accept(5, "00 00 11", PAD_POS);
+    check.accept(9, "00 01 11", PAD_POS);
+    check.accept(17, "01 11 11", PAD_POS);
+    check.accept(17, "01 00 00", PAD_POS);
+    check.accept(17, "00 00 00 01 00 00", PAD_POS);
 
-    assertEquals(0, bitLog(FORMAT.parseHex("FF FF FF"), PAD_NEG));
-    assertEquals(1, bitLog(FORMAT.parseHex("FF FF FE"), PAD_NEG));
-    assertEquals(2, bitLog(FORMAT.parseHex("FF FF FD"), PAD_NEG));
-    assertEquals(3, bitLog(FORMAT.parseHex("FF FF FB"), PAD_NEG));
-    assertEquals(4, bitLog(FORMAT.parseHex("FF FF F7"), PAD_NEG));
-    assertEquals(5, bitLog(FORMAT.parseHex("FF FF EF"), PAD_NEG));
-    assertEquals(5, bitLog(FORMAT.parseHex("FF FF EE"), PAD_NEG));
-    assertEquals(9, bitLog(FORMAT.parseHex("FF FE EE"), PAD_NEG));
-    assertEquals(17, bitLog(FORMAT.parseHex("FE EE EE"), PAD_NEG));
-    assertEquals(17, bitLog(FORMAT.parseHex("FE FF FF"), PAD_NEG));
-    assertEquals(17, bitLog(FORMAT.parseHex("FF FF FF FE FF FF"), PAD_NEG));
+    check.accept(1, "FF FF FF", PAD_NEG);
+    check.accept(2, "FF FF FE", PAD_NEG);
+    check.accept(2, "FF FF FD", PAD_NEG);
+    check.accept(3, "FF FF FB", PAD_NEG);
+    check.accept(4, "FF FF F7", PAD_NEG);
+    check.accept(5, "FF FF EF", PAD_NEG);
+    check.accept(5, "FF FF EE", PAD_NEG);
+    check.accept(9, "FF FE EE", PAD_NEG);
+    check.accept(17, "FE EE EE", PAD_NEG);
+    check.accept(17, "FE FF FF", PAD_NEG);
+    check.accept(17, "FF FF FF FE FF FF", PAD_NEG);
   }
 
   @Test
   public void bitLenPostcondition() {
-    for(int i=-18; i<18; i+=1) {
+    // define helper which executes the asserts
+    Consumer<BigInteger> check = x -> {
+      int bl = bitLog(x.toByteArray(), x.signum() == -1 ? PAD_NEG : PAD_POS);
+      int log = BigIntegerMath.log2(x.abs(), RoundingMode.DOWN);
+      if(log<0) fail("Log may not be negative: " + x);
+
+      if(log+1 != bl) fail(x.toString());
+      // check inequalities
+      if(!(bl-1 <= log)) fail(x.toString());
+      if(!(log < bl)) fail(x.toString());
+    };
+
+    // check all integers from -18 to 18 (inclusive)
+    for(int i=-18; i<=18; i++) {
       if(i==0) continue;
       BigInteger x = BigInteger.valueOf(i);
-      int bl = bitLog(x.toByteArray(), i < 0 ? PAD_NEG : PAD_POS);
-      int log = BigIntegerMath.log2(x.abs(), RoundingMode.DOWN);
-      if(log<0) fail("unexpected");
-
-      assertEquals(log+1, bl);
+      check.accept(x);
     }
 
-
-    for(int i=0; i<100; i++) {
-      System.out.println();
+    // check powers of two from 2^5 to 2^200 (about 60 decimal digits)
+    for(int i=5; i<200; i++) {
       BigInteger p = BigInteger.TWO.pow(i);
+      // check negative and positive powers of two: -2^p and +2^p
       for(int neg=0; neg<2; neg++) {
-        System.out.println("neg: " + (-neg));
-
         if(neg == 1) p = p.negate();
 
+        // check the neighborhood of each power of two
         for(int j=-2; j<=2; j++) {
           BigInteger x = p.add(BigInteger.valueOf(j));
           if(x.compareTo(BigInteger.ZERO) == 0) continue;
-          int bl = bitLog(x.toByteArray(), x.signum() == -1 ? PAD_NEG : PAD_POS);
-          int log = BigIntegerMath.log2(x.abs(), RoundingMode.DOWN);
-          if(log<0) fail("unexpected");
-
-          System.out.println(x + "  bit log " + bl + " log " + log);
-          if(log+1 != bl) {
-            fail(x.toString());
-          }
-          // check inequalities
-
-          if(!(bl-1 <= log)) fail(x.toString());
-          if(!(log < bl)) fail(x.toString());
+          check.accept(x);
         }
       }
     }
