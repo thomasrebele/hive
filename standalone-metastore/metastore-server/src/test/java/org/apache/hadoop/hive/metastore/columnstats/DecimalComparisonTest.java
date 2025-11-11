@@ -60,8 +60,9 @@ public class DecimalComparisonTest {
   }
 
     public void check(String n1, int scaleDrift1, String n2, int scaleDrift2) {
-      checkInner(n1, scaleDrift1, n2, scaleDrift2);
-      checkInner(n2, scaleDrift2, n1, scaleDrift1);
+      BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
+      checkInner(bd1, scaleDrift1, bd2, scaleDrift2);
+      checkInner(bd2, scaleDrift2, bd1, scaleDrift1);
     }
 
     public int normalizeCompareTo(int cmp) {
@@ -69,20 +70,19 @@ public class DecimalComparisonTest {
     }
 
   public void checkInner(String n1, String n2) {
-     checkInner(n1, 0, n2, 0);
+    BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
+     checkInner(bd1, 0, bd1, 0);
   }
 
-      public void checkInner(String n1, int scaleDrift1, String n2, int scaleDrift2) {
-      BigDecimal bd1 = new BigDecimal(n1), bd2 = new BigDecimal(n2);
-
+      public void checkInner(BigDecimal bd1, int scaleDrift1, BigDecimal bd2, int scaleDrift2) {
       Decimal d1 = createDecimal(bd1, scaleDrift1);
       Decimal d2 = createDecimal(bd2, scaleDrift2);
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
       int actual = normalizeCompareTo(new DecimalComparator().compare(d1, d2));
       if(expected != actual) {
-        System.out.println("compareTo result was wrong for " + n1 + "/" + toStr(d1) + " and " + n2 + "/" + toStr(d2) + ": " + expected + ", but was " + actual);
-        assertEquals("compareTo result was wrong for " + n1 + " and " + n2, expected, actual);
+        System.out.println("compareTo result was wrong for " + toStr(d1) + " and " + toStr(d2) + ": " + expected + ", but was " + actual);
+        assertEquals("compareTo result was wrong for " + bd1 + " and " + bd2, expected, actual);
       }
     }
 

@@ -164,12 +164,12 @@ public class DecimalComparator implements Comparator<Decimal> {
     int scaleDiff = scale2-scale1;
     int multiplied = scaleDiff * 27213;
     int normScaleDiff = multiplied >> 13;
-    int tmp = bitLogDiff + normScaleDiff;
+    int diff = bitLogDiff + normScaleDiff;
 
-    // the randomized test passes with tmp>0 as well;
-    // however, as it is unknown whether tmp>0 is a necessary condition
+    // the randomized test passes with diff>0 as well;
+    // however, as it is unknown whether diff>0 is a necessary condition
     // for decimal1>decimal2, keep it safe and stick to the derived inequality
-    if(tmp -1 > 0) {
+    if(diff - 1 > 0) {
       if(aic != null) aic.accept(Approach.BITLEN_A);
       return pad == PAD_POS ? 1 : -1;
     }
@@ -178,7 +178,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // multiply by -1: bl1-bl2 +1 + log2(10)*(scale2-scale1) < 0
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
-    if(tmp + 1 < 0) {
+    if(diff + 1 < 0) {
       if(aic != null) aic.accept(Approach.BITLEN_B);
       return pad == PAD_POS ? -1 : 1;
     }
@@ -195,6 +195,4 @@ public class DecimalComparator implements Comparator<Decimal> {
     }
     return new BigDecimal(new BigInteger(b1), scale1).compareTo(new BigDecimal(new BigInteger(b2), scale2));
   }
-
-
 }
