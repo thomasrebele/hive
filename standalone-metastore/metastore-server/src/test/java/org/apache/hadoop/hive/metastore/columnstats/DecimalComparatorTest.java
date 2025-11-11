@@ -44,7 +44,7 @@ import static org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.bit
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class DecimalComparisonTest {
+public class DecimalComparatorTest {
 
   public record ExpectApproach(Approach expected) implements DecimalComparator.ApproachInfoCallback {
 
@@ -342,7 +342,7 @@ public class DecimalComparisonTest {
     if(count[Approach.FALLBACK.ordinal()] > Math.max(count[Approach.BITLOG_A.ordinal()], count[Approach.BITLOG_A.ordinal()])) {
       var sb = new StringBuilder();
       sb.append("The BITLOG approaches should be used more often than the fallback:\n");
-      sb.append(DecimalComparisonTest.class.getSimpleName()).append(" randomized test statistics:");
+      sb.append(DecimalComparatorTest.class.getSimpleName()).append(" randomized test statistics:");
       for (Approach m : Approach.values()) {
         sb.append("  ").append(m).append(": ").append(count[m.ordinal()]).append(" errors: ")
             .append(countError[m.ordinal()]).append("\n");
