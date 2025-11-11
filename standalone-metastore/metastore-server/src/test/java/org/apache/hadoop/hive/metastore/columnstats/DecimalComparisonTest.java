@@ -5,7 +5,6 @@ import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.metastore.api.Decimal;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.junit.Test;
-import org.testcontainers.shaded.com.google.common.math.BigDecimalMath;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -17,6 +16,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,13 +40,13 @@ public class DecimalComparisonTest {
     END,
   }
 
+  interface MethodInfoCallback extends Consumer<Method> {}
+
   public static final HexFormat FORMAT = HexFormat.ofDelimiter(" ");
 
   public String toStr(Decimal val) {
+    // Hive's scale are the digits behind the dot ...
     return Objects.toString(new BigDecimal(new BigInteger(val.getUnscaled()), -val.getScale()));
-
-    //HiveDecimal hiveDecimal = HiveDecimal.create(new BigInteger(val.getUnscaled()), val.getScale());
-    //return hiveDecimal.toString();
   }
 
     /**
@@ -54,42 +54,39 @@ public class DecimalComparisonTest {
      */
     private boolean positive(byte[] unscaled) {
       if(unscaled.length == 0) return true;
-      return 0 == (toIntUnsigned(unscaled[0])>>7);
+      return 0 == (Byte.toUnsignedInt(unscaled[0]) >>7);
     }
 
-    public int compareTo(Decimal d1, Decimal d2) {
-      return compareToInner(d1, d2, true);
+    public int compareTo(Decimal d1, Decimal d2, MethodInfoCallback mic) {
+      return compareToInner(d1, d2, true, mic);
     }
 
-  private int compareToInner(Decimal d1, Decimal d2, boolean useFallback) {
+  private int compareToInner(Decimal d1, Decimal d2, boolean useFallback, MethodInfoCallback mic) {
     byte[] b1 = d1.getUnscaled();
     byte[] b2 = d2.getUnscaled();
     boolean sign1 = positive(b1);
     boolean sign2 = positive(b2);
 
-    //System.out.println("  " + toStr(d1) + " positive " + sign1 + " / " + toStr(d2) + " positive " + sign2);
     if (sign1 != sign2) {
-      return (sign1 ? Method.SIGN.ordinal() : -Method.SIGN.ordinal());
+      if(mic != null) mic.accept(Method.SIGN);
+      return (sign1 ? 1 : -1);
     }
 
     byte pad = sign1 ? PAD_POS : PAD_NEG;
     if (d1.getScale() == d2.getScale()) {
-      //System.out.println("  same scale: " + d1.getScale());
-      return compareSameScale(pad, b1, b2);
+      return compareSameScale(pad, b1, b2, mic);
     }
-
-    //System.out.println("  different scale, " + d1.getScale() + " vs " + d2.getScale() +" :/");
 
     // Hive's scale are the digits behind the dot ...
     if (d1.getScale() < d2.getScale()) {
-      return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback);
+      return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback, mic);
     }
     else {
-      return -compareToScaleDiff(pad, b2, d2.getScale(), b1, d1.getScale(), useFallback);
+      return -compareToScaleDiff(pad, b2, d2.getScale(), b1, d1.getScale(), useFallback, mic);
     }
   }
 
-  private static int compareSameScale(byte pad, byte[] b1, byte[] b2) {
+  private static int compareSameScale(byte pad, byte[] b1, byte[] b2, MethodInfoCallback mic) {
     int len = Math.max(b1.length, b2.length);
     int i1 = b1.length-len;
     int i2 = b2.length-len;
@@ -97,11 +94,11 @@ public class DecimalComparisonTest {
       // TODO: test case
       byte c1 = i1 < 0 ? pad : b1[i1];
       byte c2 = i2 < 0 ? pad : b2[i2];
-      //System.out.println("cmp " + c1 + "  " + c2 );
       if(c1 != c2) {
         int u1 = Byte.toUnsignedInt(c1);
         int u2 = Byte.toUnsignedInt(c2);
-        return u1 < u2 ? -Method.EQSCALE.ordinal() : Method.EQSCALE.ordinal();
+        if(mic != null) mic.accept(Method.EQSCALE);
+        return u1 < u2 ? -1 : 1;
       }
       i1++;
       i2++;
@@ -122,27 +119,18 @@ public class DecimalComparisonTest {
       return b.length;
   }
 
-  int toIntUnsigned(byte b) {
-      return b&0xff;
-  }
-
   boolean isNegPowTwo(byte[] b, int start) {
-    byte first = b[start];
-
-    //System.out.println(Integer.toBinaryString(toIntUnsigned(first)));
-    //System.out.println(Integer.toBinaryString((toIntUnsigned(first))^0xff));
-    //System.out.println(Integer.numberOfTrailingZeros(first) + "  " + Integer.numberOfLeadingZeros((toIntUnsigned(first))^0xff));
-
     for(int i=start+1; i<b.length; i++) {
       if (b[i] != 0) return false;
     }
 
     // power of two if trailingZeros + leadingOnes == 8
     // calculate trailing zeros relative to a byte; OR with 0x100 to ensure its <=8
+    byte first = b[start];
     int trailingZeros = Integer.numberOfTrailingZeros(first | 0x100);
     // calculate "complement relative to 8 bits = 1 byte" of leadingOnes
     // example: 0b11000000, invert bits 0b00111111, leading ones is 2, its complement is 8-2=6
-    int leadingOnesComplement = 32 - Integer.numberOfLeadingZeros((toIntUnsigned(first))^0xff);
+    int leadingOnesComplement = 32 - Integer.numberOfLeadingZeros((Byte.toUnsignedInt(first))^0xff);
     return trailingZeros == leadingOnesComplement;
   }
 
@@ -158,32 +146,14 @@ public class DecimalComparisonTest {
       int inv = (first^pad)&0xff;
       int bits = 32-Integer.numberOfLeadingZeros(inv);
     int result = (num.length - start - 1) * 8 + bits;
-    //System.out.println(FORMAT.formatHex(num) + " pad " + FORMAT.toHexDigits(pad) + ": " + result);
     // adjust bit log for value = -2^n
     boolean isNegPowTwo = pad == PAD_NEG && isNegPowTwo(num, start);
     return result + (isNegPowTwo ? 1 : 0);
   }
 
   /** Precondition: scale1 < scale2 */
-  private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback) {
-    int bl1 = bitLog(b1, pad);
-    int bl2 = bitLog(b2, pad);
-
-    // log of 0 is not defined
-    if(pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
-      int cmp = bl1 < bl2 ? -Method.LOG_ZERO.ordinal() : bl1 > bl2 ? Method.LOG_ZERO.ordinal() : 0;
-      return cmp;
-    }
-
-    BigDecimal bd1 = new BigDecimal(new BigInteger(b1), scale1);
-    BigDecimal bd2 = new BigDecimal(new BigInteger(b2), scale2);
-    int exp = bd1.compareTo(bd2);
-
-    //System.out.println("  " + FORMAT.formatHex(b1));
-    //System.out.println("  " + FORMAT.formatHex(b2));
-    //System.out.println("  bl1 " + bl1 + "     b1.len " + b1.length + "   scale1 " + scale1);
-    //System.out.println("  bl2 " + bl2 + "     b2.len " + b2.length + "   scale2 " + scale2);
-
+  private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback,
+      MethodInfoCallback mic) {
     // if b1 and b2 are negative, we consider both their absolute value; the result needs to be negated
     // idea: estimate the number of bits if we multiplied b1 by 10^x to make the two arrays comparable
     // inequality in the continuous domain:
@@ -205,63 +175,36 @@ public class DecimalComparisonTest {
     // log2(b1)-log2(b2) > bitLog(b1)-1 - bitLog(b2)
     // so bitLog(b1)-bitLog(b2) -1 + log2(10)*(scale2-scale1) > 0 (eq3)
 
+    int bl1 = bitLog(b1, pad);
+    int bl2 = bitLog(b2, pad);
+
+    // log of 0 is not defined, so deal with it first
+    if(pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
+      if(mic != null) mic.accept(Method.LOG_ZERO);
+      return Integer.compare(bl1, bl2);
+    }
 
     int bitLogDiff = bl1 - bl2;
     int scaleDiff = scale2-scale1;
     int multiplied = scaleDiff * 27213;
     int normScaleDiff = multiplied >> 13;
     int tmp = bitLogDiff + normScaleDiff;
-    int normScale1 = (scale1 * 27213) >> 13;
-    int normScale2 = (scale2 * 27213) >> 13;
-    String info = exp + " sc1 " + scale1 + " scale2 " + scale2
-        + " normsc1 " + normScale1 + " normsc2 " + normScale2
-        + " scale diff: " + scaleDiff + " normalized scale diff " + normScaleDiff
-        + " bl1 " + bl1 + " bl2 " + bl2 + "  bit log diff " + bitLogDiff + "     tmp " + tmp;
 
-    // ---
-    // log2(decimal1) = log2(b1) + log2(10)*-scale1
-    // between bitLog(b1)-1 <= and < bitLog(b1)
-    // ---
-    int log1 = bl1 - normScale1;
-    int log2 = bl2 - normScale2;
-
-
-    System.out.println(
-         "  bl-1 " + (bl1-1)
-        + "  ns " + normScale1
-        + " log " + Math.log(bd1.floatValue())/Math.log(2)
-        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale1).floatValue())/Math.log(2)
-        + " log(b) " + Math.log(new BigInteger(b1).floatValue())/Math.log(2)
-        );
-
-    System.out.println(
-         "  bl-1 " + (bl2-1)
-        + "  ns " + normScale2
-        + " log " + Math.log(bd2.floatValue())/Math.log(2)
-        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale2).floatValue())/Math.log(2)
-        + " log(b) " + Math.log(new BigInteger(b2).floatValue())/Math.log(2)
-        );
-
-    System.out.println("  log1 between " + (log1-1) + " and " + log1
-        + "   log 2 between " + (log2-1) + " and " + log2);
-
-    // TODO can we make it more strict? +0?
+    // the randomized test passes with tmp>0 as well;
+    // however, as it is unknown whether tmp>0 is a necessary condition
+    // for decimal1>decimal2, keep it safe and stick to the derived inequality
     if(tmp -1 > 0) {
-      System.out.println("  A " + info);
-      return pad == PAD_POS ? Method.BITLEN_A.ordinal() : -Method.BITLEN_A.ordinal();
+      if(mic != null) mic.accept(Method.BITLEN_A);
+      return pad == PAD_POS ? 1 : -1;
     }
 
     // switch 1 and 2: bl2-bl1 -1 + log2(10)*(scale1-scale2) > 0
     // multiply by -1: bl1-bl2 +1 + log2(10)*(scale2-scale1) < 0
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
-    // TODO tr derivate formula!
-    // TODO tr can we make the adjustments (+1) vs (+2), and (0) vs (-2) more restrictive?
-    // With the proposed values randomized test passes and we get fallbacks for 2 binary orders of magnitude (as expected)
-    //System.out.println("  ?? " + info);
     if(tmp + 1 < 0) {
-      System.out.println("  B " + info);
-      return pad == PAD_POS ? -Method.BITLEN_B.ordinal() : Method.BITLEN_B.ordinal();
+      if(mic != null) mic.accept(Method.BITLEN_B);
+      return pad == PAD_POS ? -1 : 1;
     }
 
     // The decimal numbers are within a binary order of magnitude,
@@ -270,8 +213,8 @@ public class DecimalComparisonTest {
     // An algorithm based on schoolbook multiplication would allow us to do this,
     // however, it would be O(n^2) and quite complex.
     // Use Java's classes as they implemented optimized integer multiplication algorithms.
-    System.out.println("  f " + info);
     if(!useFallback) {
+      if(mic != null) mic.accept(Method.FALLBACK);
       return Method.FALLBACK.ordinal();
     }
     return new BigDecimal(new BigInteger(b1), scale1).compareTo(new BigDecimal(new BigInteger(b2), scale2));
@@ -302,20 +245,12 @@ public class DecimalComparisonTest {
       Decimal d2 = createDecimal(bd2, scaleDrift2);
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
-      int actual = normalizeCompareTo(compareTo(d1, d2));
+      int actual = normalizeCompareTo(compareTo(d1, d2, null));
       if(expected != actual) {
         System.out.println("compareTo result was wrong for " + n1 + "/" + toStr(d1) + " and " + n2 + "/" + toStr(d2) + ": " + expected + ", but was " + actual);
         assertEquals("compareTo result was wrong for " + n1 + " and " + n2, expected, actual);
       }
     }
-
-  byte[] rev(byte[] b) {
-    byte[] r = new byte[b.length];
-    for(int i=0; i<b.length; i++) {
-      r[i] = b[b.length-i-1];
-    }
-    return r;
-  }
 
   @Test
   public void testTmp() {
@@ -487,7 +422,7 @@ public class DecimalComparisonTest {
   public void testRandomized1() {
     Random rOuter = new Random(System.nanoTime());
 
-    int shift = 4;
+    int shift = 15;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
 
@@ -495,12 +430,14 @@ public class DecimalComparisonTest {
     int[] countError = new int[Method.END.ordinal()+1];
 
     List<Throwable> errors = new ArrayList<>();
-      for (int i = 0; i < 1; i++) {
+      for (int i = 0; i < 1000000; i++) {
         long seed = rOuter.nextLong();
-        int[] methodIdx = new int[]{0};
+        int[] methodIdx = new int[]{1};
         try {
-          randomInner(seed, minScale, maxScale, methodIdx);
-          count[methodIdx[0]] += 1;
+          randomInner(seed, minScale, maxScale, m -> {
+            count[m.ordinal()] += 1;
+            methodIdx[0] = m.ordinal();
+          });
         }
         catch(Throwable t) {
           t.addSuppressed(new RuntimeException("seed was " + seed));
@@ -527,16 +464,15 @@ public class DecimalComparisonTest {
     int shift = 4;
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
-    int[] count = new int[Method.END.ordinal()+1];
 
     //randomInner(6476192887685342014l , minScale, maxScale, count);
     //randomInner(-952131642459718632l , minScale, maxScale, count);
-    randomInner(-1088050332798435706l , minScale, maxScale, count);
+    randomInner(-1088050332798435706l , minScale, maxScale, null);
   }
 
 
-  private void randomInner(long seed, int minScale, int maxScale, int[] methodIdxOut) {
-    System.out.println("seed: " + seed);
+  private void randomInner(long seed, int minScale, int maxScale, MethodInfoCallback mic) {
+    //System.out.println("seed: " + seed);
     Random r = new Random(seed);
     int len = r.nextInt(30) + 1;
     byte[] num = new byte[len];
@@ -570,9 +506,9 @@ public class DecimalComparisonTest {
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
       ;
-      System.out.println(bd1 + " vs " + bd2 + "  "
-          + (expected > 0 ? bd1.floatValue() / bd2.floatValue() : bd2.floatValue() / bd1.floatValue() )
-      + " log1 " + Math.log(bd1.floatValue())/Math.log(2) + " log2 " + Math.log(bd2.floatValue())/Math.log(2));
+      //System.out.println(bd1 + " vs " + bd2 + "  "
+      //    + (expected > 0 ? bd1.floatValue() / bd2.floatValue() : bd2.floatValue() / bd1.floatValue() )
+      //+ " log1 " + Math.log(bd1.floatValue())/Math.log(2) + " log2 " + Math.log(bd2.floatValue())/Math.log(2));
 
       Decimal d1 = createDecimal(bd1, scaleDrift1);
       if (d1 == null) {
@@ -583,17 +519,17 @@ public class DecimalComparisonTest {
         fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
       }
 
-      int actual = compareToInner(d1, d2, false);
-      int methodIdx = Math.abs(actual);
-      methodIdxOut[0] = methodIdx;
-      if (methodIdx != Method.FALLBACK.ordinal()) {
+      int[] methodIdx = new int[]{Method.UNKNOWN.ordinal()};
+      int actual = compareToInner(d1, d2, false, m -> methodIdx[0] = m.ordinal());
+      if(mic != null) mic.accept(Method.values()[methodIdx[0]]);
+      if (methodIdx[0] != Method.FALLBACK.ordinal()) {
         if (expected != normalizeCompareTo(actual)) {
           String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
           System.out.println(
               "compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
-                  d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx]);
+                  d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx[0]]);
           assertEquals(
-              "compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx] + ", seed " + seed,
+              "compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx[0]] + ", seed " + seed,
               expected, actual);
         }
       }
