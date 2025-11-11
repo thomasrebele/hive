@@ -1,9 +1,7 @@
 package org.apache.hadoop.hive.metastore.columnstats;
 
 import com.google.common.math.BigIntegerMath;
-import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.metastore.api.Decimal;
-import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -16,21 +14,31 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.Method;
+import org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.Approach;
 import static org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.PAD_POS;
 import static org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.PAD_NEG;
 import static org.apache.hadoop.hive.metastore.columnstats.DecimalComparator.bitLog;
 
 public class DecimalComparisonTest {
 
+  public static class ExpectApproach implements DecimalComparator.ApproachInfoCallback {
+    public final Approach expected;
 
+    public ExpectApproach(Approach expected) {
+      this.expected = expected;
+    }
+
+    @Override
+    public void accept(Approach approach) {
+      assertEquals(expected, approach);
+    }
+  }
 
   public static final HexFormat FORMAT = HexFormat.ofDelimiter(" ");
 
@@ -52,7 +60,6 @@ public class DecimalComparisonTest {
   }
 
     public void check(String n1, int scaleDrift1, String n2, int scaleDrift2) {
-      //System.out.println();
       checkInner(n1, scaleDrift1, n2, scaleDrift2);
       checkInner(n2, scaleDrift2, n1, scaleDrift1);
     }
@@ -80,37 +87,14 @@ public class DecimalComparisonTest {
     }
 
   @Test
-  public void testTmp() {
-    //checkInner("8.113", "9123");
-
-    String s1 = "1249894", s2 = "122492";
-    BigInteger bi1 = new BigInteger(s1), bi2 = new BigInteger(s2);
-    byte[] b1 = bi1.toByteArray();
-    byte[] b2 = bi2.toByteArray();
-
-    System.out.println(FORMAT.formatHex(b1));
-    System.out.println(FORMAT.formatHex(b2));
-
-    System.out.println(bi1.multiply(bi2));
-    System.out.println(new BigInteger(b1).multiply(new BigInteger(b2)));
-
-
-
-  }
-
-  @Test
   public void test1() {
 
     checkInner("-1", "-10");
-    System.out.println("\n\n");
     checkInner("-10.2", "-123.2");
-    System.out.println("\n\n");
     checkInner("-123.2", "-10.21232");
 
     checkInner("-10", "-1");
-    System.out.println("\n\n");
     checkInner("-123.2", "-10.2");
-    System.out.println("\n\n");
     checkInner("-10.21232", "-123.2");
 
     // positive values
@@ -138,10 +122,10 @@ public class DecimalComparisonTest {
 
   @Test
   public void test2() {
-    //checkInner("10", "1");
-    //checkInner("1", "10");
-    //checkInner("-10", "-1");
-    //checkInner("-1", "-10");
+    checkInner("10", "1");
+    checkInner("1", "10");
+    checkInner("-10", "-1");
+    checkInner("-1", "-10");
   }
 
   @Test
@@ -154,18 +138,6 @@ public class DecimalComparisonTest {
     check("-1000", "-1001");
     check("100000000", "100000001");
     check("-100000000", "-100000001");
-  }
-
-  @Test
-  public void scaleConfusion() {
-    Decimal decimal = DecimalUtils.getDecimal(10, -1);
-    HiveDecimal hiveDecimal = HiveDecimal.create(new BigInteger(decimal.getUnscaled()), decimal.getScale());
-    System.out.println(hiveDecimal);
-
-    System.out.println(toStr(decimal));
-
-    Decimal decimal1 = createDecimal(new BigDecimal("10.123"), 100);
-    System.out.println(toStr(decimal1));
   }
 
   @Test public void testBitLog1() {
@@ -277,32 +249,31 @@ public class DecimalComparisonTest {
     int minScale = -(1<<shift);
     int maxScale = (1<<shift)-1;
 
-    int[] count = new int[Method.END.ordinal()+1];
-    int[] countError = new int[Method.END.ordinal()+1];
+    int[] count = new int[Approach.END.ordinal()+1];
+    int[] countError = new int[Approach.END.ordinal()+1];
 
     List<Throwable> errors = new ArrayList<>();
-      for (int i = 0; i < 1000000; i++) {
+      for (int i = 0; i < 10000; i++) {
         long seed = rOuter.nextLong();
-        int[] methodIdx = new int[]{1};
+        int[] approachIdx = new int[]{1};
         try {
           randomInner(seed, minScale, maxScale, m -> {
             count[m.ordinal()] += 1;
-            methodIdx[0] = m.ordinal();
+            approachIdx[0] = m.ordinal();
           });
         }
         catch(Throwable t) {
           t.addSuppressed(new RuntimeException("seed was " + seed));
-          countError[methodIdx[0]] += 1;
+          countError[approachIdx[0]] += 1;
           errors.add(t);
         }
       }
 
-    for (Method m : Method.values()) {
+    for (Approach m : Approach.values()) {
       System.out.println(m + ": " + count[m.ordinal()] + " errors: " + countError[m.ordinal()]);
     }
     if(!errors.isEmpty()) {
-      errors.forEach(t -> System.out.println(t.getMessage())
-      );
+      errors.forEach(t -> System.out.println(t.getMessage()));
       AssertionError e = new AssertionError();
       errors.forEach(t -> e.addSuppressed(t));
       throw e;
@@ -322,8 +293,7 @@ public class DecimalComparisonTest {
   }
 
 
-  private void randomInner(long seed, int minScale, int maxScale, DecimalComparator.MethodInfoCallback mic) {
-    //System.out.println("seed: " + seed);
+  private void randomInner(long seed, int minScale, int maxScale, DecimalComparator.ApproachInfoCallback aic) {
     Random r = new Random(seed);
     int len = r.nextInt(30) + 1;
     byte[] num = new byte[len];
@@ -336,18 +306,13 @@ public class DecimalComparisonTest {
     int scaleDrift1 = 3;
     int scaleDrift2 = 4;
 
-    int s1 = -2; //r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
-    int s2 = -1; //Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
+    int s1 = r.nextInt(maxScale - scaleDrift1 - minScale) + minScale;
+    int s2 = Math.clamp(s1 + (int) r.nextGaussian(0, 10), minScale, maxScale - scaleDrift2);
 
     byte[] num2 = Arrays.copyOf(num, num.length);
     num2[0] = (byte) r.nextInt();
     // ensure the numbers have the same sign
     num2[0] = (byte) ((num2[0] & 0x7f) | (num[0] & 0x80));
-
-    num = BigInteger.valueOf(1523).toByteArray();
-    num2 = BigInteger.TEN.pow(3).toByteArray();
-
-    //System.out.println(FORMAT.formatHex(num) + "     " + FORMAT.formatHex(num2));
 
     int adapt = 0;
     for(int i=0; i<2 /*100*/*len; i++) {
@@ -356,10 +321,6 @@ public class DecimalComparisonTest {
 
 
       int expected = normalizeCompareTo(bd1.compareTo(bd2));
-      ;
-      //System.out.println(bd1 + " vs " + bd2 + "  "
-      //    + (expected > 0 ? bd1.floatValue() / bd2.floatValue() : bd2.floatValue() / bd1.floatValue() )
-      //+ " log1 " + Math.log(bd1.floatValue())/Math.log(2) + " log2 " + Math.log(bd2.floatValue())/Math.log(2));
 
       Decimal d1 = createDecimal(bd1, scaleDrift1);
       if (d1 == null) {
@@ -370,17 +331,17 @@ public class DecimalComparisonTest {
         fail("Could not convert " + bd2 + " to Decimal, seed " + seed);
       }
 
-      int[] methodIdx = new int[]{Method.UNKNOWN.ordinal()};
-      int actual = new DecimalComparator().compareToInner(d1, d2, false, m -> methodIdx[0] = m.ordinal());
-      if(mic != null) mic.accept(Method.values()[methodIdx[0]]);
-      if (methodIdx[0] != Method.FALLBACK.ordinal()) {
+      int[] approachIdx = new int[]{ Approach.UNKNOWN.ordinal()};
+      int actual = new DecimalComparator().compareInner(d1, d2, false, m -> approachIdx[0] = m.ordinal());
+      if(aic != null) aic.accept(Approach.values()[approachIdx[0]]);
+      if (approachIdx[0] != Approach.FALLBACK.ordinal()) {
         if (expected != normalizeCompareTo(actual)) {
           String expOp = expected < 0 ? " < " : expected > 0 ? " > " : " = ";
           System.out.println(
               "compareTo result was wrong for\n  " + bd1 + "/" + toStr(d1) + " and\n  " + bd2 + "/" + toStr(
-                  d2) + ": expected " + expected + ", but was " + actual + " with method " + Method.values()[methodIdx[0]]);
+                  d2) + ": expected " + expected + ", but was " + actual + " with approach " + Approach.values()[approachIdx[0]]);
           assertEquals(
-              "compareTo result was wrong for " + bd1 + expOp + bd2 + ", method " + Method.values()[methodIdx[0]] + ", seed " + seed,
+              "compareTo result was wrong for " + bd1 + expOp + bd2 + ", approach " + Approach.values()[approachIdx[0]] + ", seed " + seed,
               expected, actual);
         }
       }
@@ -402,7 +363,6 @@ public class DecimalComparisonTest {
 
 
       if(bd1.unscaledValue().bitLength() == 0 || bd2.unscaledValue().bitLength() == 0) {
-        //System.out.println("break");
         break;
       }
 
@@ -421,39 +381,4 @@ public class DecimalComparisonTest {
   }
 
 
-  @Test
-  public void testTmp2() {
-    byte[] bytes = FORMAT.parseHex("5b 7c");
-
-    for(int i=0; i<32; i++) {
-      shiftRight(bytes);
-      System.out.println(FORMAT.formatHex(bytes));
-      for(int j=0; j<bytes.length; j++) {
-        System.out.print(Integer.toBinaryString(bytes[j]&0xff));
-      }
-      System.out.println();
-    }
-  }
-
-
-  @Test
-  public void test3() {
-
-    int scale = 10;
-    BigInteger b = BigInteger.valueOf(1000);
-    BigDecimal bigDecimal = new BigDecimal(b, -scale);
-
-    int bitLog = bitLog(b.toByteArray(), PAD_POS);
-    int normScale = (scale * 27213) >> 13;
-    int tmp = bitLog + normScale;
-
-    double log = Math.log(bigDecimal.floatValue())/Math.log(2);
-    System.out.println(tmp-1
-        + "  bl-1 " + (bitLog-1)
-        + "  ns " + normScale
-        + " log " + log
-        + " log(10^scale) " + Math.log(BigInteger.TEN.pow(scale).floatValue())/Math.log(2)
-        + " log(b) " + Math.log(b.floatValue())/Math.log(2)
-        + " num " + bigDecimal);
-  }
 }

@@ -12,8 +12,7 @@ public class DecimalComparator implements Comparator<Decimal> {
   public static final byte PAD_POS = (byte) 0;
   public static final byte PAD_NEG = (byte) 255;
 
-  public enum Method {
-    SAME,
+  public enum Approach {
     UNKNOWN,
     SIGN,
     EQSCALE,
@@ -25,11 +24,11 @@ public class DecimalComparator implements Comparator<Decimal> {
     END,
   }
 
-  interface MethodInfoCallback extends Consumer<Method> {}
+  interface ApproachInfoCallback extends Consumer<Approach> {}
 
   @Override
   public int compare(Decimal o1, Decimal o2) {
-    return compareToInner(o1, o2, true, null);
+    return compareInner(o1, o2, true, null);
   }
 
   /**
@@ -40,32 +39,36 @@ public class DecimalComparator implements Comparator<Decimal> {
     return 0 == (Byte.toUnsignedInt(unscaled[0]) >>7);
   }
 
-  int compareToInner(Decimal d1, Decimal d2, boolean useFallback, MethodInfoCallback mic) {
+  int compareInner(Decimal d1, Decimal d2, boolean useFallback, ApproachInfoCallback aic) {
     byte[] b1 = d1.getUnscaled();
     byte[] b2 = d2.getUnscaled();
     boolean sign1 = positive(b1);
     boolean sign2 = positive(b2);
 
     if (sign1 != sign2) {
-      if(mic != null) mic.accept(Method.SIGN);
+      if(aic != null) aic.accept(Approach.SIGN);
       return (sign1 ? 1 : -1);
     }
 
     byte pad = sign1 ? PAD_POS : PAD_NEG;
     if (d1.getScale() == d2.getScale()) {
-      return compareSameScale(pad, b1, b2, mic);
+      return compareSameScale(pad, b1, b2, aic);
     }
 
     // Hive's scale are the digits behind the dot ...
     if (d1.getScale() < d2.getScale()) {
-      return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback, mic);
+      return compareToScaleDiff(pad, b1, d1.getScale(), b2, d2.getScale(), useFallback, aic);
     }
     else {
-      return -compareToScaleDiff(pad, b2, d2.getScale(), b1, d1.getScale(), useFallback, mic);
+      return -compareToScaleDiff(pad, b2, d2.getScale(), b1, d1.getScale(), useFallback, aic);
     }
   }
 
-  private static int compareSameScale(byte pad, byte[] b1, byte[] b2, MethodInfoCallback mic) {
+  /**
+   * If the two decimals have the same scale (or exponent),
+   * we just need to compute their unscaled value (or significand).
+   */
+  private static int compareSameScale(byte pad, byte[] b1, byte[] b2, ApproachInfoCallback aic) {
     int len = Math.max(b1.length, b2.length);
     int i1 = b1.length-len;
     int i2 = b2.length-len;
@@ -76,7 +79,7 @@ public class DecimalComparator implements Comparator<Decimal> {
       if(c1 != c2) {
         int u1 = Byte.toUnsignedInt(c1);
         int u2 = Byte.toUnsignedInt(c2);
-        if(mic != null) mic.accept(Method.EQSCALE);
+        if(aic != null) aic.accept(Approach.EQSCALE);
         return u1 < u2 ? -1 : 1;
       }
       i1++;
@@ -126,7 +129,7 @@ public class DecimalComparator implements Comparator<Decimal> {
 
   /** Precondition: scale1 < scale2 */
   private int compareToScaleDiff(byte pad, byte[] b1, short scale1, byte[] b2, short scale2, boolean useFallback,
-      MethodInfoCallback mic) {
+      ApproachInfoCallback aic) {
     // if b1 and b2 are negative, we consider both their absolute value; the result needs to be negated
     // idea: estimate the number of bits if we multiplied b1 by 10^x to make the two arrays comparable
     // inequality in the continuous domain:
@@ -153,7 +156,7 @@ public class DecimalComparator implements Comparator<Decimal> {
 
     // log of 0 is not defined, so deal with it first
     if(pad == PAD_POS && (bl1 == 0 || bl2 == 0)) {
-      if(mic != null) mic.accept(Method.LOG_ZERO);
+      if(aic != null) aic.accept(Approach.LOG_ZERO);
       return Integer.compare(bl1, bl2);
     }
 
@@ -167,7 +170,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // however, as it is unknown whether tmp>0 is a necessary condition
     // for decimal1>decimal2, keep it safe and stick to the derived inequality
     if(tmp -1 > 0) {
-      if(mic != null) mic.accept(Method.BITLEN_A);
+      if(aic != null) aic.accept(Approach.BITLEN_A);
       return pad == PAD_POS ? 1 : -1;
     }
 
@@ -176,7 +179,7 @@ public class DecimalComparator implements Comparator<Decimal> {
     // as scale2-scale1 is positive because of the precondition,
     // the LHS gets smaller for the smaller approximation of log2(10) > 27213/(2^13)
     if(tmp + 1 < 0) {
-      if(mic != null) mic.accept(Method.BITLEN_B);
+      if(aic != null) aic.accept(Approach.BITLEN_B);
       return pad == PAD_POS ? -1 : 1;
     }
 
@@ -187,8 +190,8 @@ public class DecimalComparator implements Comparator<Decimal> {
     // however, it would be O(n^2) and quite complex.
     // Use Java's classes as they implemented optimized integer multiplication algorithms.
     if(!useFallback) {
-      if(mic != null) mic.accept(Method.FALLBACK);
-      return Method.FALLBACK.ordinal();
+      if(aic != null) aic.accept(Approach.FALLBACK);
+      return Approach.FALLBACK.ordinal();
     }
     return new BigDecimal(new BigInteger(b1), scale1).compareTo(new BigDecimal(new BigInteger(b2), scale2));
   }
