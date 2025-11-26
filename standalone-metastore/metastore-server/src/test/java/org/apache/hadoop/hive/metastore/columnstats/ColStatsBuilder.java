@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataI
 import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 public class ColStatsBuilder<T> {
 
@@ -132,6 +133,11 @@ public class ColStatsBuilder<T> {
   public ColStatsBuilder<T> kll(double... values) {
     KllFloatsSketch kll = StatisticsTestUtils.createKll(values);
     this.kll = kll.toByteArray();
+    return this;
+  }
+
+  public ColStatsBuilder<T> kllRaw(byte[] a) {
+    this.kll = Arrays.copyOf(a, a.length);
     return this;
   }
 

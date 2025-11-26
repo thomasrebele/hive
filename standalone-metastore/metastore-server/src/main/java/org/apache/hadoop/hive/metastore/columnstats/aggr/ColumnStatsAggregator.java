@@ -19,9 +19,14 @@
 
 package org.apache.hadoop.hive.metastore.columnstats.aggr;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.hive.common.histogram.KllHistogramEstimator;
 import org.apache.hadoop.hive.common.histogram.KllHistogramEstimatorFactory;
@@ -30,6 +35,7 @@ import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.utils.MetaStoreServerUtils.ColStatsObjWithSourceInfo;
 
+import static org.apache.commons.codec.digest.DigestUtils.md5;
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.dateInspectorFromStats;
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.decimalInspectorFromStats;
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.doubleInspectorFromStats;
@@ -65,37 +71,79 @@ public abstract class ColumnStatsAggregator {
 
   protected abstract ColumnStatisticsData initColumnStatisticsData();
 
+  private static AtomicInteger CNT = new AtomicInteger();
+
   protected KllHistogramEstimator mergeHistograms(List<ColStatsObjWithSourceInfo> colStatsWithSourceInfo) {
+    boolean debug = true;
+    final int call = debug ? CNT.incrementAndGet() : -1;
+
     // invariant: no two elements of this list are merge-compatible
     final List<KllHistogramEstimator> mergedHistogramEstimators = new ArrayList<>();
     final BitSet mergedStats = new BitSet(colStatsWithSourceInfo.size());
     int currIndex = 0;
 
     while (mergedStats.cardinality() != colStatsWithSourceInfo.size()) {
-      currIndex = mergedStats.nextClearBit(currIndex);
-      final ColumnStatisticsObj currColStatsObj = colStatsWithSourceInfo.get(currIndex).getColStatsObj();
-      final KllHistogramEstimator statsEstimator = getHistogramFromStats(currColStatsObj);
-      if (statsEstimator == null) {
-        mergedStats.set(currIndex); // so we can move past it
-        continue;
-      }
-      final KllHistogramEstimator currHistogram = KllHistogramEstimatorFactory.getEmptyHistogramEstimator(statsEstimator);
-      // we need to create a new estimator to not alter the one from the stats object via merging
-      currHistogram.mergeEstimators(statsEstimator);
+      try {
+        currIndex = mergedStats.nextClearBit(currIndex);
+        ColStatsObjWithSourceInfo sourceInfo = colStatsWithSourceInfo.get(currIndex);
 
-      // check if the histogram can be merged an existing element in the final list
-      for (KllHistogramEstimator candidateHistogram : mergedHistogramEstimators) {
-        if (candidateHistogram.canMerge(currHistogram)) {
-          candidateHistogram.mergeEstimators(currHistogram);
+        final ColumnStatisticsObj currColStatsObj = sourceInfo.getColStatsObj();
+        final KllHistogramEstimator statsEstimator = getHistogramFromStats(currColStatsObj);
+        if (debug) {
+          String partName = sourceInfo.getPartName();
+          if (statsEstimator == null) {
+            System.out.println(call + " part: " + partName + " stats: null");
+          } else {
+            //System.out.println(call + "part: " + partName + " raw hist " + Arrays.toString(
+            //    currColStatsObj.getStatsData().getDecimalStats().getHistogram()));
+            //System.out.println(
+            //    call + "part: " + partName + " estim    " + Arrays.toString(statsEstimator.getSketch().toByteArray()));
+          }
+        }
+
+        if (statsEstimator == null) {
+          mergedStats.set(currIndex); // so we can move past it
+          continue;
+        }
+        final KllHistogramEstimator currHistogram =
+            KllHistogramEstimatorFactory.getEmptyHistogramEstimator(statsEstimator);
+        // we need to create a new estimator to not alter the one from the stats object via merging
+        currHistogram.mergeEstimators(statsEstimator);
+
+        // check if the histogram can be merged an existing element in the final list
+        for (KllHistogramEstimator candidateHistogram : mergedHistogramEstimators) {
+          if (candidateHistogram.canMerge(currHistogram)) {
+            System.out.println("merge before " + md5str(candidateHistogram.getSketch().toByteArray()));
+            candidateHistogram.mergeEstimators(currHistogram);
+            System.out.println("merge after  " + md5str(candidateHistogram.getSketch().toByteArray()));
+            mergedStats.set(currIndex);
+            break;
+          }
+        }
+
+        // if it has not been merged, then store it in the final list
+        if (!mergedStats.get(currIndex)) {
+          mergedHistogramEstimators.add(currHistogram);
           mergedStats.set(currIndex);
-          break;
         }
       }
+      finally {
+        if(debug) {
+          MessageDigest md = null;
+          try {
+            md = MessageDigest.getInstance("MD5");
+          } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+          }
+          for (KllHistogramEstimator candidateHistogram : mergedHistogramEstimators) {
+            byte[] a = candidateHistogram.getSketch().toByteArray();
+            md.update(a);
+          }
 
-      // if it has not been merged, then store it in the final list
-      if (!mergedStats.get(currIndex)) {
-        mergedHistogramEstimators.add(currHistogram);
-        mergedStats.set(currIndex);
+          System.out.println(call + " merged estimators " + mergedHistogramEstimators.size()
+              + " hash " + new BigInteger(md.digest())
+              + " merged stats bitset " + new BigInteger(mergedStats.toByteArray()));
+        }
       }
     }
 
@@ -111,6 +159,16 @@ public abstract class ColumnStatsAggregator {
 
     // set the histogram with largest N
     return largestHistogramEstimator;
+  }
+
+  private String md5str(byte[] byteArray) {
+    MessageDigest md = null;
+          try {
+            md = MessageDigest.getInstance("MD5");
+          } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+          }
+          return new BigInteger(md.digest(byteArray)).toString();
   }
 
   private KllHistogramEstimator getHistogramFromStats(ColumnStatisticsObj currColStatsObj) {

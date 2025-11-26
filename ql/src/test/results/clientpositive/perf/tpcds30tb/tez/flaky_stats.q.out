@@ -1,0 +1,30 @@
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 84
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.365670116E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 82
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 43
+
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 175
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.34863895E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 173
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 134
+
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 266
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.365276894E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 264
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 225
+
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 357
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.361197278E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 355
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 316
+
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 448
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.363425508E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 446
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 407
+
+CBO PLAN:
+HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 539
+  HiveFilter(condition=[>($17, 100:DECIMAL(3, 0))]): rowcount = 3.352956124E9, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 537
+    HiveTableScan(table=[[default, catalog_returns]], table:alias=[catalog_returns]): rowcount = 4.320980099E9, cumulative cost = {0}, id = 498
+

@@ -91,7 +91,7 @@ public class DecimalColumnStatsAggregator extends ColumnStatsAggregator implemen
     if (areAllNDVEstimatorsMergeable && ndvEstimator != null) {
       ndvEstimator = NumDistinctValueEstimatorFactory.getEmptyNumDistinctValueEstimator(ndvEstimator);
     }
-    LOG.debug("all of the bit vectors can merge for {} is {}", colName, areAllNDVEstimatorsMergeable);
+    //LOG.debug("all of the bit vectors can merge for {} is {}", colName, areAllNDVEstimatorsMergeable);
 
     ColumnStatisticsData columnStatisticsData = initColumnStatisticsData();
     if (doAllPartitionContainStats || colStatsWithSourceInfo.size() < 2) {
@@ -153,7 +153,7 @@ public class DecimalColumnStatsAggregator extends ColumnStatsAggregator implemen
     } else {
       // TODO: bail out if missing stats are over a certain threshold
       // we need extrapolation
-      LOG.debug("start extrapolation for {}", colName);
+      //LOG.debug("start extrapolation for {}", colName);
       Map<String, Integer> indexMap = new HashMap<>();
       for (int index = 0; index < partNames.size(); index++) {
         indexMap.put(partNames.get(index), index);
@@ -252,12 +252,19 @@ public class DecimalColumnStatsAggregator extends ColumnStatsAggregator implemen
       extrapolate(columnStatisticsData, partNames.size(), colStatsWithSourceInfo.size(),
           adjustedIndexMap, adjustedStatsMap, densityAvgSum / adjustedStatsMap.size());
     }
-    LOG.debug(
-        "Ndv estimation for {} is {}. # of partitions requested: {}. # of partitions found: {}",
-        colName, columnStatisticsData.getDecimalStats().getNumDVs(), partNames.size(),
-        colStatsWithSourceInfo.size());
+    //LOG.debug(
+    //    "Ndv estimation for {} is {}. # of partitions requested: {}. # of partitions found: {}",
+    //    colName, columnStatisticsData.getDecimalStats().getNumDVs(), partNames.size(),
+    //    colStatsWithSourceInfo.size());
 
-    KllHistogramEstimator mergedKllHistogramEstimator = mergeHistograms(colStatsWithSourceInfo);
+    KllHistogramEstimator mergedKllHistogramEstimator;
+    try {
+      COL_NAME.set(colName);
+      mergedKllHistogramEstimator = mergeHistograms(colStatsWithSourceInfo);
+    }
+    finally {
+      COL_NAME.set("");
+    }
     if (mergedKllHistogramEstimator != null) {
       columnStatisticsData.getDecimalStats().setHistogram(mergedKllHistogramEstimator.serialize());
     }
@@ -265,6 +272,8 @@ public class DecimalColumnStatsAggregator extends ColumnStatsAggregator implemen
     statsObj.setStatsData(columnStatisticsData);
     return statsObj;
   }
+
+  public static ThreadLocal<String> COL_NAME = ThreadLocal.withInitial(() -> "");
 
   @Override protected ColumnStatisticsData initColumnStatisticsData() {
     ColumnStatisticsData columnStatisticsData = new ColumnStatisticsData();
