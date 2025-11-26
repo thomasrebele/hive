@@ -24,7 +24,7 @@ package org.apache.hadoop.hive.ql;
 public class QTestProcessExecResult {
 
   private static final String TRUNCATED_OUTPUT = "Output was too long and had to be truncated...";
-  private static final short MAX_OUTPUT_CHAR_LENGTH = 2000;
+  private static final short MAX_OUTPUT_CHAR_LENGTH = 10000;
 
   private final int returnCode;
   private final String standardOut;

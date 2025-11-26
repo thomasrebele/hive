@@ -18,6 +18,7 @@
 package org.apache.hadoop.hive.cli;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.hive.cli.control.CliAdapter;
@@ -40,6 +41,16 @@ public class TestMiniLlapLocalCliDriver {
 
   @Parameters(name = "{0}")
   public static List<Object[]> getParameters() throws Exception {
+    Object o = SplitSupport.class;
+    o = ArrayList.class;
+
+    //List<Object[]> l = new ArrayList<>();
+    //for (int i = 0; i < 100; i++) {
+    //  l.add(new Object[] { "stats_histogram" + i,
+    //      new File("/home/trebele/dev/hive/h1/ql/src/test/queries/clientpositive/stats_histogram.q") });
+    //}
+    //return l;
+
     return SplitSupport.process(adapter.getParameters(), TestMiniLlapLocalCliDriver.class, N_SPLITS);
   }
 

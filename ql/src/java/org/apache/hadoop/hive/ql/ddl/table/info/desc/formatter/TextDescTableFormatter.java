@@ -151,6 +151,9 @@ class TextDescTableFormatter extends DescTableFormatter {
       metaDataTable.transpose();
     }
     statsData += metaDataTable.renderTable(isOutputPadded);
+    if (columnPath != null && (columnPath.contains("test_stats.b") || columnPath.contains("test_stats.c"))) {
+      System.out.println(statsData);
+    }
     out.write(statsData.getBytes(StandardCharsets.UTF_8));
   }
 

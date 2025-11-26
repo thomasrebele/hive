@@ -126,6 +126,17 @@ public class CliDriver {
     ss.err.flush();
     try {
       ss.updateThreadName();
+      if (cmd.contains("=rand()")) {
+        int r = (int) (Math.random() * Integer.MAX_VALUE);
+        cmd = cmd.replace("=rand()", "=" + r);
+      }
+      if (cmd.contains("DESCRIBE FORMATTED test_stats b")) {
+        //try {
+        //  Thread.sleep(1000);
+        //} catch (InterruptedException e) {
+        //  System.out.println("\n\n\nINTERRUPTED\n\n\n");
+        //}
+      }
       return processCmd1(cmd);
     } finally {
       ss.resetThreadName();

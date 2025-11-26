@@ -530,6 +530,7 @@ public class CachedStore implements RawStore, Configurable {
               // in that case, continue with the next table
               continue;
             }
+            System.out.println("prewarming table " + table);
             List<String> colNames = MetaStoreUtils.getColumnNamesForTable(table);
             try {
               ColumnStatistics tableColStats = null;

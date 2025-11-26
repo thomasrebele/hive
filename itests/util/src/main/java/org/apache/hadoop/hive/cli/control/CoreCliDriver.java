@@ -115,6 +115,7 @@ public class CoreCliDriver extends CliAdapter {
         qt.executeClient();
       } catch (CommandProcessorException e) {
         failed = true;
+        e.printStackTrace();
         qt.failedQuery(e.getCause(), e.getResponseCode(), fname, QTestUtil.DEBUG_HINT);
       }
 
