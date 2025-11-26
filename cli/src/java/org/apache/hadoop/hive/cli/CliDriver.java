@@ -29,6 +29,9 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,11 +58,13 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.hadoop.hive.conf.Validator;
 import org.apache.hadoop.hive.conf.VariableSubstitution;
+import org.apache.hadoop.hive.metastore.HMSHandlerContext;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.ql.IDriver;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper;
 import org.apache.hadoop.hive.ql.exec.tez.TezJobExecHelper;
+import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveMaterializedViewsRegistry;
 import org.apache.hadoop.hive.ql.metadata.HiveMetaStoreClientWithLocalCache;
 import org.apache.hadoop.hive.ql.parse.CalcitePlanner;
@@ -197,6 +202,16 @@ public class CliDriver {
     }  else { // local mode
       try {
 
+        Hive.get().getMSC().flushCache();
+        HMSHandlerContext.clear();
+        Hive.get().setConf((HiveConf) conf);
+        HMSHandlerContext.setConfiguration(conf);
+        try {
+          Files.writeString(Paths.get("/tmp/test-2025-11-05.txt"), "B " + cmd + "\n", StandardOpenOption.CREATE,
+              StandardOpenOption.APPEND);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
         try (CommandProcessor proc = CommandProcessorFactory.get(tokens, (HiveConf) conf)) {
           if (proc instanceof IDriver) {
             // Let Driver strip comments using sql parser

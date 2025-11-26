@@ -1,0 +1,22 @@
+debug bad:
+  wrote into HiveConf@12321
+  also into SessionState.getOverridenConfigurations(), LinkedHashMap@89042
+
+  but tries to read from Configuration@19735
+
+  --------------------------------------------------------------------------------
+  another debug session:
+
+  debugging became HiveConf@12448?
+  CREATE TABLE uses HiveConf@12538, which does NOT YET contain the metastore.stats.fetch.kll!
+  Where is the "ground truth"? CliDriver.conf? that would be HiveConf@12448, which does NOT YET contain the metastore.stats.fetch.kll!
+  DESCRIBE FORMATTED creates a copy of the conf in org.apache.hadoop.hive.ql.QueryState.Builder#build
+  Is this related to org.apache.hadoop.hive.ql.metadata.Hive#setConf (introduced by scarlin)?
+
+  Conf used for the first DESCRIBE COMMAND: Configuration@129648
+  === NOW WE EXECUTE THE SET COMMAND ===
+  Setting metastore.stats.fetch.kll in HiveConf@12448
+  
+  However, when reading the value in ObjectStore#getTableColumnStatisticsInternal, called via Thrift / HMSHandler, the property is not set
+  
+

@@ -253,6 +253,11 @@ public class TestMetastoreConf {
         TimeUnit.SECONDS));
     Assert.assertEquals(300000,
         MetastoreConf.getTimeVar(conf, ConfVars.TIME_TEST_ENTRY, TimeUnit.MILLISECONDS));
+
+    Assert.assertEquals(true, MetastoreConf.getBoolVar(conf, ConfVars.BOOLEAN_TEST_ENTRY));
+    MetastoreConf.setBoolVar(conf, ConfVars.BOOLEAN_TEST_ENTRY, false);
+    Assert.assertEquals(false, MetastoreConf.getBoolVar(conf, ConfVars.BOOLEAN_TEST_ENTRY));
+
   }
 
   @Test
