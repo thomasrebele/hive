@@ -33,6 +33,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.datasketches.kll.KllFloatsSketch;
+import org.apache.datasketches.quantilescommon.FloatsSketchSortedView;
+import org.apache.datasketches.quantilescommon.QuantilesFloatsAPI;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.StatisticsTestUtils;
 import org.apache.hadoop.hive.ql.optimizer.calcite.HiveRelFactories;
@@ -43,6 +45,7 @@ import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveRelNode;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan;
 import org.apache.hadoop.hive.ql.parse.CalcitePlanner;
 import org.apache.hadoop.hive.ql.plan.ColStatistics;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -51,15 +54,19 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
+import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.getInterpolatedRank;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.greaterThanOrEqualSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.greaterThanSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.isHistogramAvailable;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.lessThanOrEqualSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.lessThanSelectivity;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestFilterSelectivityEstimator {
@@ -512,5 +519,74 @@ public class TestFilterSelectivityEstimator {
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, inputRef0, int1, int3);
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
     Assert.assertEquals(0.55, estimator.estimateSelectivity(filter), DELTA);
+  }
+
+  public static void main(String[] args) {
+    //{
+    //  KllFloatsSketch kll = KllFloatsSketch.newHeapInstance(8);
+    //  for (int i = 0; i < 10; i++) {
+    //    kll.update(i);
+    //    System.out.println("added " + i);
+    //  }
+    //  System.out.println(Arrays.toString(kll.getSortedView().getQuantiles()));
+    //  System.out.println(Arrays.toString(kll.getSortedView().getCumulativeWeights()));
+    //}
+
+    KllFloatsSketch t1 = getLinearKllFloatSketch();
+    FloatsSketchSortedView sv;
+
+    sv = t1.getSortedView();
+
+    System.out.println(Arrays.toString(sv.getCumulativeWeights()));
+    System.out.println(sv.getCumulativeWeights().length);
+    System.out.println(Arrays.toString(sv.getQuantiles()));
+    System.out.println(sv.getQuantiles().length);
+
+    long n = sv.getN();
+    for (int i = -5; i <= 110; i += 5) {
+      extracted(t1, i, n);
+    }
+
+    //System.out.println("quantiles");
+    //for (int i = 0; i < sv.getQuantiles().length; i++) {
+    //  extracted(t1, (int) sv.getQuantiles()[i], n);
+    //}
+
+    //System.out.println(Arrays.toString(tb1));
+    //System.out.println(tb1.length);
+
+  }
+
+  /**
+   * Creates a mock sketch with a linear CDF.
+   * It corresponds to the order statistics over the integers 1 until 100 (both inclusive).
+   */
+  private static @NotNull KllFloatsSketch getLinearKllFloatSketch() {
+    float[] quantiles = new float[] { 1f, 10f, 30f, 50f, 70f, 90f, 100f };
+    long[] cumWeights = new long[quantiles.length];
+
+    for (int i = 0; i < quantiles.length; i++) {
+      cumWeights[i] = (long) (quantiles[i]);
+    }
+
+    QuantilesFloatsAPI qfa = mock(QuantilesFloatsAPI.class);
+    when(qfa.getMinItem()).thenReturn(1f);
+    when(qfa.getMaxItem()).thenReturn(100f);
+    when(qfa.getN()).thenReturn(100L);
+
+    FloatsSketchSortedView sv = new FloatsSketchSortedView(quantiles, cumWeights, qfa);
+    KllFloatsSketch t1 = mock(KllFloatsSketch.class);
+    when(t1.getSortedView()).thenReturn(sv);
+    return t1;
+  }
+
+  private static void extracted(KllFloatsSketch t1, int i, long n) {
+    String info = "i=" + String.format("%3s", i) + ": ";
+    double r = getInterpolatedRank(t1, i);
+    info += " r=" + String.format("%4s", r);
+    double v = lessThanOrEqualSelectivity(t1, i);
+    //double gt = greaterThanSelectivity(t1, i);
+    double exp = (double) i / n;
+    System.out.println(info);
   }
 }

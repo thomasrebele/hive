@@ -19,6 +19,7 @@ package org.apache.hadoop.hive.ql.optimizer.calcite.stats;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -41,9 +42,11 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunctionLagrangeForm;
 import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.memory.Memory;
-import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
+import org.apache.datasketches.quantilescommon.FloatsSketchSortedView;
+import org.apache.datasketches.quantilescommon.InequalitySearch;
 import org.apache.hadoop.hive.ql.optimizer.calcite.HiveCalciteUtil;
 import org.apache.hadoop.hive.ql.optimizer.calcite.HiveConfPlannerContext;
 import org.apache.hadoop.hive.ql.optimizer.calcite.RelOptHiveTable;
@@ -489,10 +492,49 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return null;
   }
 
+  public static double getInterpolatedRank(FloatsSketchSortedView sv, float val) {
+    if (true) {
+      if (sv.isEmpty())
+        return 0;
+      float[] quantiles = sv.getQuantiles();
+      long[] cumulativeWeights = sv.getCumulativeWeights();
+      int len = quantiles.length;
+      int indexLow = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.LT);
+      int indexUpper = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.GE);
+      // TODO tr how to treat boundaries?
+      if (indexLow == -1)
+        return 0;
+      if (indexUpper == -1)
+        return 1;
+      if (quantiles[indexUpper] == val) {
+        return (double) cumulativeWeights[indexUpper] / sv.getN();
+      }
+
+      int from = Math.max(indexLow - 2, 0);
+      int until = Math.min(indexUpper + 2, quantiles.length - 1);
+      int interpLen = until - from + 1;
+      double[] x = new double[interpLen];
+      double[] y = new double[interpLen];
+      for (int i = 0; i < interpLen; i++) {
+        x[i] = quantiles[from + i];
+        y[i] = cumulativeWeights[from + i];
+      }
+      System.out.println("len " + interpLen + " x " + Arrays.toString(x) + " y " + Arrays.toString(y) + " val " + val);
+
+      double interp = PolynomialFunctionLagrangeForm.evaluate(x, y, val);
+      interp = Math.clamp(interp, cumulativeWeights[indexLow], cumulativeWeights[indexUpper]);
+      return interp / sv.getN();
+    }
+
+    return -1; //kll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);
+  }
+
+  public static double getInterpolatedRank(KllFloatsSketch kll, float val) {
+    return getInterpolatedRank(kll.getSortedView(), val);
+  }
+
   private static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
-    float[] splitPoints = new float[] { val1, val2 };
-    double[] boundaries = kll.getCDF(splitPoints, QuantileSearchCriteria.EXCLUSIVE);
-    return boundaries[1] - boundaries[0];
+    return getInterpolatedRank(kll, val2) - getInterpolatedRank(kll, val1);
   }
 
   /**
@@ -536,7 +578,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     if (value < kll.getMinItem()) {
       return 0;
     }
-    return kll.getCDF(new float[] { Math.nextUp(value) }, QuantileSearchCriteria.EXCLUSIVE)[0];
+    return getInterpolatedRank(kll, Math.nextUp(value));
   }
 
   /**
@@ -553,7 +595,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     if (Double.compare(value, min) == 0 || Double.compare(Math.nextUp(value), min) == 0) {
       return 0;
     }
-    return kll.getCDF(new float[] { value }, QuantileSearchCriteria.EXCLUSIVE)[0];
+    return getInterpolatedRank(kll, value);
   }
 
   /**
