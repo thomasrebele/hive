@@ -42,7 +42,9 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunctionLagrangeForm;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.quantilescommon.FloatsSketchSortedView;
@@ -516,7 +518,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       int[] points = new int[6];
       int pointsIdx = 2;
       int lastI = indexLower;
-      for (int i = indexLower; i-- > 0; ) {
+      for (int i = indexLower + 1; i-- > 0; ) {
         boolean usePoint = i == indexLower;
         usePoint |= quantiles[i] < quantiles[lastI] && cumulativeWeights[i] < cumulativeWeights[lastI];
         if (usePoint) {
@@ -551,13 +553,20 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         x[i] = quantiles[points[pointsLower + i]];
         y[i] = cumulativeWeights[points[pointsLower + i]];
       }
-      System.out.println("len " + interpLen + " points " + Arrays.toString(points) + " x " + Arrays.toString(
-          x) + " y " + Arrays.toString(y) + " val " + val);
+      //System.out.println("len " + interpLen + " points " + Arrays.toString(points) + " x " + Arrays.toString(
+      //    x) + " y " + Arrays.toString(y) + " val " + val);
 
       // interpolate with sanity checks
-      double interp = PolynomialFunctionLagrangeForm.evaluate(x, y, val);
-      //interp = Math.clamp(interp, cumulativeWeights[indexLower], cumulativeWeights[indexUpper]);
+      double interp = new SplineInterpolator().interpolate(x, y).value(val);
+      interp = Math.clamp(interp, cumulativeWeights[indexLower], cumulativeWeights[indexUpper]);
       return interp / sv.getN();
+
+      // TODO tr fallback if less than three points
+      //      // we need to stay within the boundaries, so do a simple linear interpolation
+      //      double factor = (val - quantiles[indexLower]) / (quantiles[indexUpper] - quantiles[indexLower]);
+      //      double weightDelta = factor * (cumulativeWeights[indexUpper] - cumulativeWeights[indexLower]);
+      //      double interpolatedWeight = cumulativeWeights[indexLower] + weightDelta;
+      //      return interpolatedWeight / sv.getN();
     }
 
     return -1; //kll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);

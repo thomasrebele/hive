@@ -523,6 +523,10 @@ public class TestFilterSelectivityEstimator {
     Assert.assertEquals(0.55, estimator.estimateSelectivity(filter), DELTA);
   }
 
+  public static String fmt(double val) {
+    return String.format("%.3f", val);
+  }
+
   public static void main(String[] args) {
     {
       KllFloatsSketch kll = KllFloatsSketch.newHeapInstance(8);
@@ -564,18 +568,37 @@ public class TestFilterSelectivityEstimator {
     //System.out.println(Arrays.toString(tb1));
     //System.out.println(tb1.length);
 
+    float absErrorSumOrig[] = new float[] { 0 };
+    float absErrorSumInterp[] = new float[] { 0 };
+    int count = 0;
+
     float[] values = getGaussian(123L);
     KllFloatsSketch gaussianKll = createMockSketch(values);
     float min = values[0], max = values[values.length - 1];
-    for (int i = -5; i < 110; i += 1) {
-      float val = min + (max - min) * i / 100;
-      double act = getInterpolatedRank(gaussianKll, val);
+    //for (int i = -5; i < 110; i += 1) {
+    //  float val = min + (max - min) * i / 100;
+    for (float val : values) {
+      int i = 0;
+      double originalRank = gaussianKll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);
+      double interPolatedRank = getInterpolatedRank(gaussianKll, val);
+
       int valIdx = Arrays.binarySearch(values, val);
       if (valIdx < 0)
         valIdx = -(valIdx + 1);
       double exp = (double) valIdx / values.length;
-      System.out.println("i: " + i + " val " + val + " valIdx " + valIdx + " act " + act + " exp " + exp);
+
+      double origError = Math.abs(originalRank - exp);
+      double interpError = Math.abs(interPolatedRank - exp);
+      absErrorSumOrig[0] += origError;
+      absErrorSumInterp[0] += interpError;
+      count++;
+
+      System.out.println(
+          "i: " + i + " val " + val + " valIdx " + valIdx + " orig " + fmt(originalRank) + " interp " + fmt(
+              interPolatedRank) + " exp " + exp + " oe " + origError + " ie " + interpError);
     }
+    System.out.println("avg error orig: " + absErrorSumOrig[0] / count);
+    System.out.println("avg error interpolated: " + absErrorSumInterp[0] / count);
   }
 
   private static @NotNull KllFloatsSketch createMockSketch(float[] values) {
@@ -585,7 +608,7 @@ public class TestFilterSelectivityEstimator {
     quantiles[0] = min;
     quantiles[quantiles.length - 1] = max;
     for (int i = 1; i < quantiles.length - 1; i++) {
-      quantiles[i] = min + (max - min) * ((float) i) / quantiles.length;
+      quantiles[i] = min + (max - min) * ((float) i) / (quantiles.length - 1);
     }
     int idx = 0;
     System.out.println("max: " + max);
@@ -611,7 +634,7 @@ public class TestFilterSelectivityEstimator {
 
   private static float[] getGaussian(long seed) {
     Random rng = new Random(seed);
-    float[] vals = new float[100];
+    float[] vals = new float[10000];
     for (int i = 0; i < vals.length; i++) {
       vals[i] = (float) rng.nextGaussian(1000, 100);
     }
