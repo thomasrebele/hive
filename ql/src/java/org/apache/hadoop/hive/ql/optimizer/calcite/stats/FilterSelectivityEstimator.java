@@ -499,10 +499,10 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       float[] quantiles = sv.getQuantiles();
       long[] cumulativeWeights = sv.getCumulativeWeights();
       int len = quantiles.length;
-      int indexLow = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.LT);
+      int indexLower = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.LT);
       int indexUpper = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.GE);
       // TODO tr how to treat boundaries?
-      if (indexLow == -1)
+      if (indexLower == -1)
         return 0;
       if (indexUpper == -1)
         return 1;
@@ -510,19 +510,53 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         return (double) cumulativeWeights[indexUpper] / sv.getN();
       }
 
-      int from = Math.max(indexLow - 2, 0);
-      int until = Math.min(indexUpper + 2, quantiles.length - 1);
-      int interpLen = until - from + 1;
+      // TODO tr there might be duplicates, but the interpolation method does not support duplicates!
+      // TODO tr also for safety: skip duplicate cumWeights as well
+
+      int[] points = new int[6];
+      int pointsIdx = 2;
+      int lastI = indexLower;
+      for (int i = indexLower; i-- > 0; ) {
+        boolean usePoint = i == indexLower;
+        usePoint |= quantiles[i] < quantiles[lastI] && cumulativeWeights[i] < cumulativeWeights[lastI];
+        if (usePoint) {
+          points[pointsIdx] = i;
+          lastI = i;
+          pointsIdx -= 1;
+          if (pointsIdx < 0)
+            break;
+        }
+      }
+      int pointsLower = pointsIdx + 1;
+      pointsIdx = 3;
+
+      for (int i = indexUpper; i < quantiles.length; i++) {
+        boolean usePoint = i == indexUpper;
+        usePoint |= quantiles[lastI] < quantiles[i] && cumulativeWeights[lastI] < cumulativeWeights[i];
+        if (usePoint) {
+          points[pointsIdx] = i;
+          lastI = i;
+          pointsIdx += 1;
+          if (pointsIdx == points.length)
+            break;
+        }
+      }
+      int pointsUpper = pointsIdx;
+
+      // setup interpolation
+      int interpLen = pointsUpper - pointsLower;
       double[] x = new double[interpLen];
       double[] y = new double[interpLen];
       for (int i = 0; i < interpLen; i++) {
-        x[i] = quantiles[from + i];
-        y[i] = cumulativeWeights[from + i];
+        x[i] = quantiles[points[pointsLower + i]];
+        y[i] = cumulativeWeights[points[pointsLower + i]];
       }
-      System.out.println("len " + interpLen + " x " + Arrays.toString(x) + " y " + Arrays.toString(y) + " val " + val);
+      System.out.println("len " + interpLen + " points " + Arrays.toString(points) + " x " + Arrays.toString(
+          x) + " y " + Arrays.toString(y) + " val " + val);
 
+      // interpolate with sanity checks
       double interp = PolynomialFunctionLagrangeForm.evaluate(x, y, val);
-      interp = Math.clamp(interp, cumulativeWeights[indexLow], cumulativeWeights[indexUpper]);
+      //interp = Math.clamp(interp, cumulativeWeights[indexLower], cumulativeWeights[indexUpper]);
       return interp / sv.getN();
     }
 
@@ -533,7 +567,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return getInterpolatedRank(kll.getSortedView(), val);
   }
 
-  private static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
+  /**
+   * Returns the selectivity of a predicate "val1 <= column < val2".
+   * @param kll the KLL sketch for the involved column
+   * @param val1 the lower value (included)
+   * @param val2 the upper value (excluded)
+   * @return a value in the range [0,1]
+   */
+  public static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
     return getInterpolatedRank(kll, val2) - getInterpolatedRank(kll, val1);
   }
 

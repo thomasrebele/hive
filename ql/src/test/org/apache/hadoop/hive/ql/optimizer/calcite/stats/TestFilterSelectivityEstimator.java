@@ -34,6 +34,7 @@ import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.quantilescommon.FloatsSketchSortedView;
+import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 import org.apache.datasketches.quantilescommon.QuantilesFloatsAPI;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.StatisticsTestUtils;
@@ -56,6 +57,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Random;
 
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.getInterpolatedRank;
@@ -522,17 +524,24 @@ public class TestFilterSelectivityEstimator {
   }
 
   public static void main(String[] args) {
-    //{
-    //  KllFloatsSketch kll = KllFloatsSketch.newHeapInstance(8);
-    //  for (int i = 0; i < 10; i++) {
-    //    kll.update(i);
-    //    System.out.println("added " + i);
-    //  }
-    //  System.out.println(Arrays.toString(kll.getSortedView().getQuantiles()));
-    //  System.out.println(Arrays.toString(kll.getSortedView().getCumulativeWeights()));
-    //}
+    {
+      KllFloatsSketch kll = KllFloatsSketch.newHeapInstance(8);
+      for (int i = 0; i < 10; i++) {
+        kll.update(i);
+        kll.update(i);
+      }
+      System.out.println(Arrays.toString(kll.getSortedView().getQuantiles()));
+      System.out.println(Arrays.toString(kll.getSortedView().getCumulativeWeights()));
+      System.out.println(kll.getRank(4.0f, QuantileSearchCriteria.EXCLUSIVE));
+      System.out.println(kll.getRank(4.01f, QuantileSearchCriteria.EXCLUSIVE));
+      System.out.println(kll.getRank(4.5f, QuantileSearchCriteria.EXCLUSIVE));
+      System.out.println(kll.getRank(4.99f, QuantileSearchCriteria.EXCLUSIVE));
+      System.out.println(kll.getRank(5.0f, QuantileSearchCriteria.EXCLUSIVE));
+      //if (true)
+      //  return;
+    }
 
-    KllFloatsSketch t1 = getLinearKllFloatSketch();
+    KllFloatsSketch t1 = getLinearKllFloatSketch1to100();
     FloatsSketchSortedView sv;
 
     sv = t1.getSortedView();
@@ -543,8 +552,8 @@ public class TestFilterSelectivityEstimator {
     System.out.println(sv.getQuantiles().length);
 
     long n = sv.getN();
-    for (int i = -5; i <= 110; i += 5) {
-      extracted(t1, i, n);
+    for (int i = -5; i <= 110; i += 1) {
+      check(t1, i, n);
     }
 
     //System.out.println("quantiles");
@@ -555,24 +564,76 @@ public class TestFilterSelectivityEstimator {
     //System.out.println(Arrays.toString(tb1));
     //System.out.println(tb1.length);
 
+    float[] values = getGaussian(123L);
+    KllFloatsSketch gaussianKll = createMockSketch(values);
+    float min = values[0], max = values[values.length - 1];
+    for (int i = -5; i < 110; i += 1) {
+      float val = min + (max - min) * i / 100;
+      double act = getInterpolatedRank(gaussianKll, val);
+      int valIdx = Arrays.binarySearch(values, val);
+      if (valIdx < 0)
+        valIdx = -(valIdx + 1);
+      double exp = (double) valIdx / values.length;
+      System.out.println("i: " + i + " val " + val + " valIdx " + valIdx + " act " + act + " exp " + exp);
+    }
+  }
+
+  private static @NotNull KllFloatsSketch createMockSketch(float[] values) {
+    float[] quantiles = new float[10];
+    long[] cumWeights = new long[quantiles.length];
+    float min = values[0], max = values[values.length - 1];
+    quantiles[0] = min;
+    quantiles[quantiles.length - 1] = max;
+    for (int i = 1; i < quantiles.length - 1; i++) {
+      quantiles[i] = min + (max - min) * ((float) i) / quantiles.length;
+    }
+    int idx = 0;
+    System.out.println("max: " + max);
+    System.out.println("quantiles " + Arrays.toString(quantiles));
+    System.out.println("values " + Arrays.toString(values));
+    for (int i = 0; i < values.length; i++) {
+      if (idx >= cumWeights.length) {
+        System.out.println("val " + values[i] + " oob " + idx);
+      }
+      while (values[i] > quantiles[idx]) {
+        System.out.println("val " + values[i] + " cmp " + cumWeights[idx] + " idx " + idx);
+        cumWeights[idx] = i + 1;
+        idx += 1;
+      }
+    }
+    for (; idx < cumWeights.length; idx++) {
+      cumWeights[idx] = cumWeights[idx - 1];
+    }
+    System.out.println(Arrays.toString(quantiles));
+    System.out.println(Arrays.toString(cumWeights));
+    return createMockSketch(quantiles, cumWeights);
+  }
+
+  private static float[] getGaussian(long seed) {
+    Random rng = new Random(seed);
+    float[] vals = new float[100];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = (float) rng.nextGaussian(1000, 100);
+    }
+    Arrays.sort(vals);
+    return vals;
   }
 
   /**
    * Creates a mock sketch with a linear CDF.
    * It corresponds to the order statistics over the integers 1 until 100 (both inclusive).
    */
-  private static @NotNull KllFloatsSketch getLinearKllFloatSketch() {
+  private static @NotNull KllFloatsSketch getLinearKllFloatSketch1to100() {
     float[] quantiles = new float[] { 1f, 10f, 30f, 50f, 70f, 90f, 100f };
-    long[] cumWeights = new long[quantiles.length];
+    long[] cumWeights = new long[] { 1L, 10L, 30L, 50L, 70L, 90L, 100L };
+    return createMockSketch(quantiles, cumWeights);
+  }
 
-    for (int i = 0; i < quantiles.length; i++) {
-      cumWeights[i] = (long) (quantiles[i]);
-    }
-
+  private static @NotNull KllFloatsSketch createMockSketch(float[] quantiles, long[] cumWeights) {
     QuantilesFloatsAPI qfa = mock(QuantilesFloatsAPI.class);
-    when(qfa.getMinItem()).thenReturn(1f);
-    when(qfa.getMaxItem()).thenReturn(100f);
-    when(qfa.getN()).thenReturn(100L);
+    when(qfa.getMinItem()).thenReturn(quantiles[0]);
+    when(qfa.getMaxItem()).thenReturn(quantiles[quantiles.length - 1]);
+    when(qfa.getN()).thenReturn(cumWeights[cumWeights.length - 1]);
 
     FloatsSketchSortedView sv = new FloatsSketchSortedView(quantiles, cumWeights, qfa);
     KllFloatsSketch t1 = mock(KllFloatsSketch.class);
@@ -580,7 +641,7 @@ public class TestFilterSelectivityEstimator {
     return t1;
   }
 
-  private static void extracted(KllFloatsSketch t1, int i, long n) {
+  private static void check(KllFloatsSketch t1, int i, long n) {
     String info = "i=" + String.format("%3s", i) + ": ";
     double r = getInterpolatedRank(t1, i);
     info += " r=" + String.format("%4s", r);
