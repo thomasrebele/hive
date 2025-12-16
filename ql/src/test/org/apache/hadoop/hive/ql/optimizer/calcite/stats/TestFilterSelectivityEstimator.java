@@ -573,12 +573,12 @@ public class TestFilterSelectivityEstimator {
     int count = 0;
 
     float[] values = getGaussian(123L);
-    KllFloatsSketch gaussianKll = createMockSketch(values);
+    KllFloatsSketch gaussianKll = createMockSketch(values, 500);
     float min = values[0], max = values[values.length - 1];
-    //for (int i = -5; i < 110; i += 1) {
-    //  float val = min + (max - min) * i / 100;
-    for (float val : values) {
-      int i = 0;
+    for (int i = -5; i < 110; i += 1) {
+      float val = min + (max - min) * i / 100;
+      //for (float val : values) {
+      //  int i = 0;
       double originalRank = gaussianKll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);
       double interPolatedRank = getInterpolatedRank(gaussianKll, val);
 
@@ -595,14 +595,14 @@ public class TestFilterSelectivityEstimator {
 
       System.out.println(
           "i: " + i + " val " + val + " valIdx " + valIdx + " orig " + fmt(originalRank) + " interp " + fmt(
-              interPolatedRank) + " exp " + exp + " oe " + origError + " ie " + interpError);
+              interPolatedRank) + " exp " + exp + " oe " + fmt(origError) + " ie " + fmt(interpError));
     }
-    System.out.println("avg error orig: " + absErrorSumOrig[0] / count);
-    System.out.println("avg error interpolated: " + absErrorSumInterp[0] / count);
+    System.out.println("avg error orig: " + String.format("%.5f", absErrorSumOrig[0] / count));
+    System.out.println("avg error interpolated: " + String.format("%.5f", absErrorSumInterp[0] / count));
   }
 
-  private static @NotNull KllFloatsSketch createMockSketch(float[] values) {
-    float[] quantiles = new float[10];
+  public static @NotNull KllFloatsSketch createMockSketch(float[] values, int numQuantiles) {
+    float[] quantiles = new float[numQuantiles];
     long[] cumWeights = new long[quantiles.length];
     float min = values[0], max = values[values.length - 1];
     quantiles[0] = min;
@@ -615,11 +615,11 @@ public class TestFilterSelectivityEstimator {
     System.out.println("quantiles " + Arrays.toString(quantiles));
     System.out.println("values " + Arrays.toString(values));
     for (int i = 0; i < values.length; i++) {
-      if (idx >= cumWeights.length) {
-        System.out.println("val " + values[i] + " oob " + idx);
-      }
+      //if (idx >= cumWeights.length) {
+      //  System.out.println("val " + values[i] + " oob " + idx);
+      //}
       while (values[i] > quantiles[idx]) {
-        System.out.println("val " + values[i] + " cmp " + cumWeights[idx] + " idx " + idx);
+        //System.out.println("val " + values[i] + " cmp " + cumWeights[idx] + " idx " + idx);
         cumWeights[idx] = i + 1;
         idx += 1;
       }
@@ -652,7 +652,7 @@ public class TestFilterSelectivityEstimator {
     return createMockSketch(quantiles, cumWeights);
   }
 
-  private static @NotNull KllFloatsSketch createMockSketch(float[] quantiles, long[] cumWeights) {
+  public static @NotNull KllFloatsSketch createMockSketch(float[] quantiles, long[] cumWeights) {
     QuantilesFloatsAPI qfa = mock(QuantilesFloatsAPI.class);
     when(qfa.getMinItem()).thenReturn(quantiles[0]);
     when(qfa.getMaxItem()).thenReturn(quantiles[quantiles.length - 1]);

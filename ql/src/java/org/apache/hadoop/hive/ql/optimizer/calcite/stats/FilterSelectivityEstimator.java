@@ -556,6 +556,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       //System.out.println("len " + interpLen + " points " + Arrays.toString(points) + " x " + Arrays.toString(
       //    x) + " y " + Arrays.toString(y) + " val " + val);
 
+      x = new double[quantiles.length];
+      y = new double[quantiles.length];
+      for (int i = 0; i < quantiles.length; i++) {
+        x[i] = quantiles[i];
+        y[i] = cumulativeWeights[i];
+      }
+
+
       // interpolate with sanity checks
       double interp = new SplineInterpolator().interpolate(x, y).value(val);
       interp = Math.clamp(interp, cumulativeWeights[indexLower], cumulativeWeights[indexUpper]);
