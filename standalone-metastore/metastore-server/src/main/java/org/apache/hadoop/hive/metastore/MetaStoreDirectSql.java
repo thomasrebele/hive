@@ -1960,6 +1960,7 @@ class MetaStoreDirectSql {
   private List<ColumnStatisticsObj> aggrStatsUseDB(String catName, String dbName,
       String tableName, List<String> partNames, List<String> colNames, String engine,
       boolean areAllPartsFound, boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
+    final boolean timestampAsLong = MetastoreConf.getBoolVar(conf, ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG);
     // TODO: all the extrapolation logic should be moved out of this class,
     // only mechanical data retrieval should remain here.
     String commonPrefix = "select \"COLUMN_NAME\", \"COLUMN_TYPE\", "
@@ -2016,7 +2017,7 @@ class MetaStoreDirectSql {
             new ArrayList<ColumnStatisticsObj>(list.size());
         for (Object[] row : list) {
           colStats.add(prepareCSObjWithAdjustedNDV(row, 0,
-              useDensityFunctionForNDVEstimation, ndvTuner));
+              useDensityFunctionForNDVEstimation, ndvTuner, timestampAsLong));
           Deadline.checkTimeout();
         }
         return colStats;
@@ -2085,7 +2086,7 @@ class MetaStoreDirectSql {
           list = MetastoreDirectSqlUtils.ensureList(qResult);
           for (Object[] row : list) {
             colStats.add(prepareCSObjWithAdjustedNDV(row, 0,
-                useDensityFunctionForNDVEstimation, ndvTuner));
+                useDensityFunctionForNDVEstimation, ndvTuner, timestampAsLong));
             Deadline.checkTimeout();
           }
           end = doTrace ? System.nanoTime() : 0;
@@ -2249,7 +2250,8 @@ class MetaStoreDirectSql {
               }
             }
           }
-          colStats.add(prepareCSObjWithAdjustedNDV(row, 0, useDensityFunctionForNDVEstimation, ndvTuner));
+          colStats.add(
+              prepareCSObjWithAdjustedNDV(row, 0, useDensityFunctionForNDVEstimation, ndvTuner, timestampAsLong));
           Deadline.checkTimeout();
         }
       }
@@ -2263,13 +2265,15 @@ class MetaStoreDirectSql {
     Object llow = row[i++], lhigh = row[i++], dlow = row[i++], dhigh = row[i++],
         declow = row[i++], dechigh = row[i++], nulls = row[i++], dist = row[i++], bitVector = row[i++],
         histogram = row[i++], avglen = row[i++], maxlen = row[i++], trues = row[i++], falses = row[i];
+    boolean timestampAsLong = MetastoreConf.getBoolVar(conf, ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG);
     StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data,
-        llow, lhigh, dlow, dhigh, declow, dechigh, nulls, dist, bitVector, histogram, avglen, maxlen, trues, falses);
+        llow, lhigh, dlow, dhigh, declow, dechigh, nulls, dist, bitVector, histogram, avglen, maxlen, trues, falses,
+        timestampAsLong);
     return cso;
   }
 
   private ColumnStatisticsObj prepareCSObjWithAdjustedNDV(Object[] row, int i,
-      boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
+      boolean useDensityFunctionForNDVEstimation, double ndvTuner, boolean timestampAsLong) throws MetaException {
     ColumnStatisticsData data = new ColumnStatisticsData();
     ColumnStatisticsObj cso = new ColumnStatisticsObj((String) row[i++], (String) row[i++], data);
     Object llow = row[i++], lhigh = row[i++], dlow = row[i++], dhigh = row[i++], declow = row[i++],
@@ -2278,7 +2282,7 @@ class MetaStoreDirectSql {
         avgDecimal = row[i++], sumDist = row[i++];
     StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data, llow, lhigh, dlow, dhigh,
         declow, dechigh, nulls, dist, avglen, maxlen, trues, falses, avgLong, avgDouble,
-        avgDecimal, sumDist, useDensityFunctionForNDVEstimation, ndvTuner);
+        avgDecimal, sumDist, useDensityFunctionForNDVEstimation, ndvTuner, timestampAsLong);
     return cso;
   }
 
