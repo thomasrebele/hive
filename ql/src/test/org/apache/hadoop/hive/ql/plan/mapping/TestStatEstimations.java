@@ -158,15 +158,20 @@ public class TestStatEstimations {
 
   private static void readStatsAndCheckTimestampField(boolean timestampAsLong) throws TException {
     HiveConf conf = env_setup.getTestCtx().hiveConf;
-    MetastoreConf.setBoolVar(conf, MetastoreConf.ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG, timestampAsLong);
+    boolean oldSetting = MetastoreConf.getBoolVar(conf, MetastoreConf.ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG);
+    try {
+      MetastoreConf.setBoolVar(conf, MetastoreConf.ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG, timestampAsLong);
 
-    try(IMetaStoreClient client = new HiveMetaStoreClient(conf)) {
-      List<ColumnStatisticsObj> tableColumnStatistics =
-          client.getTableColumnStatistics("default", "t2", Collections.singletonList("c"), "hive");
-      ColumnStatisticsObj columnStatisticsObj = tableColumnStatistics.getFirst();
-      ColumnStatisticsData statsData = columnStatisticsObj.getStatsData();
-      assertEquals(timestampAsLong, statsData.isSetLongStats());
-      assertEquals(!timestampAsLong, statsData.isSetTimestampStats());
+      try (IMetaStoreClient client = new HiveMetaStoreClient(conf)) {
+        List<ColumnStatisticsObj> tableColumnStatistics =
+            client.getTableColumnStatistics("default", "t2", Collections.singletonList("c"), "hive");
+        ColumnStatisticsObj columnStatisticsObj = tableColumnStatistics.getFirst();
+        ColumnStatisticsData statsData = columnStatisticsObj.getStatsData();
+        assertEquals(timestampAsLong, statsData.isSetLongStats());
+        assertEquals(!timestampAsLong, statsData.isSetTimestampStats());
+      }
+    } finally {
+      MetastoreConf.setBoolVar(conf, MetastoreConf.ConfVars.HIVE_STATS_LEGACY_TIMESTAMP_AS_LONG, oldSetting);
     }
   }
 
