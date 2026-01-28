@@ -51,6 +51,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
@@ -65,8 +66,11 @@ import static org.mockito.Mockito.doReturn;
 public class TestFilterSelectivityEstimator {
 
   private static final float[] VALUES = { 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7 };
+  private static final float[] VALUES2 = { 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f, 1e7f };
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
-  private static final float DELTA = Float.MIN_VALUE;
+  private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
+  private static final float DELTA = 1e-8f;
+  // a selectivity resolution of 1e-8f is enough to distinguish 100 million elements
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
   private static RelOptCluster relOptCluster;
@@ -86,6 +90,7 @@ public class TestFilterSelectivityEstimator {
   private static RexNode boolFalse;
   private static RexNode boolTrue;
   private static ColStatistics stats;
+  private static ColStatistics stats2;
 
   @Mock
   private RelOptSchema schemaMock;
@@ -120,6 +125,20 @@ public class TestFilterSelectivityEstimator {
 
     stats = new ColStatistics();
     stats.setHistogram(KLL.toByteArray());
+    stats.setRange(rangeOf(VALUES));
+
+    stats2 = new ColStatistics();
+    stats2.setHistogram(KLL2.toByteArray());
+    stats2.setRange(rangeOf(VALUES2));
+  }
+
+  private static ColStatistics.Range rangeOf(float[] values) {
+    float min = Float.MAX_VALUE, max = -Float.MAX_VALUE;
+    for (float v : values) {
+      min = Math.min(min, v);
+      max = Math.max(max, v);
+    }
+    return new ColStatistics.Range(min, max);
   }
 
   @Before
@@ -512,5 +531,24 @@ public class TestFilterSelectivityEstimator {
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, inputRef0, int1, int3);
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
     Assert.assertEquals(0.55, estimator.estimateSelectivity(filter), DELTA);
+  }
+
+  @Test
+  public void testComputeRangePredicateSelectivityWithCast() {
+    doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(0));
+    RexNode cast = REX_BUILDER.makeCast(REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.BIGINT), inputRef0);
+    RexNode filter = REX_BUILDER.makeCall(SqlStdOperatorTable.GREATER_THAN_OR_EQUAL, cast, int5);
+    FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
+    Assert.assertEquals(3 / 13.f, estimator.estimateSelectivity(filter), DELTA);
+  }
+
+  @Test
+  public void testComputeRangePredicateSelectivityWithCast2() {
+    doReturn(Collections.singletonList(stats2)).when(tableMock).getColStat(Collections.singletonList(0));
+    RexNode cast =
+        REX_BUILDER.makeCast(REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DECIMAL, 3, 1), inputRef0);
+    RexNode filter = REX_BUILDER.makeCall(SqlStdOperatorTable.GREATER_THAN_OR_EQUAL, cast, int5);
+    FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
+    Assert.assertEquals(2 / 7.f, estimator.estimateSelectivity(filter), DELTA);
   }
 }
