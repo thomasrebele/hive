@@ -17,7 +17,12 @@
  */
 package org.apache.hadoop.hive.ql.optimizer.calcite.stats;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
@@ -52,6 +57,7 @@ import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveIn;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan;
 import org.apache.hadoop.hive.ql.plan.ColStatistics;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,50 +190,129 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return selectivity;
   }
 
+  private RexNode removeLosslessCast(RexCall cast, HiveTableScan tableScan) {
+    RexNode op0 = cast.getOperands().get(0);
+    if (!(op0 instanceof RexInputRef)) {
+      return cast;
+    }
+    int index = ((RexInputRef) op0).getIndex();
+    final List<ColStatistics> colStats = tableScan.getColStat(Collections.singletonList(index));
+    if (colStats.isEmpty()) {
+      return cast;
+    }
+
+    String type = cast.getType().getSqlTypeName().getName();
+
+    double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
+    switch (type.toLowerCase()) {
+    case serdeConstants.INT_TYPE_NAME:
+      min = Integer.MIN_VALUE;
+      max = Integer.MAX_VALUE;
+      break;
+    case serdeConstants.BIGINT_TYPE_NAME:
+      min = Long.MIN_VALUE;
+      max = Long.MAX_VALUE;
+      break;
+    case serdeConstants.FLOAT_TYPE_NAME:
+      min = -Float.MAX_VALUE;
+      max = Float.MAX_VALUE;
+      break;
+    case serdeConstants.DOUBLE_TYPE_NAME:
+      min = -Double.MAX_VALUE;
+      max = Double.MAX_VALUE;
+      break;
+    case serdeConstants.TINYINT_TYPE_NAME:
+      min = Byte.MIN_VALUE;
+      max = Byte.MAX_VALUE;
+      break;
+    case serdeConstants.SMALLINT_TYPE_NAME:
+      min = Short.MIN_VALUE;
+      max = Short.MAX_VALUE;
+      break;
+
+    }
+
+    ColStatistics colStat = colStats.getFirst();
+    ColStatistics.Range range = colStat.getRange();
+    if (range == null)
+      return cast;
+    if (range.minValue == null || Double.isNaN(range.minValue.doubleValue()) || range.minValue.doubleValue() < min)
+      return cast;
+    if (range.maxValue == null || Double.isNaN(range.maxValue.doubleValue()) || range.maxValue.doubleValue() > max)
+      return cast;
+
+    return op0;
+  }
+
+
   private double computeRangePredicateSelectivity(RexCall call, SqlKind op) {
-    final boolean isLiteralLeft = call.getOperands().get(0).getKind().equals(SqlKind.LITERAL);
-    final boolean isLiteralRight = call.getOperands().get(1).getKind().equals(SqlKind.LITERAL);
-    final boolean isInputRefLeft = call.getOperands().get(0).getKind().equals(SqlKind.INPUT_REF);
-    final boolean isInputRefRight = call.getOperands().get(1).getKind().equals(SqlKind.INPUT_REF);
+    double defaultSelectivity = ((double) 1 / (double) 3);
+    if (!(childRel instanceof HiveTableScan)) {
+      return defaultSelectivity;
+    }
 
-    if (childRel instanceof HiveTableScan && isLiteralLeft != isLiteralRight && isInputRefLeft != isInputRefRight) {
-      final HiveTableScan t = (HiveTableScan) childRel;
-      final int inputRefIndex = ((RexInputRef) call.getOperands().get(isInputRefLeft ? 0 : 1)).getIndex();
-      final List<ColStatistics> colStats = t.getColStat(Collections.singletonList(inputRefIndex));
+    List<RexNode> operands = call.getOperands();
+    final boolean isLiteralLeft = operands.get(0).getKind().equals(SqlKind.LITERAL);
+    final boolean isLiteralRight = operands.get(1).getKind().equals(SqlKind.LITERAL);
+    if (isLiteralLeft == isLiteralRight) {
+      return defaultSelectivity;
+    }
 
-      if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
-        final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        final Object boundValueObject = ((RexLiteral) call.getOperands().get(isLiteralLeft ? 0 : 1)).getValue();
-        final SqlTypeName typeName = call.getOperands().get(isInputRefLeft ? 0 : 1).getType().getSqlTypeName();
-        float value = extractLiteral(typeName, boundValueObject);
-        boolean closedBound = op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.GREATER_THAN_OR_EQUAL);
+    final HiveTableScan t = (HiveTableScan) childRel;
+    int inputOpIndex = -1;
+    int inputRefIndex = -1;
 
-        double selectivity;
-        if (op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.LESS_THAN)) {
-          selectivity = closedBound ? lessThanOrEqualSelectivity(kll, value) : lessThanSelectivity(kll, value);
-        } else {
-          selectivity = closedBound ? greaterThanOrEqualSelectivity(kll, value) : greaterThanSelectivity(kll, value);
-        }
+    for (int i = 0; i < operands.size(); i++) {
+      RexNode node = operands.get(i);
+      if (node.getKind().equals(SqlKind.CAST)) {
+        node = removeLosslessCast((RexCall) node, t);
+      }
 
-        // selectivity does not account for null values, we multiply for the number of non-null values (getN)
-        // and we divide by the total (non-null + null values) to get the overall selectivity.
-        //
-        // Example: consider a filter "col < 3", and the following table rows:
-        //  _____
-        // | col |
-        // |_____|
-        // |1    |
-        // |null |
-        // |null |
-        // |3    |
-        // |4    |
-        // -------
-        // kll.getN() would be 3, selectivity 1/3, t.getTable().getRowCount() 5
-        // so the final result would be 3 * 1/3 / 5 = 1/5, as expected.
-        return kll.getN() * selectivity / t.getTable().getRowCount();
+      if (node.getKind().equals(SqlKind.INPUT_REF)) {
+        inputOpIndex = i;
+        inputRefIndex = ((RexInputRef) node).getIndex();
+        break;
       }
     }
-    return ((double) 1 / (double) 3);
+
+    if (inputRefIndex < 0) {
+      return defaultSelectivity;
+    }
+
+    final List<ColStatistics> colStats = t.getColStat(Collections.singletonList(inputRefIndex));
+    if (colStats.isEmpty() || !isHistogramAvailable(colStats.get(0))) {
+      return defaultSelectivity;
+    }
+
+    final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
+    final Object boundValueObject = ((RexLiteral) operands.get(isLiteralLeft ? 0 : 1)).getValue();
+    final SqlTypeName typeName = operands.get(inputOpIndex).getType().getSqlTypeName();
+    float value = extractLiteral(typeName, boundValueObject);
+    boolean closedBound = op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.GREATER_THAN_OR_EQUAL);
+
+    double selectivity;
+    if (op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.LESS_THAN)) {
+      selectivity = closedBound ? lessThanOrEqualSelectivity(kll, value) : lessThanSelectivity(kll, value);
+    } else {
+      selectivity = closedBound ? greaterThanOrEqualSelectivity(kll, value) : greaterThanSelectivity(kll, value);
+    }
+
+    // selectivity does not account for null values, we multiply for the number of non-null values (getN)
+    // and we divide by the total (non-null + null values) to get the overall selectivity.
+    //
+    // Example: consider a filter "col < 3", and the following table rows:
+    //  _____
+    // | col |
+    // |_____|
+    // |1    |
+    // |null |
+    // |null |
+    // |3    |
+    // |4    |
+    // -------
+    // kll.getN() would be 3, selectivity 1/3, t.getTable().getRowCount() 5
+    // so the final result would be 3 * 1/3 / 5 = 1/5, as expected.
+    return kll.getN() * selectivity / t.getTable().getRowCount();
   }
 
   private Double computeBetweenPredicateSelectivity(RexCall call) {
