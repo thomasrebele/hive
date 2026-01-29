@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.calcite.plan.RelOptUtil;
@@ -185,7 +186,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return selectivity;
   }
 
-  private RexNode removeLosslessCast(RexCall cast, HiveTableScan tableScan, float[] boundaries) {
+  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, float[] boundaries) {
     RexNode op0 = cast.getOperands().get(0);
     if (!(op0 instanceof RexInputRef)) {
       return cast;
@@ -259,12 +260,12 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     // search for the literal
     List<RexNode> operands = call.getOperands();
-    final boolean isLiteralLeft = operands.get(0).getKind().equals(SqlKind.LITERAL);
-    final boolean isLiteralRight = operands.get(1).getKind().equals(SqlKind.LITERAL);
-    if (isLiteralLeft == isLiteralRight) {
+    final Float valLeft = extractLiteral(operands.get(0));
+    final Float valRight = extractLiteral(operands.get(1));
+    if ((valLeft != null) == (valRight != null)) {
       return defaultSelectivity;
     }
-    int literalOpIdx = isLiteralLeft ? 0 : 1;
+    int literalOpIdx = valLeft != null ? 0 : 1;
 
     // convert the condition to a range val1 <= x < val2
     float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
@@ -289,16 +290,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     // the rangeSelectivity function takes a half-open interval [a,b), so adapt the value if necessary
     // that is, either an open left boundary (index 0), or a closed right boundary (index 1)
-    if ((boundaryIdx == 0) == openBound) {
-      value = Math.nextUp(value);
-    }
-    boundaries[boundaryIdx] = value;
+    boundaries[boundaryIdx] = (boundaryIdx == 0) == openBound ? Math.nextUp(value) : value;
 
     // extract the column index from the other operator
     final HiveTableScan t = (HiveTableScan) childRel;
-    RexNode node = operands.get(1 - literalOpIdx);
+    int inputRefOpIndex = 1 - literalOpIdx;
+    RexNode node = operands.get(inputRefOpIndex);
     if (node.getKind().equals(SqlKind.CAST)) {
-      node = removeLosslessCast((RexCall) node, t, boundaries);
+      node = removeCastIfPossible((RexCall) node, t, boundaries);
     }
 
     int inputRefIndex = -1;
@@ -337,28 +336,43 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   }
 
   private Double computeBetweenPredicateSelectivity(RexCall call) {
-    final boolean hasLiteralBool = call.getOperands().get(0).getKind().equals(SqlKind.LITERAL);
-    final boolean hasInputRef = call.getOperands().get(1).getKind().equals(SqlKind.INPUT_REF);
-    final boolean hasLiteralLeft = call.getOperands().get(2).getKind().equals(SqlKind.LITERAL);
-    final boolean hasLiteralRight = call.getOperands().get(3).getKind().equals(SqlKind.LITERAL);
+    if (!(childRel instanceof HiveTableScan)) {
+      return computeFunctionSelectivity(call);
+    }
 
-    if (childRel instanceof HiveTableScan && hasLiteralBool && hasInputRef && hasLiteralLeft && hasLiteralRight) {
+    List<RexNode> operands = call.getOperands();
+    final boolean hasLiteralBool = operands.get(0).getKind().equals(SqlKind.LITERAL);
+    Float leftValue = extractLiteral(operands.get(2));
+    Float rightValue = extractLiteral(operands.get(3));
+
+    if (hasLiteralBool && leftValue != null && rightValue != null) {
       final HiveTableScan t = (HiveTableScan) childRel;
-      final int inputRefIndex = ((RexInputRef) call.getOperands().get(1)).getIndex();
+      float[] boundaries = new float[] { leftValue, rightValue };
+
+      int inputRefOpIndex = 1;
+      RexNode node = operands.get(inputRefOpIndex);
+      if (node.getKind().equals(SqlKind.CAST)) {
+        node = removeCastIfPossible((RexCall) node, t, boundaries);
+      }
+
+      int inputRefIndex = -1;
+      if (node.getKind().equals(SqlKind.INPUT_REF)) {
+        inputRefIndex = ((RexInputRef) node).getIndex();
+      }
+
+      if (inputRefIndex < 0) {
+        return computeFunctionSelectivity(call);
+      }
+
       final List<ColStatistics> colStats = t.getColStat(Collections.singletonList(inputRefIndex));
 
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        final SqlTypeName typeName = call.getOperands().get(1).getType().getSqlTypeName();
-        final Object inverseBoolValueObject = ((RexLiteral) call.getOperands().get(0)).getValue();
+        final Object inverseBoolValueObject = ((RexLiteral) operands.get(0)).getValue();
         boolean inverseBool = Boolean.parseBoolean(inverseBoolValueObject.toString());
-        final Object leftBoundValueObject = ((RexLiteral) call.getOperands().get(2)).getValue();
-        float leftValue = extractLiteral(typeName, leftBoundValueObject);
-        final Object rightBoundValueObject = ((RexLiteral) call.getOperands().get(3)).getValue();
-        float rightValue = extractLiteral(typeName, rightBoundValueObject);
         // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
         if (inverseBool) {
-          if (rightValue == leftValue) {
+          if (Objects.equals(rightValue, leftValue)) {
             return computeNotEqualitySelectivity(call);
           } else if (rightValue < leftValue) {
             return 1.0;
@@ -372,6 +386,17 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       }
     }
     return computeFunctionSelectivity(call);
+  }
+
+  private Float extractLiteral(RexNode node) {
+    if (node.getKind() != SqlKind.LITERAL) {
+      return null;
+    }
+    RexLiteral literal = (RexLiteral) node;
+    if (literal.getValue() == null) {
+      return null;
+    }
+    return extractLiteral(literal.getTypeName(), literal.getValue());
   }
 
   private float extractLiteral(SqlTypeName typeName, Object boundValueObject) {
@@ -687,7 +712,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
           "Selectivity for BETWEEN leftValue AND rightValue when the two values coincide is not supported, found: "
           + "leftValue = " + leftValue + " and rightValue = " + rightValue);
     }
-    return rangedSelectivity(kll, Math.nextDown(leftValue), Math.nextUp(rightValue));
+    return rangedSelectivity(kll, leftValue, Math.nextUp(rightValue));
   }
 
   /**

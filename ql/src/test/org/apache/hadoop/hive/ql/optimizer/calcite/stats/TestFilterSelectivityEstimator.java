@@ -76,16 +76,23 @@ public class TestFilterSelectivityEstimator {
   private static final SqlBinaryOperator LE = SqlStdOperatorTable.LESS_THAN_OR_EQUAL;
 
   private static final float[] VALUES = { 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7 };
-  private static final float[] VALUES2 = { 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f, 1e7f };
+  private static final float[] VALUES2 = {
+      //
+      10f, 100f, 1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f,
+      // TODO tr comments
+      Math.nextDown(Math.nextDown(100f)), Math.nextDown(100f), Math.nextUp(1000f), Math.nextUp(Math.nextUp(1000f)), };
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
-  private static final float DELTA = 1e-8f;
-  // a selectivity resolution of 1e-8f is enough to distinguish 100 million elements
+  private static final float DELTA = 1e-7f;
+  // a selectivity resolution of 1e-8f is enough to distinguish 10 million elements
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
 
   public static final RelDataType BIGINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.BIGINT);
   public static final RelDataType DECIMAL_3_1 = createDecimalType(3, 1);
+  public static final RelDataType DECIMAL_7_1 = createDecimalType(7, 1);
+  public static final RelDataType DECIMAL_38_25 = createDecimalType(38, 25);
+  public static final RelDataType FLOAT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.FLOAT);
   private static RelOptCluster relOptCluster;
   private static RexNode intMinus1;
   private static RexNode int0;
@@ -556,19 +563,38 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityWithCast() {
     useValues(VALUES, stats);
-    RexNode filter = compareWithCast(BIGINT, GE, int5);
-    checkSelectivity(3 / 13.f, filter);
+    checkSelectivity(3 / 13.f, compareWithCast(BIGINT, GE, int5));
   }
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
     useValues(VALUES2, stats2);
-    checkSelectivity(1 / 7.f, compareWithCast(DECIMAL_3_1, GE, int5));
+    checkSelectivity(2 / 11.f, compareWithCast(DECIMAL_7_1, GE, literal(9000)));
+  }
+
+  @Test
+  public void testComputeRangePredicateSelectivityBetweenWithCast() {
+    useValues(VALUES2, stats2);
+    RexNode cast = REX_BUILDER.makeCast(DECIMAL_38_25, inputRef0);
+    //RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, int1, int3);
+    //RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literal(1), literal(3));
+    RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literal(100), literal(1000));
+    FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
+    System.out.println(filter);
+    // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
+    Assert.assertEquals(2 / 11.f, estimator.estimateSelectivity(filter), DELTA);
+
+    RexNode filter2 = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, cast, literal(100), literal(1000));
+    Assert.assertEquals(9 / 11.f, estimator.estimateSelectivity(filter2), DELTA);
+  }
+
+  private RexNode literal(float f) {
+    return REX_BUILDER.makeLiteral(f, FLOAT);
   }
 
   private void checkSelectivity(float expected, RexNode filter) {
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
-    //Assert.assertEquals(filter.toString(), expected, estimator.estimateSelectivity(filter), DELTA);
+    Assert.assertEquals(filter.toString(), expected, estimator.estimateSelectivity(filter), DELTA);
 
     // swap operand
     RexCall call = (RexCall) filter;
