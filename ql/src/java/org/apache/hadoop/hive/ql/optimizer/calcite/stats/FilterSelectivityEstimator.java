@@ -226,16 +226,18 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       max = Double.MAX_VALUE;
       break;
     case serdeConstants.DECIMAL_TYPE_NAME:
-      min = Double.MIN_VALUE;
+      min = -Double.MAX_VALUE;
       max = Double.MAX_VALUE;
       // values outside the representable range are cast to NULL, so adapt the boundaries
       int precision = cast.getType().getPrecision();
       int scale = cast.getType().getScale();
       int digits = precision - scale;
-      float t = (float) Math.pow(10, digits);
-
+      // the cast does some rounding, i.e., CAST(99.9499 AS DECIMAL(3,1)) = 99.9
+      // but CAST(99.95 AS DECIMAL(3,1)) = NULL
+      float t = Math.nextDown((float) (Math.pow(10, digits) - 5 * Math.pow(10, -(scale + 1))));
       boundaries[0] = Math.max(boundaries[0], -t);
-      boundaries[1] = Math.min(boundaries[1], t);
+      // boundaries is a right-open interval
+      boundaries[1] = Math.min(boundaries[1], Math.nextUp(t));
       break;
     }
 
@@ -250,7 +252,6 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     return op0;
   }
-
 
   private double computeRangePredicateSelectivity(RexCall call, SqlKind op) {
     double defaultSelectivity = ((double) 1 / (double) 3);

@@ -77,14 +77,20 @@ public class TestFilterSelectivityEstimator {
 
   private static final float[] VALUES = { 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7 };
   private static final float[] VALUES2 = {
-      //
-      10f, 100f, 1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f,
-      // TODO tr comments
-      Math.nextDown(Math.nextDown(100f)), Math.nextDown(100f), Math.nextUp(1000f), Math.nextUp(Math.nextUp(1000f)), };
+      // rounding for DECIMAL(3,1)
+      -99.95f, -99.94999f,
+      // some values
+      0f, 1f, 10f,
+      // rounding for DECIMAL(3,1)
+      99.94999f, 99.95f,
+      // 100f and its two predecessors and successors
+      99.999985f, 99.99999f, 100f, 100.00001f, 100.000015f,
+      // some values
+      1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f };
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
+  // a selectivity resolution of 1e-7f is enough to distinguish 10 million elements
   private static final float DELTA = 1e-7f;
-  // a selectivity resolution of 1e-8f is enough to distinguish 10 million elements
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
 
@@ -568,13 +574,11 @@ public class TestFilterSelectivityEstimator {
     useValues(VALUES, stats);
     checkSelectivity(3 / 13.f, castAndCompare(TINYINT, GE, int5));
     checkSelectivity(10 / 13.f, castAndCompare(TINYINT, LT, int5));
-
     checkSelectivity(2 / 13.f, castAndCompare(TINYINT, GT, int5));
     checkSelectivity(11 / 13.f, castAndCompare(TINYINT, LE, int5));
 
     checkSelectivity(12 / 13f, castAndCompare(TINYINT, GE, int2));
     checkSelectivity(1 / 13f, castAndCompare(TINYINT, LT, int2));
-
     checkSelectivity(5 / 13f, castAndCompare(TINYINT, GT, int2));
     checkSelectivity(8 / 13f, castAndCompare(TINYINT, LE, int2));
 
@@ -588,11 +592,21 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
     useValues(VALUES2, stats2);
+
     // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
-    checkSelectivity(2 / 11.f, castAndCompare(DECIMAL_7_1, GE, literal(9999)));
-    checkSelectivity(2 / 11.f, castAndCompare(DECIMAL_7_1, GE, literal(10000)));
-    checkSelectivity(1 / 11.f, castAndCompare(DECIMAL_7_1, GT, literal(10000)));
-    checkSelectivity(1 / 11.f, castAndCompare(DECIMAL_7_1, GT, literal(10001)));
+    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_7_1, GE, literal(9999)));
+    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_7_1, GE, literal(10000)));
+
+    // expected: 100_000f
+    checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literal(10000)));
+    checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literal(10001)));
+
+    // expected 1f, 10f, 99.94999f
+    checkSelectivity(3 / 17.f, castAndCompare(DECIMAL_3_1, GE, literal(1)));
+    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_3_1, GT, literal(1)));
+    // expected -99.94999f, 0f, 1f
+    checkSelectivity(3 / 17.f, castAndCompare(DECIMAL_3_1, LE, literal(1)));
+    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_3_1, LT, literal(1)));
 
     // the cast would apply a modulo operation to the values outside the range of the cast
     // so instead a default selectivity should be returned
@@ -641,10 +655,6 @@ public class TestFilterSelectivityEstimator {
     Assert.assertEquals(filter.toString(), expected, estimator.estimateSelectivity(swapped), DELTA);
   }
 
-  private static RexNode compare(SqlBinaryOperator op, RexNode value) {
-    return REX_BUILDER.makeCall(op, inputRef0, value);
-  }
-
   private static RexNode castAndCompare(RelDataType type, SqlBinaryOperator op, RexNode value) {
     RexNode cast = REX_BUILDER.makeCast(type, inputRef0);
     return REX_BUILDER.makeCall(op, cast, value);
@@ -652,11 +662,5 @@ public class TestFilterSelectivityEstimator {
 
   private static RelDataType createDecimalType(int precision, int scale) {
     return REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DECIMAL, precision, scale);
-  }
-
-  @Test
-  public void test() {
-    System.out.println(FilterSelectivityEstimator.rangedSelectivity(KLL, 0, 2.1f) * VALUES.length);
-    System.out.println(FilterSelectivityEstimator.rangedSelectivity(KLL, 2f, 2.1f) * VALUES.length);
   }
 }
