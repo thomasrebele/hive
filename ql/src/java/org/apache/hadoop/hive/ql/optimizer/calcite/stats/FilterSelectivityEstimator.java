@@ -17,12 +17,7 @@
  */
 package org.apache.hadoop.hive.ql.optimizer.calcite.stats;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
@@ -190,7 +185,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return selectivity;
   }
 
-  private RexNode removeLosslessCast(RexCall cast, HiveTableScan tableScan) {
+  private RexNode removeLosslessCast(RexCall cast, HiveTableScan tableScan, float[] boundaries) {
     RexNode op0 = cast.getOperands().get(0);
     if (!(op0 instanceof RexInputRef)) {
       return cast;
@@ -229,7 +224,18 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       min = Short.MIN_VALUE;
       max = Short.MAX_VALUE;
       break;
+    case serdeConstants.DECIMAL_TYPE_NAME:
+      min = Double.MIN_VALUE;
+      max = Double.MAX_VALUE;
+      // values outside the representable range are cast to NULL, so adapt the boundaries
+      int precision = cast.getType().getPrecision();
+      int scale = cast.getType().getScale();
+      int digits = precision - scale;
+      float t = (float) Math.pow(10, digits);
 
+      boundaries[0] = Math.max(boundaries[0], -t);
+      boundaries[1] = Math.min(boundaries[1], t);
+      break;
     }
 
     ColStatistics colStat = colStats.getFirst();
@@ -251,28 +257,53 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       return defaultSelectivity;
     }
 
+    // search for the literal
     List<RexNode> operands = call.getOperands();
     final boolean isLiteralLeft = operands.get(0).getKind().equals(SqlKind.LITERAL);
     final boolean isLiteralRight = operands.get(1).getKind().equals(SqlKind.LITERAL);
     if (isLiteralLeft == isLiteralRight) {
       return defaultSelectivity;
     }
+    int literalOpIdx = isLiteralLeft ? 0 : 1;
 
+    // convert the condition to a range val1 <= x < val2
+    float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
+    final Object boundValueObject = ((RexLiteral) operands.get(literalOpIdx)).getValue();
+    if (boundValueObject == null) {
+      return defaultSelectivity;
+    }
+    final SqlTypeName typeName = operands.get(literalOpIdx).getType().getSqlTypeName();
+    float value = extractLiteral(typeName, boundValueObject);
+    int boundaryIdx;
+    boolean openBound = op == SqlKind.LESS_THAN || op == SqlKind.GREATER_THAN;
+    switch (op) {
+    case LESS_THAN, LESS_THAN_OR_EQUAL:
+      boundaryIdx = literalOpIdx;
+      break;
+    case GREATER_THAN, GREATER_THAN_OR_EQUAL:
+      boundaryIdx = 1 - literalOpIdx;
+      break;
+    default:
+      return defaultSelectivity;
+    }
+
+    // the rangeSelectivity function takes a half-open interval [a,b), so adapt the value if necessary
+    // that is, either an open left boundary (index 0), or a closed right boundary (index 1)
+    if ((boundaryIdx == 0) == openBound) {
+      value = Math.nextUp(value);
+    }
+    boundaries[boundaryIdx] = value;
+
+    // extract the column index from the other operator
     final HiveTableScan t = (HiveTableScan) childRel;
-    int inputOpIndex = -1;
+    RexNode node = operands.get(1 - literalOpIdx);
+    if (node.getKind().equals(SqlKind.CAST)) {
+      node = removeLosslessCast((RexCall) node, t, boundaries);
+    }
+
     int inputRefIndex = -1;
-
-    for (int i = 0; i < operands.size(); i++) {
-      RexNode node = operands.get(i);
-      if (node.getKind().equals(SqlKind.CAST)) {
-        node = removeLosslessCast((RexCall) node, t);
-      }
-
-      if (node.getKind().equals(SqlKind.INPUT_REF)) {
-        inputOpIndex = i;
-        inputRefIndex = ((RexInputRef) node).getIndex();
-        break;
-      }
+    if (node.getKind().equals(SqlKind.INPUT_REF)) {
+      inputRefIndex = ((RexInputRef) node).getIndex();
     }
 
     if (inputRefIndex < 0) {
@@ -285,17 +316,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     }
 
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-    final Object boundValueObject = ((RexLiteral) operands.get(isLiteralLeft ? 0 : 1)).getValue();
-    final SqlTypeName typeName = operands.get(inputOpIndex).getType().getSqlTypeName();
-    float value = extractLiteral(typeName, boundValueObject);
-    boolean closedBound = op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.GREATER_THAN_OR_EQUAL);
-
-    double selectivity;
-    if (op.equals(SqlKind.LESS_THAN_OR_EQUAL) || op.equals(SqlKind.LESS_THAN)) {
-      selectivity = closedBound ? lessThanOrEqualSelectivity(kll, value) : lessThanSelectivity(kll, value);
-    } else {
-      selectivity = closedBound ? greaterThanOrEqualSelectivity(kll, value) : greaterThanSelectivity(kll, value);
-    }
+    double selectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
 
     // selectivity does not account for null values, we multiply for the number of non-null values (getN)
     // and we divide by the total (non-null + null values) to get the overall selectivity.
@@ -574,7 +595,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return null;
   }
 
-  private static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
+  /**
+   * Returns the selectivity of a predicate "val1 &lt;= column &lt; val2"
+   * @param kll the sketch
+   * @param val1 lower bound (inclusive)
+   * @param val2 upper bound (exclusive)
+   * @return the selectivity of "val1 &lt;= column &lt; val2"
+   */
+  public static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
     float[] splitPoints = new float[] { val1, val2 };
     double[] boundaries = kll.getCDF(splitPoints, QuantileSearchCriteria.EXCLUSIVE);
     return boundaries[1] - boundaries[0];
