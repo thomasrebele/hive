@@ -88,11 +88,14 @@ public class TestFilterSelectivityEstimator {
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
 
+  public static final RelDataType TINYINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TINYINT);
+  public static final RelDataType INTEGER = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
   public static final RelDataType BIGINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.BIGINT);
   public static final RelDataType DECIMAL_3_1 = createDecimalType(3, 1);
   public static final RelDataType DECIMAL_7_1 = createDecimalType(7, 1);
   public static final RelDataType DECIMAL_38_25 = createDecimalType(38, 25);
   public static final RelDataType FLOAT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.FLOAT);
+  public static final RelDataType DOUBLE = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DOUBLE);
   private static RelOptCluster relOptCluster;
   private static RexNode intMinus1;
   private static RexNode int0;
@@ -563,27 +566,50 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityWithCast() {
     useValues(VALUES, stats);
-    checkSelectivity(3 / 13.f, compareWithCast(BIGINT, GE, int5));
+    checkSelectivity(3 / 13.f, castAndCompare(TINYINT, GE, int5));
+    checkSelectivity(10 / 13.f, castAndCompare(TINYINT, LT, int5));
+
+    checkSelectivity(2 / 13.f, castAndCompare(TINYINT, GT, int5));
+    checkSelectivity(11 / 13.f, castAndCompare(TINYINT, LE, int5));
+
+    checkSelectivity(12 / 13f, castAndCompare(TINYINT, GE, int2));
+    checkSelectivity(1 / 13f, castAndCompare(TINYINT, LT, int2));
+
+    checkSelectivity(5 / 13f, castAndCompare(TINYINT, GT, int2));
+    checkSelectivity(8 / 13f, castAndCompare(TINYINT, LE, int2));
+
+    // try some different types
+    checkSelectivity(3 / 13.f, castAndCompare(INTEGER, GE, int5));
+    checkSelectivity(3 / 13.f, castAndCompare(BIGINT, GE, int5));
+    checkSelectivity(3 / 13.f, castAndCompare(FLOAT, GE, int5));
+    checkSelectivity(3 / 13.f, castAndCompare(DOUBLE, GE, int5));
   }
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
     useValues(VALUES2, stats2);
-    checkSelectivity(2 / 11.f, compareWithCast(DECIMAL_7_1, GE, literal(9000)));
+    // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
+    checkSelectivity(2 / 11.f, castAndCompare(DECIMAL_7_1, GE, literal(9999)));
+    checkSelectivity(2 / 11.f, castAndCompare(DECIMAL_7_1, GE, literal(10000)));
+    checkSelectivity(1 / 11.f, castAndCompare(DECIMAL_7_1, GT, literal(10000)));
+    checkSelectivity(1 / 11.f, castAndCompare(DECIMAL_7_1, GT, literal(10001)));
+
+    // the cast would apply a modulo operation to the values outside the range of the cast
+    // so instead a default selectivity should be returned
+    checkSelectivity(1 / 3.f, castAndCompare(TINYINT, LT, literal(100)));
+    checkSelectivity(1 / 3.f, castAndCompare(TINYINT, LT, literal(100)));
   }
 
   @Test
   public void testComputeRangePredicateSelectivityBetweenWithCast() {
     useValues(VALUES2, stats2);
     RexNode cast = REX_BUILDER.makeCast(DECIMAL_38_25, inputRef0);
-    //RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, int1, int3);
-    //RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literal(1), literal(3));
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literal(100), literal(1000));
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
     System.out.println(filter);
-    // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
     Assert.assertEquals(2 / 11.f, estimator.estimateSelectivity(filter), DELTA);
 
+    // invert the filter
     RexNode filter2 = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, cast, literal(100), literal(1000));
     Assert.assertEquals(9 / 11.f, estimator.estimateSelectivity(filter2), DELTA);
   }
@@ -619,7 +645,7 @@ public class TestFilterSelectivityEstimator {
     return REX_BUILDER.makeCall(op, inputRef0, value);
   }
 
-  private static RexNode compareWithCast(RelDataType type, SqlBinaryOperator op, RexNode value) {
+  private static RexNode castAndCompare(RelDataType type, SqlBinaryOperator op, RexNode value) {
     RexNode cast = REX_BUILDER.makeCast(type, inputRef0);
     return REX_BUILDER.makeCall(op, cast, value);
   }

@@ -187,7 +187,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   }
 
   private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, float[] boundaries) {
-    RexNode op0 = cast.getOperands().get(0);
+    RexNode op0 = cast.getOperands().getFirst();
     if (!(op0 instanceof RexInputRef)) {
       return cast;
     }
@@ -201,7 +201,15 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
     switch (type.toLowerCase()) {
-    case serdeConstants.INT_TYPE_NAME:
+    case serdeConstants.TINYINT_TYPE_NAME:
+      min = Byte.MIN_VALUE;
+      max = Byte.MAX_VALUE;
+      break;
+    case serdeConstants.SMALLINT_TYPE_NAME:
+      min = Short.MIN_VALUE;
+      max = Short.MAX_VALUE;
+      break;
+    case serdeConstants.INT_TYPE_NAME, "integer":
       min = Integer.MIN_VALUE;
       max = Integer.MAX_VALUE;
       break;
@@ -216,14 +224,6 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     case serdeConstants.DOUBLE_TYPE_NAME:
       min = -Double.MAX_VALUE;
       max = Double.MAX_VALUE;
-      break;
-    case serdeConstants.TINYINT_TYPE_NAME:
-      min = Byte.MIN_VALUE;
-      max = Byte.MAX_VALUE;
-      break;
-    case serdeConstants.SMALLINT_TYPE_NAME:
-      min = Short.MIN_VALUE;
-      max = Short.MAX_VALUE;
       break;
     case serdeConstants.DECIMAL_TYPE_NAME:
       min = Double.MIN_VALUE;
