@@ -3,9 +3,10 @@ set metastore.stats.fetch.bitvector=true;
 set metastore.stats.fetch.kll=true;
 set hive.stats.autogather=true;
 set hive.stats.column.autogather=true;
+set hive.vectorized.execution.enabled=false;
 
 CREATE TABLE test_stats (a string, b int, c double, d float, e decimal(5,2), f timestamp, g date, h timestamp with local time zone)
-STORED AS ORC;
+STORED AS TEXTFILE;
 
 INSERT INTO test_stats (a, b, c, d, e, f, g, h) VALUES ("a", 2, 1.1, 12.2, 1.3, "2020-11-2 00:00:00", "2020-11-2", "2020-11-2 00:00:00");
 INSERT INTO test_stats (a, b, c, d, e, f, g, h) VALUES ("b", 2, 2.1, NULL, 6.3, "2020-11-2 00:00:00", "2020-11-2", "2020-11-2 00:00:00");
