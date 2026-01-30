@@ -28,6 +28,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlOperator;
@@ -55,6 +56,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -87,8 +92,25 @@ public class TestFilterSelectivityEstimator {
       99.999985f, 99.99999f, 100f, 100.00001f, 100.000015f,
       // some values
       1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f };
+
+  private static long timestampMillis(String timestamp) {
+    if (!timestamp.contains(":")) {
+      return LocalDate.parse(timestamp).toEpochSecond(LocalTime.MIDNIGHT, ZoneOffset.UTC) * 1000;
+    }
+    return Instant.parse(timestamp).toEpochMilli();
+  }
+
+  private static long timestamp(String timestamp) {
+    return timestampMillis(timestamp) / 1000;
+  }
+
+  private static final float[] VALUES_TIME =
+      { timestamp("2020-11-01"), timestamp("2020-11-02"), timestamp("2020-11-03"), timestamp("2020-11-04"),
+          timestamp("2020-11-05T01:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
+
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
+  private static final KllFloatsSketch KLL_TIMESTAMP = StatisticsTestUtils.createKll(VALUES_TIME);
   // a selectivity resolution of 1e-7f is enough to distinguish 10 million elements
   private static final float DELTA = 1e-7f;
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
@@ -118,8 +140,6 @@ public class TestFilterSelectivityEstimator {
   private static RexNode inputRef0;
   private static RexNode boolFalse;
   private static RexNode boolTrue;
-  private static ColStatistics stats;
-  private static ColStatistics stats2;
 
   @Mock
   private RelOptSchema schemaMock;
@@ -129,7 +149,9 @@ public class TestFilterSelectivityEstimator {
   private RelMetadataQuery mq;
 
   private HiveTableScan tableScan;
+  private ColStatistics stats;
   private RelNode scan;
+  private RexNode defaultInputRef;
   private final MutableObject<float[]> currentValues = new MutableObject<>();
 
   @BeforeClass
@@ -148,18 +170,14 @@ public class TestFilterSelectivityEstimator {
     int11 = REX_BUILDER.makeLiteral(11, integerType, true);
     boolFalse = REX_BUILDER.makeLiteral(false, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
     boolTrue = REX_BUILDER.makeLiteral(true, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
-    tableType = TYPE_FACTORY.createStructType(ImmutableList.of(integerType), ImmutableList.of("f1"));
+    RelDataTypeFactory.Builder b = new RelDataTypeFactory.Builder(TYPE_FACTORY);
+    b.add("f_integer", SqlTypeName.INTEGER);
+    b.add("f_timestamp", SqlTypeName.TIMESTAMP);
+    b.add("f_date", SqlTypeName.DATE).build();
+    tableType = b.build();
 
     RelOptPlanner planner = CalcitePlanner.createPlanner(new HiveConf());
     relOptCluster = RelOptCluster.create(planner, REX_BUILDER);
-
-    stats = new ColStatistics();
-    stats.setHistogram(KLL.toByteArray());
-    stats.setRange(rangeOf(VALUES));
-
-    stats2 = new ColStatistics();
-    stats2.setHistogram(KLL2.toByteArray());
-    stats2.setRange(rangeOf(VALUES2));
   }
 
   private static ColStatistics.Range rangeOf(float[] values) {
@@ -182,11 +200,22 @@ public class TestFilterSelectivityEstimator {
         tableMock, "table", null, false, false);
     scan = relBuilder.push(tableScan).build();
     inputRef0 = REX_BUILDER.makeInputRef(scan, 0);
+
+    stats = new ColStatistics();
+    stats.setHistogram(KLL.toByteArray());
+    stats.setRange(rangeOf(VALUES));
   }
 
-  private void useValues(float[] values, ColStatistics stats) {
+  /**
+   * Note: call it only at the beginning of a test method.
+   */
+  private void useValues(String fieldname, float[] values, KllFloatsSketch sketch) {
     currentValues.setValue(values);
-    doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(0));
+    stats.setHistogram(sketch.toByteArray());
+    stats.setRange(rangeOf(values));
+    int fieldIndex = scan.getRowType().getFieldNames().indexOf(fieldname);
+    defaultInputRef = REX_BUILDER.makeInputRef(scan, fieldIndex);
+    doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(fieldIndex));
   }
 
   @Test
@@ -571,7 +600,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast() {
-    useValues(VALUES, stats);
+    useValues("f_integer", VALUES, KLL);
     checkSelectivity(3 / 13.f, castAndCompare(TINYINT, GE, int5));
     checkSelectivity(10 / 13.f, castAndCompare(TINYINT, LT, int5));
     checkSelectivity(2 / 13.f, castAndCompare(TINYINT, GT, int5));
@@ -591,7 +620,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
-    useValues(VALUES2, stats2);
+    useValues("f_integer", VALUES2, KLL2);
 
     // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
     checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_7_1, GE, literal(9999)));
@@ -615,17 +644,37 @@ public class TestFilterSelectivityEstimator {
   }
 
   @Test
+  public void testComputeRangePredicateSelectivityTime() {
+    useValues("f_timestamp", VALUES_TIME, KLL_TIMESTAMP);
+
+    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, defaultInputRef, literalTimestamp("2020-11-03")));
+    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(LE, defaultInputRef, literalTimestamp("2020-11-05T01:23:45Z")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, defaultInputRef, literalTimestamp("2020-11-05T01:23:45Z")));
+  }
+
+  private static RexLiteral literalTimestamp(String timestamp) {
+    RexLiteral rexLiteral = REX_BUILDER.makeLiteral(timestampMillis(timestamp),
+        REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
+
+    return rexLiteral;
+  }
+
+  private static RexLiteral literalDate(String date) {
+    return REX_BUILDER.makeLiteral(timestampMillis(date),
+        REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
+  }
+
+  @Test
   public void testComputeRangePredicateSelectivityBetweenWithCast() {
-    useValues(VALUES2, stats2);
+    useValues("f_integer", VALUES2, KLL2);
     RexNode cast = REX_BUILDER.makeCast(DECIMAL_38_25, inputRef0);
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literal(100), literal(1000));
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
-    System.out.println(filter);
-    Assert.assertEquals(2 / 11.f, estimator.estimateSelectivity(filter), DELTA);
+    Assert.assertEquals(4 / 17.f, estimator.estimateSelectivity(filter), DELTA);
 
     // invert the filter
     RexNode filter2 = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, cast, literal(100), literal(1000));
-    Assert.assertEquals(9 / 11.f, estimator.estimateSelectivity(filter2), DELTA);
+    Assert.assertEquals(13 / 17.f, estimator.estimateSelectivity(filter2), DELTA);
   }
 
   private RexNode literal(float f) {
