@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.calcite.plan.RelOptUtil;
@@ -261,21 +262,16 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     // search for the literal
     List<RexNode> operands = call.getOperands();
-    final Float valLeft = extractLiteral(operands.get(0));
-    final Float valRight = extractLiteral(operands.get(1));
-    if ((valLeft != null) == (valRight != null)) {
+    final Optional<Float> leftLiteral = extractLiteral(operands.get(0));
+    final Optional<Float> rightLiteral = extractLiteral(operands.get(1));
+    if ((leftLiteral.isPresent()) == (rightLiteral.isPresent())) {
       return defaultSelectivity;
     }
-    int literalOpIdx = valLeft != null ? 0 : 1;
+    int literalOpIdx = leftLiteral.isPresent() ? 0 : 1;
 
     // convert the condition to a range val1 <= x < val2
     float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
-    final Object boundValueObject = ((RexLiteral) operands.get(literalOpIdx)).getValue();
-    if (boundValueObject == null) {
-      return defaultSelectivity;
-    }
-    final SqlTypeName typeName = operands.get(literalOpIdx).getType().getSqlTypeName();
-    float value = extractLiteral(typeName, boundValueObject);
+    float value = leftLiteral.orElseGet(rightLiteral::get);
     int boundaryIdx;
     boolean openBound = op == SqlKind.LESS_THAN || op == SqlKind.GREATER_THAN;
     switch (op) {
@@ -343,11 +339,13 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     List<RexNode> operands = call.getOperands();
     final boolean hasLiteralBool = operands.get(0).getKind().equals(SqlKind.LITERAL);
-    Float leftValue = extractLiteral(operands.get(2));
-    Float rightValue = extractLiteral(operands.get(3));
+    Optional<Float> leftLiteral = extractLiteral(operands.get(2));
+    Optional<Float> rightLiteral = extractLiteral(operands.get(3));
 
-    if (hasLiteralBool && leftValue != null && rightValue != null) {
+    if (hasLiteralBool && leftLiteral.isPresent() && rightLiteral.isPresent()) {
       final HiveTableScan t = (HiveTableScan) childRel;
+      float leftValue = leftLiteral.get();
+      float rightValue = rightLiteral.get();
       float[] boundaries = new float[] { leftValue, rightValue };
 
       int inputRefOpIndex = 1;
@@ -389,18 +387,18 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return computeFunctionSelectivity(call);
   }
 
-  private Float extractLiteral(RexNode node) {
+  private Optional<Float> extractLiteral(RexNode node) {
     if (node.getKind() != SqlKind.LITERAL) {
-      return null;
+      return Optional.empty();
     }
     RexLiteral literal = (RexLiteral) node;
     if (literal.getValue() == null) {
-      return null;
+      return Optional.empty();
     }
     return extractLiteral(literal.getTypeName(), literal.getValue());
   }
 
-  private float extractLiteral(SqlTypeName typeName, Object boundValueObject) {
+  private Optional<Float> extractLiteral(SqlTypeName typeName, Object boundValueObject) {
     final String boundValueString = boundValueObject.toString();
 
     float value;
@@ -431,10 +429,10 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       value = ((GregorianCalendar) boundValueObject).toInstant().getEpochSecond();
       break;
     default:
-      throw new IllegalStateException(
-          "Unsupported type for comparator selectivity evaluation using histogram: " + typeName);
+      LOG.warn("Unsupported type for comparator selectivity evaluation using histogram: {}", typeName);
+      return Optional.empty();
     }
-    return value;
+    return Optional.of(value);
   }
 
   /**
