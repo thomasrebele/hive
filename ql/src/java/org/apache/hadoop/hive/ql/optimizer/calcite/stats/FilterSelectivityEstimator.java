@@ -214,7 +214,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       min = Integer.MIN_VALUE;
       max = Integer.MAX_VALUE;
       break;
-    case serdeConstants.BIGINT_TYPE_NAME:
+    case serdeConstants.BIGINT_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
       min = Long.MIN_VALUE;
       max = Long.MAX_VALUE;
       break;

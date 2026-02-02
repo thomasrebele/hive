@@ -17,7 +17,6 @@
  */
 package org.apache.hadoop.hive.ql.optimizer.calcite.stats;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -104,13 +103,17 @@ public class TestFilterSelectivityEstimator {
     return timestampMillis(timestamp) / 1000;
   }
 
+  private static int epochDay(String date) {
+    return (int) LocalDate.parse(date).toEpochDay();
+  }
+
   private static final float[] VALUES_TIME =
       { timestamp("2020-11-01"), timestamp("2020-11-02"), timestamp("2020-11-03"), timestamp("2020-11-04"),
-          timestamp("2020-11-05T01:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
+          timestamp("2020-11-05T11:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
 
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
-  private static final KllFloatsSketch KLL_TIMESTAMP = StatisticsTestUtils.createKll(VALUES_TIME);
+  private static final KllFloatsSketch KLL_TIME = StatisticsTestUtils.createKll(VALUES_TIME);
   // a selectivity resolution of 1e-7f is enough to distinguish 10 million elements
   private static final float DELTA = 1e-7f;
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
@@ -151,7 +154,7 @@ public class TestFilterSelectivityEstimator {
   private HiveTableScan tableScan;
   private ColStatistics stats;
   private RelNode scan;
-  private RexNode defaultInputRef;
+  private RexNode currentInputRef;
   private final MutableObject<float[]> currentValues = new MutableObject<>();
 
   @BeforeClass
@@ -214,7 +217,7 @@ public class TestFilterSelectivityEstimator {
     stats.setHistogram(sketch.toByteArray());
     stats.setRange(rangeOf(values));
     int fieldIndex = scan.getRowType().getFieldNames().indexOf(fieldname);
-    defaultInputRef = REX_BUILDER.makeInputRef(scan, fieldIndex);
+    currentInputRef = REX_BUILDER.makeInputRef(scan, fieldIndex);
     doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(fieldIndex));
   }
 
@@ -644,24 +647,32 @@ public class TestFilterSelectivityEstimator {
   }
 
   @Test
-  public void testComputeRangePredicateSelectivityTime() {
-    useValues("f_timestamp", VALUES_TIME, KLL_TIMESTAMP);
+  public void testComputeRangePredicateSelectivityTimestamp() {
+    useValues("f_timestamp", VALUES_TIME, KLL_TIME);
 
-    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, defaultInputRef, literalTimestamp("2020-11-03")));
-    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(LE, defaultInputRef, literalTimestamp("2020-11-05T01:23:45Z")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, defaultInputRef, literalTimestamp("2020-11-05T01:23:45Z")));
+    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, currentInputRef, literalTimestamp("2020-11-03")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(GT, currentInputRef, literalTimestamp("2020-11-03")));
+    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(LE, currentInputRef, literalTimestamp("2020-11-05T11:23:45Z")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, currentInputRef, literalTimestamp("2020-11-05T11:23:45Z")));
+  }
+
+  @Test
+  public void testComputeRangePredicateSelectivityDate() {
+    useValues("f_date", VALUES_TIME, KLL_TIME);
+
+    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, currentInputRef, literalDate("2020-11-03")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(GT, currentInputRef, literalDate("2020-11-03")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LE, currentInputRef, literalDate("2020-11-05")));
+    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, currentInputRef, literalDate("2020-11-05")));
   }
 
   private static RexLiteral literalTimestamp(String timestamp) {
-    RexLiteral rexLiteral = REX_BUILDER.makeLiteral(timestampMillis(timestamp),
+    return REX_BUILDER.makeLiteral(timestampMillis(timestamp),
         REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
-
-    return rexLiteral;
   }
 
   private static RexLiteral literalDate(String date) {
-    return REX_BUILDER.makeLiteral(timestampMillis(date),
-        REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
+    return REX_BUILDER.makeLiteral(epochDay(date), REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DATE));
   }
 
   @Test
