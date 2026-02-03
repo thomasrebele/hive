@@ -1305,3 +1305,51 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues2
 #### A masked pattern was here ####
 10
+PREHOOK: query: select '\nrounding mode\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nrounding mode\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+rounding mode
+
+PREHOOK: query: CREATE TABLE rounding_mode (a decimal(38,24)) stored as orc
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@rounding_mode
+POSTHOOK: query: CREATE TABLE rounding_mode (a decimal(38,24)) stored as orc
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@rounding_mode
+PREHOOK: query: insert into rounding_mode (a) values (5.5), (2.5), (1.6), (1.1),
+(1.0), (-1.0), (-1.1), (-1.6), (-2.5), (-5.5)
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Output: default@rounding_mode
+POSTHOOK: query: insert into rounding_mode (a) values (5.5), (2.5), (1.6), (1.1),
+(1.0), (-1.0), (-1.1), (-1.6), (-2.5), (-5.5)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Output: default@rounding_mode
+POSTHOOK: Lineage: rounding_mode.a SCRIPT []
+PREHOOK: query: select a, CAST(a as DECIMAL(10,0)) from rounding_mode
+PREHOOK: type: QUERY
+PREHOOK: Input: default@rounding_mode
+#### A masked pattern was here ####
+POSTHOOK: query: select a, CAST(a as DECIMAL(10,0)) from rounding_mode
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@rounding_mode
+#### A masked pattern was here ####
+5.500000000000000000000000	6
+2.500000000000000000000000	3
+1.600000000000000000000000	2
+1.100000000000000000000000	1
+1.000000000000000000000000	1
+-1.000000000000000000000000	-1
+-1.100000000000000000000000	-1
+-1.600000000000000000000000	-2
+-2.500000000000000000000000	-3
+-5.500000000000000000000000	-6

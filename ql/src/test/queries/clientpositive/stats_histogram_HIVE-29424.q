@@ -190,4 +190,12 @@ select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 
 
 select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 100.0;
 
+select '\nrounding mode\n';
+
+CREATE TABLE rounding_mode (a decimal(38,24)) stored as orc;
+
+insert into rounding_mode (a) values (5.5), (2.5), (1.6), (1.1),
+(1.0), (-1.0), (-1.1), (-1.6), (-2.5), (-5.5);
+
+select a, CAST(a as DECIMAL(10,0)) from rounding_mode;
 
