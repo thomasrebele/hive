@@ -723,24 +723,19 @@ public class TestFilterSelectivityEstimator {
     float total = VALUES2.length;
 
     {
-      float universe = 23;
-      RexNode cast = REX_BUILDER.makeCast(DECIMAL_4_1, inputRef0);
-      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
-    }
-
-    {
       float universe = 2;
       RexNode cast = REX_BUILDER.makeCast(DECIMAL_2_1, inputRef0);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
       checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
     }
-
 
     {
       float universe = 7;
       RexNode cast = REX_BUILDER.makeCast(DECIMAL_3_1, inputRef0);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
       checkBetweenSelectivity(4, universe, total, cast, 1f, 100f);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
     }
 
     {
@@ -750,6 +745,7 @@ public class TestFilterSelectivityEstimator {
       // the values between 99.95 and 100 are rounded up to 100, so they fulfill the BETWEEN
       checkBetweenSelectivity(13, universe, total, cast, 100, 1000);
       checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
     }
 
     {
@@ -757,8 +753,8 @@ public class TestFilterSelectivityEstimator {
       RexNode cast = REX_BUILDER.makeCast(DECIMAL_7_1, inputRef0);
       checkBetweenSelectivity(14, universe, total, cast, 100, 1000);
       checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
     }
-
   }
 
   private static RexLiteral literalTimestamp(String timestamp) {

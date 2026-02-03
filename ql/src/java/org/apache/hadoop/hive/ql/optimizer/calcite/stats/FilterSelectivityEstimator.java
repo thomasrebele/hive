@@ -399,9 +399,6 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         if (inverseBool) {
           if (Objects.equals(rightValue, leftValue)) {
             return computeNotEqualitySelectivity(call);
-          } else if (rightValue < leftValue) {
-            // TODO what's the ground truth in that case? CAST(x) BETWEEN 1000 and 100?
-            return 1.0;
           }
 
           double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
