@@ -728,7 +728,7 @@ public class TestFilterSelectivityEstimator {
     float total = VALUES2.length;
 
     {
-      float universe = 2;
+      float universe = 2; // the number of values that "survive" the cast
       RexNode cast = REX_BUILDER.makeCast(DECIMAL_2_1, inputRef0);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
       checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
