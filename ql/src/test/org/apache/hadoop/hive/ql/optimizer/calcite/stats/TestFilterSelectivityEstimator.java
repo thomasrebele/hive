@@ -71,7 +71,10 @@ import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivit
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.isHistogramAvailable;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.lessThanOrEqualSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.lessThanSelectivity;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -523,7 +526,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityBetweenLeftEqualsRight() {
-    doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(0));
+    verify(tableMock, never()).getColStat(any());
     doReturn(10.0).when(mq).getDistinctRowCount(scan, ImmutableBitSet.of(0), REX_BUILDER.makeLiteral(true));
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, inputRef0, int3, int3);
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
@@ -557,7 +560,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityNotBetweenLeftEqualsRight() {
-    doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(0));
+    verify(tableMock, never()).getColStat(any());
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, inputRef0, int3, int3);
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
     Assert.assertEquals(1, estimator.estimateSelectivity(filter), DELTA);
@@ -614,7 +617,9 @@ public class TestFilterSelectivityEstimator {
     doReturn(Collections.singletonList(stats)).when(tableMock).getColStat(Collections.singletonList(0));
     RexNode filter = REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, inputRef0, int1, int3);
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
-    Assert.assertEquals(0.55, estimator.estimateSelectivity(filter), DELTA);
+    // only the values 4, 5, 6, 7 fulfill the condition NOT BETWEEN 1 AND 3
+    // (the NULL values do not fulfill the condition)
+    Assert.assertEquals(0.2, estimator.estimateSelectivity(filter), DELTA);
   }
 
   @Test

@@ -368,6 +368,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       final HiveTableScan t = (HiveTableScan) childRel;
       float leftValue = leftLiteral.get();
       float rightValue = rightLiteral.get();
+
+      final Object inverseBoolValueObject = ((RexLiteral) operands.get(0)).getValue();
+      boolean inverseBool = Boolean.parseBoolean(inverseBoolValueObject.toString());
+      // when they are equal it's an equality predicate, we cannot handle it as "between"
+      if (Objects.equals(leftValue, rightValue)) {
+        return inverseBool ? computeNotEqualitySelectivity(call) : computeFunctionSelectivity(call);
+      }
+
       float[] boundaries = new float[] { leftValue, rightValue, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
       boolean[] inclusive = new boolean[] { true, true };
 
@@ -393,23 +401,13 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         boundaries[3] = Math.nextUp(boundaries[3]);
 
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        final Object inverseBoolValueObject = ((RexLiteral) operands.get(0)).getValue();
-        boolean inverseBool = Boolean.parseBoolean(inverseBoolValueObject.toString());
         // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
+        double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
         if (inverseBool) {
-          if (Objects.equals(rightValue, leftValue)) {
-            return computeNotEqualitySelectivity(call);
-          }
-
-          double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
           double universe = rangedSelectivity(kll, boundaries[2], boundaries[3]);
-          return universe - (kll.getN() * rawSelectivity / t.getTable().getRowCount());
+          rawSelectivity = universe - rawSelectivity;
         }
-        // when they are equal it's an equality predicate, we cannot handle it as "between"
-        if (Double.compare(leftValue, rightValue) != 0) {
-          double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
-          return kll.getN() * rawSelectivity / t.getTable().getRowCount();
-        }
+        return kll.getN() * rawSelectivity / t.getTable().getRowCount();
       }
     }
     return computeFunctionSelectivity(call);
