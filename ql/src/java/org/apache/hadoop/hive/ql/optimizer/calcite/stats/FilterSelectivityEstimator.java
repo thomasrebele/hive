@@ -245,11 +245,13 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       float adjusted1 = inclusive[0] ? boundaries[0] - adjust : Math.nextDown(boundaries[0] + adjust);
       // boundaries is a right-open interval
       float adjusted2 = inclusive[1] ? Math.nextDown(boundaries[1] + adjust) : boundaries[1] - adjust;
+      float lowerUniverse = inclusive[0] ? -universeExtent : Math.nextDown(-universeExtent);
       float upperUniverse = inclusive[1] ? universeExtent : Math.nextUp(universeExtent);
+      float boundary0 = Math.max(adjusted1, lowerUniverse);
       float boundary1 = Math.min(adjusted2, upperUniverse);
-      boundaries[0] = Math.max(adjusted1, -universeExtent);
+      boundaries[0] = boundary0;
       boundaries[1] = boundary1;
-      boundaries[2] = -universeExtent;
+      boundaries[2] = lowerUniverse;
       boundaries[3] = upperUniverse;
       break;
     }
@@ -286,7 +288,6 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY,
         // dummy universe boundaries
         Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
-    boolean[] inclusive = new boolean[] { true, true };
     float value = leftLiteral.orElseGet(rightLiteral::get);
     int boundaryIdx;
     boolean openBound = op == SqlKind.LESS_THAN || op == SqlKind.GREATER_THAN;
@@ -301,6 +302,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       return defaultSelectivity;
     }
 
+    boolean[] inclusive = new boolean[] { true, true };
     inclusive[boundaryIdx] = !openBound;
     boundaries[boundaryIdx] = value;
 
@@ -314,8 +316,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     // the rangeSelectivity function takes a half-open interval [a,b), so adapt the value if necessary
     // that is, either an open left boundary (index 0), or a closed right boundary (index 1)
-    boundaries[boundaryIdx] =
-        (boundaryIdx == 0) == openBound ? Math.nextUp(boundaries[boundaryIdx]) : boundaries[boundaryIdx];
+    boundaries[0] = inclusive[0] ? boundaries[0] : Math.nextUp(boundaries[0]);
+    boundaries[1] = inclusive[1] ? Math.nextUp(boundaries[1]) : boundaries[1];
 
     int inputRefIndex = -1;
     if (node.getKind().equals(SqlKind.INPUT_REF)) {
@@ -366,15 +368,13 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       final HiveTableScan t = (HiveTableScan) childRel;
       float leftValue = leftLiteral.get();
       float rightValue = rightLiteral.get();
-      float[] boundaries =
-          new float[] { leftValue, Math.nextUp(rightValue), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
-      // TODO tr which direction?
-      boolean[] adjustUp = new boolean[] { false, true };
+      float[] boundaries = new float[] { leftValue, rightValue, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
+      boolean[] inclusive = new boolean[] { true, true };
 
       int inputRefOpIndex = 1;
       RexNode node = operands.get(inputRefOpIndex);
       if (node.getKind().equals(SqlKind.CAST)) {
-        node = removeCastIfPossible((RexCall) node, t, boundaries, adjustUp);
+        node = removeCastIfPossible((RexCall) node, t, boundaries, inclusive);
       }
 
       int inputRefIndex = -1;
@@ -389,6 +389,9 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       final List<ColStatistics> colStats = t.getColStat(Collections.singletonList(inputRefIndex));
 
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
+        boundaries[1] = Math.nextUp(boundaries[1]);
+        boundaries[3] = Math.nextUp(boundaries[3]);
+
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
         final Object inverseBoolValueObject = ((RexLiteral) operands.get(0)).getValue();
         boolean inverseBool = Boolean.parseBoolean(inverseBoolValueObject.toString());
@@ -400,6 +403,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
             // TODO what's the ground truth in that case? CAST(x) BETWEEN 1000 and 100?
             return 1.0;
           }
+
           double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
           double universe = rangedSelectivity(kll, boundaries[2], boundaries[3]);
           return universe - (kll.getN() * rawSelectivity / t.getTable().getRowCount());
@@ -627,7 +631,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     } else if (r instanceof Filter) {
       return isPartitionPredicate(expr, ((Filter) r).getInput());
     } else if (r instanceof HiveTableScan) {
-      RelOptHiveTable table = (RelOptHiveTable) ((HiveTableScan) r).getTable();
+      RelOptHiveTable table = (RelOptHiveTable) r.getTable();
       ImmutableBitSet cols = RelOptUtil.InputFinder.bits(expr);
       return table.containsPartitionColumnsOnly(cols);
     }

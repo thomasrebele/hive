@@ -60,7 +60,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
@@ -651,6 +653,7 @@ public class TestFilterSelectivityEstimator {
     System.out.println(down + base + "f" + up);
 
     useFieldWithValues("f_numeric", VALUES2, KLL2);
+    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
 
     // TODO tr compare with 100
     // values from -99.94999 to 99.94999 (both inclusive)
@@ -670,23 +673,23 @@ public class TestFilterSelectivityEstimator {
     checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GT, literalFloat(100)));
     checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GE, literalFloat(100)));
 
-    // TODO tr update values
-    checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
+    // expected: 100_000f
+    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
 
     // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
-    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(9999)));
-    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(10000)));
+    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(9999)));
+    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(10000)));
 
     // expected: 100_000f
-    checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
-    checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10001)));
+    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
+    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10001)));
 
-    // expected 1f, 10f, 99.94999f
-    checkSelectivity(3 / 17.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
-    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(1)));
-    // expected -99.94999f, 0f, 1f
-    checkSelectivity(3 / 17.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(1)));
-    checkSelectivity(2 / 17.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(1)));
+    // expected 1f, 10f, 99.94998f, 99.94999f
+    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
+    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(1)));
+    // expected -99.94999f, -99.94998f, 0f, 1f
+    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(1)));
+    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(1)));
 
     // the cast would apply a modulo operation to the values outside the range of the cast
     // so instead a default selectivity should be returned
@@ -717,34 +720,45 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityBetweenWithCast() {
     useFieldWithValues("f_numeric", VALUES2, KLL2);
-    //{
-    //  RexNode cast = REX_BUILDER.makeCast(DECIMAL_7_1, inputRef0);
-    //  RexNode filter =
-    //      REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literalFloat(100), literalFloat(1000));
-    //  checkSelectivity(4 / 17.f, filter);
-
-    //  // invert the filter
-    //  RexNode filter2 =
-    //      REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, cast, literalFloat(100), literalFloat(1000));
-    //  checkSelectivity(13 / 17.f, filter2);
-    //}
+    float total = VALUES2.length;
 
     {
-      // TODO tr how to support this case? float modulo 10-x?
+      float universe = 23;
       RexNode cast = REX_BUILDER.makeCast(DECIMAL_4_1, inputRef0);
-      RexNode filter =
-          REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, cast, literalFloat(100), literalFloat(1000));
+      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+    }
+
+    {
+      float universe = 2;
+      RexNode cast = REX_BUILDER.makeCast(DECIMAL_2_1, inputRef0);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
+      checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
+    }
+
+
+    {
+      float universe = 7;
+      RexNode cast = REX_BUILDER.makeCast(DECIMAL_3_1, inputRef0);
+      checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
+      checkBetweenSelectivity(4, universe, total, cast, 1f, 100f);
+    }
+
+    {
+      float universe = 23;
+      RexNode cast = REX_BUILDER.makeCast(DECIMAL_4_1, inputRef0);
       // the values between -999.94999... and 999.94999... (both inclusive) pass through the cast
       // the values between 99.95 and 100 are rounded up to 100, so they fulfill the BETWEEN
-      //checkSelectivity(6 / 17.f, filter);
-
-      // invert the filter
-      // accepts values between -999.95 and 99.95, both exclusive (!)
-      // 99.95 is rounded up to 100, and does not fulfill the BETWEEN
-      RexNode filter2 =
-          REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, cast, literalFloat(100), literalFloat(1000));
-      checkSelectivity(6 / 17.f, filter2);
+      checkBetweenSelectivity(13, universe, total, cast, 100, 1000);
+      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
     }
+
+    {
+      float universe = 26;
+      RexNode cast = REX_BUILDER.makeCast(DECIMAL_7_1, inputRef0);
+      checkBetweenSelectivity(14, universe, total, cast, 100, 1000);
+      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+    }
+
   }
 
   private static RexLiteral literalTimestamp(String timestamp) {
@@ -784,6 +798,24 @@ public class TestFilterSelectivityEstimator {
     }
     RexNode swapped = REX_BUILDER.makeCall(swappedOp, call.getOperands().get(1), call.getOperands().get(0));
     Assert.assertEquals(filter.toString(), expectedSelectivity, estimator.estimateSelectivity(swapped), DELTA);
+  }
+
+  private void checkBetweenSelectivity(float expectedEntries, float universe, float total, RexNode value, float lower,
+      float upper) {
+    RexNode betweenFilter =
+        REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolFalse, value, literalFloat(lower), literalFloat(upper));
+    FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
+    String between = "BETWEEN " + lower + " AND " + upper;
+    float expectedSelectivity = expectedEntries / total;
+    String message = between + ": calcite filter " + betweenFilter.toString();
+    Assert.assertEquals(message, expectedSelectivity, estimator.estimateSelectivity(betweenFilter), DELTA);
+
+    // invert the filter to a NOT BETWEEN
+    RexNode invBetween =
+        REX_BUILDER.makeCall(HiveBetween.INSTANCE, boolTrue, value, literalFloat(lower), literalFloat(upper));
+    String invMessage = "NOT " + between + ": calcite filter " + invBetween.toString();
+    float invExpectedSelectivity = (universe - expectedEntries) / total;
+    Assert.assertEquals(invMessage, invExpectedSelectivity, estimator.estimateSelectivity(invBetween), DELTA);
   }
 
   private static RexNode castAndCompare(RelDataType type, SqlBinaryOperator op, RexNode value) {
