@@ -1,0 +1,1307 @@
+PREHOOK: query: select '\nground truth of test data for HIVE-29424\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nground truth of test data for HIVE-29424\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+ground truth of test data for HIVE-29424
+
+PREHOOK: query: select '\nVALUES\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nVALUES\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+VALUES
+
+PREHOOK: query: select '\ncheck selectivity of BETWEEN with NULLS\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ncheck selectivity of BETWEEN with NULLS\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+check selectivity of BETWEEN with NULLS
+
+PREHOOK: query: CREATE TABLE test_stats1 (e int) stored as orc
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@test_stats1
+POSTHOOK: query: CREATE TABLE test_stats1 (e int) stored as orc
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@test_stats1
+PREHOOK: query: insert into test_stats1 (e) values 
+(1), (2), (2), (2), (2),
+(2), (2), (2), (3), (4),
+(5), (6), (7), (NULL), (NULL),
+(NULL), (NULL), (NULL), (NULL), (NULL)
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Output: default@test_stats1
+POSTHOOK: query: insert into test_stats1 (e) values 
+(1), (2), (2), (2), (2),
+(2), (2), (2), (3), (4),
+(5), (6), (7), (NULL), (NULL),
+(NULL), (NULL), (NULL), (NULL), (NULL)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Output: default@test_stats1
+POSTHOOK: Lineage: test_stats1.e SCRIPT []
+PREHOOK: query: select count(*) from test_stats1 where e BETWEEN -1000 AND 1000
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from test_stats1 where e BETWEEN -1000 AND 1000
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+13
+PREHOOK: query: select count(*) from test_stats1 where e BETWEEN 1 AND 3
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from test_stats1 where e BETWEEN 1 AND 3
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+9
+PREHOOK: query: select count(*) from test_stats1 where e NOT BETWEEN 1 AND 3
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from test_stats1 where e NOT BETWEEN 1 AND 3
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats1
+#### A masked pattern was here ####
+4
+PREHOOK: query: select '\nVALUES2\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nVALUES2\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+VALUES2
+
+PREHOOK: query: CREATE TABLE tabVALUES2 (e decimal(38,10), inc boolean) stored as orc
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@tabVALUES2
+POSTHOOK: query: CREATE TABLE tabVALUES2 (e decimal(38,10), inc boolean) stored as orc
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@tabVALUES2
+PREHOOK: query: insert into tabVALUES2 (e, inc) values
+(-99.95001, true),
+(-99.950005, true),
+(-99.95, true),
+(-99.94999, true),
+(-99.94998, true),
+(0.0, true),
+(1.0, true),
+(10.0, true),
+(99.94998, true),
+(99.94999, true),
+(99.95, true),
+(99.950005, true),
+(99.95001, true),
+(99.999985, true),
+(99.99999, true),
+(100.0, true),
+(100.00001, true),
+(100.000015, true),
+(100.04999, true),
+(100.049995, true),
+(100.05, true),
+(100.05001, true),
+(100.05002, true),
+(1000.0, true),
+(10000.0, true),
+(100000.0, true),
+(1000000.0, true),
+(10000000.0, true)
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Output: default@tabvalues2
+POSTHOOK: query: insert into tabVALUES2 (e, inc) values
+(-99.95001, true),
+(-99.950005, true),
+(-99.95, true),
+(-99.94999, true),
+(-99.94998, true),
+(0.0, true),
+(1.0, true),
+(10.0, true),
+(99.94998, true),
+(99.94999, true),
+(99.95, true),
+(99.950005, true),
+(99.95001, true),
+(99.999985, true),
+(99.99999, true),
+(100.0, true),
+(100.00001, true),
+(100.000015, true),
+(100.04999, true),
+(100.049995, true),
+(100.05, true),
+(100.05001, true),
+(100.05002, true),
+(1000.0, true),
+(10000.0, true),
+(100000.0, true),
+(1000000.0, true),
+(10000000.0, true)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Output: default@tabvalues2
+POSTHOOK: Lineage: tabvalues2.e SCRIPT []
+POSTHOOK: Lineage: tabvalues2.inc SCRIPT []
+PREHOOK: query: select * from tabVALUES2
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+1000.0000000000	true
+10000.0000000000	true
+100000.0000000000	true
+1000000.0000000000	true
+10000000.0000000000	true
+PREHOOK: query: select CAST(e as DECIMAL(3,1)) from tabVALUES2
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select CAST(e as DECIMAL(3,1)) from tabVALUES2
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+NULL
+NULL
+NULL
+-99.9
+-99.9
+0.0
+1.0
+10.0
+99.9
+99.9
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+PREHOOK: query: select '\ndecimal(2,1)'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(2,1)'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(2,1)
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0.0000000000	true
+1.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0.0000000000	true
+1.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select '\ndecimal(3,1)'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(3,1)'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(3,1)
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select '\ndecimal(4,1)'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(4,1)'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(4,1)
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) < 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) < 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+20
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) <= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) <= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) > 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) > 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+13
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) >= 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) >= 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+PREHOOK: query: select '\nother comparisons decimal(7,1)'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nother comparisons decimal(7,1)'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+other comparisons decimal(7,1)
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+100000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 9999.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 9999.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 9999.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 9999.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10000.0000000000	true
+100000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) >= 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10000.0000000000	true
+100000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+100000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10001.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10001.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10001.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) > 10001.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+100000.0000000000	true
+PREHOOK: query: select '\nother comparisons decimal(3,1)'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nother comparisons decimal(3,1)'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+other comparisons decimal(3,1)
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) >= 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) > 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) <= 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) < 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+PREHOOK: query: select '\nbetween'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nbetween'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+between
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) IS NOT NULL
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) IS NOT NULL
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) IS NOT NULL
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) IS NOT NULL
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+7
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) IS NOT NULL
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) IS NOT NULL
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+23
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) IS NOT NULL
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) IS NOT NULL
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+26
+PREHOOK: query: select '\ndecimal(2,1) between'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(2,1) between'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(2,1) between
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0.0000000000	true
+1.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0.0000000000	true
+PREHOOK: query: select '\ndecimal(3,1) between'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(3,1) between'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(3,1) between
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+PREHOOK: query: select '\ndecimal(4,1) between'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(4,1) between'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(4,1) between
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+13
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+14
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+9
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+PREHOOK: query: select '\ndecimal(7,1) between'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ndecimal(7,1) between'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+decimal(7,1) between
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+14
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+1000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+12
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1000.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1000.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+10000.0000000000	true
+100000.0000000000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+14
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+1.0000000000	true
+10.0000000000	true
+99.9499800000	true
+99.9499900000	true
+99.9500000000	true
+99.9500050000	true
+99.9500100000	true
+99.9999850000	true
+99.9999900000	true
+100.0000000000	true
+100.0000100000	true
+100.0000150000	true
+100.0499900000	true
+100.0499950000	true
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+12
+PREHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 1.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 1.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+-99.9500100000	true
+-99.9500050000	true
+-99.9500000000	true
+-99.9499900000	true
+-99.9499800000	true
+0.0000000000	true
+100.0500000000	true
+100.0500100000	true
+100.0500200000	true
+1000.0000000000	true
+10000.0000000000	true
+100000.0000000000	true
+PREHOOK: query: select '\nsome corner cases'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nsome corner cases'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+some corner cases
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+0
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) NOT BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) NOT BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+7
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) NOT BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+23
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 AND 1.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+26
+PREHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 100.0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 100.0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues2
+#### A masked pattern was here ####
+10
