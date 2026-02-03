@@ -60,9 +60,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
@@ -103,21 +101,6 @@ public class TestFilterSelectivityEstimator {
       // some values
       1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f };
 
-  private static long timestampMillis(String timestamp) {
-    if (!timestamp.contains(":")) {
-      return LocalDate.parse(timestamp).toEpochSecond(LocalTime.MIDNIGHT, ZoneOffset.UTC) * 1000;
-    }
-    return Instant.parse(timestamp).toEpochMilli();
-  }
-
-  private static long timestamp(String timestamp) {
-    return timestampMillis(timestamp) / 1000;
-  }
-
-  private static int epochDay(String date) {
-    return (int) LocalDate.parse(date).toEpochDay();
-  }
-
   /**
    * Both dates and timestamps are converted to epoch seconds.
    * <p>
@@ -130,7 +113,6 @@ public class TestFilterSelectivityEstimator {
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
   private static final KllFloatsSketch KLL_TIME = StatisticsTestUtils.createKll(VALUES_TIME);
-  // a selectivity resolution of 1e-7f is enough to distinguish 10 million elements
   private static final float DELTA = 1e-7f;
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
@@ -229,7 +211,7 @@ public class TestFilterSelectivityEstimator {
   }
 
   /**
-   * Note: call it only at the beginning of a test method.
+   * Note: call this method only at the beginning of a test method.
    */
   private void useFieldWithValues(String fieldname, float[] values, KllFloatsSketch sketch) {
     currentValues.setValue(values);
@@ -644,27 +626,12 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
-    float base = 100.05f;
-    float x = base;
-    float y = base;
-    String up = "";
-    String down = "";
-    for (int i = 0; i < 4; i++) {
-      x = Math.nextUp(x);
-      y = Math.nextDown(y);
-      up += ", " + x + "f";
-      down = y + "f, " + down;
-    }
-    System.out.println(down + base + "f" + up);
-
     useFieldWithValues("f_numeric", VALUES2, KLL2);
     checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
 
-    // TODO tr compare with 100
     // values from -99.94999 to 99.94999 (both inclusive)
     checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(100)));
     checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(100)));
-    // TODO comment, cast can only produce values up to x=???
     checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(100)));
     checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(100)));
 
@@ -762,19 +729,6 @@ public class TestFilterSelectivityEstimator {
     }
   }
 
-  private static RexLiteral literalTimestamp(String timestamp) {
-    return REX_BUILDER.makeLiteral(timestampMillis(timestamp),
-        REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
-  }
-
-  private static RexLiteral literalDate(String date) {
-    return REX_BUILDER.makeLiteral(epochDay(date), REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DATE));
-  }
-
-  private RexNode literalFloat(float f) {
-    return REX_BUILDER.makeLiteral(f, FLOAT);
-  }
-
   private void checkSelectivity(float expectedSelectivity, RexNode filter) {
     FilterSelectivityEstimator estimator = new FilterSelectivityEstimator(scan, mq);
     Assert.assertEquals(filter.toString(), expectedSelectivity, estimator.estimateSelectivity(filter), DELTA);
@@ -827,4 +781,33 @@ public class TestFilterSelectivityEstimator {
   private static RelDataType createDecimalType(int precision, int scale) {
     return REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DECIMAL, precision, scale);
   }
+
+  private static RexLiteral literalTimestamp(String timestamp) {
+    return REX_BUILDER.makeLiteral(timestampMillis(timestamp),
+        REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TIMESTAMP));
+  }
+
+  private static RexLiteral literalDate(String date) {
+    return REX_BUILDER.makeLiteral(epochDay(date), REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DATE));
+  }
+
+  private RexNode literalFloat(float f) {
+    return REX_BUILDER.makeLiteral(f, FLOAT);
+  }
+
+  private static long timestampMillis(String timestamp) {
+    if (!timestamp.contains(":")) {
+      return LocalDate.parse(timestamp).toEpochSecond(LocalTime.MIDNIGHT, ZoneOffset.UTC) * 1000;
+    }
+    return Instant.parse(timestamp).toEpochMilli();
+  }
+
+  private static long timestamp(String timestamp) {
+    return timestampMillis(timestamp) / 1000;
+  }
+
+  private static int epochDay(String date) {
+    return (int) LocalDate.parse(date).toEpochDay();
+  }
+
 }
