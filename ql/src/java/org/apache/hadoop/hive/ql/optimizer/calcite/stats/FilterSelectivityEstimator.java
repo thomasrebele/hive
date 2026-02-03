@@ -187,7 +187,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     return selectivity;
   }
 
-  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, float[] boundaries, boolean[] adjustUp) {
+  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, float[] boundaries, boolean[] inclusive) {
     RexNode op0 = cast.getOperands().getFirst();
     if (!(op0 instanceof RexInputRef)) {
       return cast;
@@ -241,15 +241,16 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       // e.g., 10000<x, should be only upped, not rounding-adjusted;
       // instead we get nextUp(10000-0.05) = 9999.951
 
-      float t = Math.nextDown((float) (Math.pow(10, digits) - adjust));
-      boundaries[2] = -t;
-      float adjusted1 = boundaries[0] - adjust;
-      boundaries[0] = Math.max(adjusted1, -t);
+      float universeExtent = Math.nextDown((float) (Math.pow(10, digits) - adjust));
+      float adjusted1 = inclusive[0] ? boundaries[0] - adjust : Math.nextDown(boundaries[0] + adjust);
       // boundaries is a right-open interval
-      float adjusted2 = boundaries[1] + adjust;
-      boundaries[3] = Math.nextUp(t);
-      float boundary1 = Math.min(adjusted2, boundaries[3]);
+      float adjusted2 = inclusive[1] ? Math.nextDown(boundaries[1] + adjust) : boundaries[1] - adjust;
+      float upperUniverse = inclusive[1] ? universeExtent : Math.nextUp(universeExtent);
+      float boundary1 = Math.min(adjusted2, upperUniverse);
+      boundaries[0] = Math.max(adjusted1, -universeExtent);
       boundaries[1] = boundary1;
+      boundaries[2] = -universeExtent;
+      boundaries[3] = upperUniverse;
       break;
     }
 
@@ -282,9 +283,10 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     int literalOpIdx = leftLiteral.isPresent() ? 0 : 1;
 
     // convert the condition to a range val1 <= x < val2
-    float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY,
-        Float.POSITIVE_INFINITY };
-    boolean[] adjustUp = new boolean[] { false, true };
+    float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY,
+        // dummy universe boundaries
+        Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
+    boolean[] inclusive = new boolean[] { true, true };
     float value = leftLiteral.orElseGet(rightLiteral::get);
     int boundaryIdx;
     boolean openBound = op == SqlKind.LESS_THAN || op == SqlKind.GREATER_THAN;
@@ -299,18 +301,21 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       return defaultSelectivity;
     }
 
-    // the rangeSelectivity function takes a half-open interval [a,b), so adapt the value if necessary
-    // that is, either an open left boundary (index 0), or a closed right boundary (index 1)
-    adjustUp[boundaryIdx] = (boundaryIdx == 0) == openBound;
-    boundaries[boundaryIdx] = (boundaryIdx == 0) == openBound ? Math.nextUp(value) : value;
+    inclusive[boundaryIdx] = !openBound;
+    boundaries[boundaryIdx] = value;
 
     // extract the column index from the other operator
     final HiveTableScan t = (HiveTableScan) childRel;
     int inputRefOpIndex = 1 - literalOpIdx;
     RexNode node = operands.get(inputRefOpIndex);
     if (node.getKind().equals(SqlKind.CAST)) {
-      node = removeCastIfPossible((RexCall) node, t, boundaries, adjustUp);
+      node = removeCastIfPossible((RexCall) node, t, boundaries, inclusive);
     }
+
+    // the rangeSelectivity function takes a half-open interval [a,b), so adapt the value if necessary
+    // that is, either an open left boundary (index 0), or a closed right boundary (index 1)
+    boundaries[boundaryIdx] =
+        (boundaryIdx == 0) == openBound ? Math.nextUp(boundaries[boundaryIdx]) : boundaries[boundaryIdx];
 
     int inputRefIndex = -1;
     if (node.getKind().equals(SqlKind.INPUT_REF)) {
@@ -363,11 +368,13 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       float rightValue = rightLiteral.get();
       float[] boundaries =
           new float[] { leftValue, Math.nextUp(rightValue), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
+      // TODO tr which direction?
+      boolean[] adjustUp = new boolean[] { false, true };
 
       int inputRefOpIndex = 1;
       RexNode node = operands.get(inputRefOpIndex);
       if (node.getKind().equals(SqlKind.CAST)) {
-        node = removeCastIfPossible((RexCall) node, t, boundaries);
+        node = removeCastIfPossible((RexCall) node, t, boundaries, adjustUp);
       }
 
       int inputRefIndex = -1;

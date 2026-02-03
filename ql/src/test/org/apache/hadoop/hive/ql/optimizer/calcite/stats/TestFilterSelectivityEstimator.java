@@ -84,13 +84,17 @@ public class TestFilterSelectivityEstimator {
   private static final float[] VALUES = { 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7 };
   private static final float[] VALUES2 = {
       // rounding for DECIMAL(3,1)
-      -99.95f, -99.94999f,
+      // -99.95f and its two predecessors and successors
+      -99.95001f, -99.950005f, -99.95f, -99.94999f, -99.94998f,
       // some values
       0f, 1f, 10f,
       // rounding for DECIMAL(3,1)
-      99.94999f, 99.95f,
+      // 99.95f and its two predecessors and successors
+      99.94998f, 99.94999f, 99.95f, 99.950005f, 99.95001f,
       // 100f and its two predecessors and successors
       99.999985f, 99.99999f, 100f, 100.00001f, 100.000015f,
+      // 100.05f and its two predecessors and successors
+      100.04999f, 100.049995f, 100.05f, 100.05001f, 100.05002f,
       // some values
       1_000f, 10_000f, 100_000f, 1_000_000f, 10_000_000f };
 
@@ -129,6 +133,7 @@ public class TestFilterSelectivityEstimator {
   public static final RelDataType TINYINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TINYINT);
   public static final RelDataType INTEGER = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
   public static final RelDataType BIGINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.BIGINT);
+  public static final RelDataType DECIMAL_2_1 = createDecimalType(2, 1);
   public static final RelDataType DECIMAL_3_1 = createDecimalType(3, 1);
   public static final RelDataType DECIMAL_4_1 = createDecimalType(4, 1);
   public static final RelDataType DECIMAL_7_1 = createDecimalType(7, 1);
@@ -181,7 +186,7 @@ public class TestFilterSelectivityEstimator {
     boolFalse = REX_BUILDER.makeLiteral(false, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
     boolTrue = REX_BUILDER.makeLiteral(true, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
     RelDataTypeFactory.Builder b = new RelDataTypeFactory.Builder(TYPE_FACTORY);
-    b.add("f_integer", SqlTypeName.INTEGER);
+    b.add("f_numeric", DECIMAL_38_25);
     b.add("f_timestamp", SqlTypeName.TIMESTAMP);
     b.add("f_date", SqlTypeName.DATE).build();
     tableType = b.build();
@@ -612,7 +617,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast() {
-    useFieldWithValues("f_integer", VALUES, KLL);
+    useFieldWithValues("f_numeric", VALUES, KLL);
     checkSelectivity(3 / 13.f, castAndCompare(TINYINT, GE, int5));
     checkSelectivity(10 / 13.f, castAndCompare(TINYINT, LT, int5));
     checkSelectivity(2 / 13.f, castAndCompare(TINYINT, GT, int5));
@@ -632,9 +637,40 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
-    // TODO tr compare with 100
+    float base = 100.05f;
+    float x = base;
+    float y = base;
+    String up = "";
+    String down = "";
+    for (int i = 0; i < 4; i++) {
+      x = Math.nextUp(x);
+      y = Math.nextDown(y);
+      up += ", " + x + "f";
+      down = y + "f, " + down;
+    }
+    System.out.println(down + base + "f" + up);
 
-    useFieldWithValues("f_integer", VALUES2, KLL2);
+    useFieldWithValues("f_numeric", VALUES2, KLL2);
+
+    // TODO tr compare with 100
+    // values from -99.94999 to 99.94999 (both inclusive)
+    checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(100)));
+    checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(100)));
+    // TODO comment, cast can only produce values up to x=???
+    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(100)));
+    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(100)));
+
+    checkSelectivity(10 / 28.f, castAndCompare(DECIMAL_4_1, LT, literalFloat(100)));
+    checkSelectivity(20 / 28.f, castAndCompare(DECIMAL_4_1, LE, literalFloat(100)));
+    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_4_1, GT, literalFloat(100)));
+    checkSelectivity(13 / 28.f, castAndCompare(DECIMAL_4_1, GE, literalFloat(100)));
+
+    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_2_1, LT, literalFloat(100)));
+    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_2_1, LE, literalFloat(100)));
+    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GT, literalFloat(100)));
+    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GE, literalFloat(100)));
+
+    // TODO tr update values
     checkSelectivity(1 / 17.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
 
     // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
@@ -680,7 +716,7 @@ public class TestFilterSelectivityEstimator {
 
   @Test
   public void testComputeRangePredicateSelectivityBetweenWithCast() {
-    useFieldWithValues("f_integer", VALUES2, KLL2);
+    useFieldWithValues("f_numeric", VALUES2, KLL2);
     //{
     //  RexNode cast = REX_BUILDER.makeCast(DECIMAL_7_1, inputRef0);
     //  RexNode filter =
