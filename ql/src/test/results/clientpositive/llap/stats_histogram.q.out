@@ -911,6 +911,52 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@test_stats
 #### A masked pattern was here ####
 12
+PREHOOK: query: EXPLAIN cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+POSTHOOK: query: EXPLAIN cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+CBO PLAN:
+HiveProject(_c0=[$0]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 1922
+  HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 1920
+    HiveFilter(condition=[BETWEEN(false, $6, 2020-11-01:DATE, 2020-11-06:DATE)]): rowcount = 11.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 1919
+      HiveTableScan(table=[[default, test_stats]], table:alias=[test_stats]): rowcount = 15.0, cumulative cost = {0}, id = 1873
+
+PREHOOK: query: SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+12
+PREHOOK: query: explain cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days)
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+POSTHOOK: query: explain cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+CBO PLAN:
+HiveProject(_c0=[$0]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 2112
+  HiveAggregate(group=[{}], agg#0=[count()]): rowcount = 1.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 2110
+    HiveFilter(condition=[BETWEEN(false, CAST($6):TIMESTAMP(9), 2020-11-01 00:00:00:TIMESTAMP(9), 2020-11-06 00:00:00:TIMESTAMP(9))]): rowcount = 11.0, cumulative cost = {0.0 rows, 0.0 cpu, 0.0 io}, id = 2109
+      HiveTableScan(table=[[default, test_stats]], table:alias=[test_stats]): rowcount = 15.0, cumulative cost = {0}, id = 2063
+
+PREHOOK: query: SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days)
+PREHOOK: type: QUERY
+PREHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@test_stats
+#### A masked pattern was here ####
+12
 PREHOOK: query: DROP TABLE test_stats
 PREHOOK: type: DROPTABLE
 PREHOOK: Input: default@test_stats

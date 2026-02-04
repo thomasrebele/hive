@@ -54,4 +54,9 @@ SELECT COUNT(*) FROM test_stats WHERE f >= "2020-11-7" AND g >= "2020-11-7";
 EXPLAIN SELECT COUNT(*) FROM test_stats WHERE f BETWEEN "2020-11-01" AND "2020-11-06" AND g >= "2020-11-01";
 SELECT COUNT(*) FROM test_stats WHERE f BETWEEN "2020-11-01" AND "2020-11-06" AND g >= "2020-11-01";
 
+EXPLAIN cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06";
+SELECT COUNT(*) FROM test_stats WHERE g BETWEEN "2020-11-01" AND "2020-11-06";
+explain cbo joincost SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days) ;
+SELECT COUNT(*) FROM test_stats WHERE g BETWEEN cast("2020-11-01" as date) AND (cast("2020-11-01" as date) + 5 days) ;
+
 DROP TABLE test_stats;
