@@ -1017,8 +1017,7 @@ public class StatsRulesProcFactory {
       return maxNoNulls;
     }
 
-    private long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx,
-        ExprNodeGenericFuncDesc genFunc,
+    private long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx, ExprNodeGenericFuncDesc genFunc,
         long currNumRows) {
       GenericUDF udf = genFunc.getGenericUDF();
 
@@ -1072,9 +1071,9 @@ public class StatsRulesProcFactory {
 
       if (cs != null && cs.getRange() != null &&
           cs.getRange().maxValue != null && cs.getRange().minValue != null) {
-
         Long result =
-            evaluateComparatorWithRange(cs, currNumRows, colTypeLowerCase, boundValue, upperBound, closedBound, aspCtx);
+            evaluateComparatorWithRangeStats(cs, currNumRows, colTypeLowerCase, boundValue, upperBound, closedBound,
+                aspCtx);
         if (result != null)
           return result;
       }
@@ -1083,6 +1082,13 @@ public class StatsRulesProcFactory {
     }
 
     private static class EvaluateComparatorWithRange<T extends Number & Comparable<T>> {
+      /**
+       * Adjusts the number of rows assuming a uniform distribution.
+       * <p>
+       * If the values are uniformly distributed between min and max, and the predicate
+       * only accepts values between lower and upper, do a simple linear scaling.
+       * </p>
+       */
       interface RescaleRows<T> {
         double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
       }
@@ -1134,15 +1140,15 @@ public class StatsRulesProcFactory {
       }
     }
 
-    private Long evaluateComparatorWithRange(ColStatistics cs, long currNumRows, String typeName, String boundValue,
+    private Long evaluateComparatorWithRangeStats(ColStatistics cs, long currNumRows, String type, String boundValue,
         boolean upperBound, boolean closedBound, AnnotateStatsProcCtx aspCtx) {
       try {
         EvaluateComparatorWithRange<?> helper;
-        if (typeName.startsWith(serdeConstants.DECIMAL_TYPE_NAME)) {
-          typeName = serdeConstants.DECIMAL_TYPE_NAME;
+        if (type.startsWith(serdeConstants.DECIMAL_TYPE_NAME)) {
+          type = serdeConstants.DECIMAL_TYPE_NAME;
         }
 
-        switch (typeName) {
+        switch (type) {
         case serdeConstants.TINYINT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::byteValue, Byte::parseByte,
               (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
@@ -1153,12 +1159,12 @@ public class StatsRulesProcFactory {
           break;
         case serdeConstants.INT_TYPE_NAME, serdeConstants.DATE_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
           Function<String, Long> parse;
-          if (typeName.equals(serdeConstants.DATE_TYPE_NAME)) {
+          if (type.equals(serdeConstants.DATE_TYPE_NAME)) {
             parse = str -> {
               DateWritable writableVal = new DateWritable(java.sql.Date.valueOf(str));
               return Long.valueOf(writableVal.getDays());
             };
-          } else if (typeName.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
+          } else if (type.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
             parse = str -> {
               TimestampWritableV2 timestampWritable = new TimestampWritableV2(Timestamp.valueOf(boundValue));
               return timestampWritable.getTimestamp().toEpochSecond();
@@ -1167,9 +1173,7 @@ public class StatsRulesProcFactory {
             parse = Long::parseLong;
           }
           helper = new EvaluateComparatorWithRange<>(Number::longValue, parse,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows)
-
-          );
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
           break;
 
         case serdeConstants.DECIMAL_TYPE_NAME, serdeConstants.BIGINT_TYPE_NAME:
@@ -1179,15 +1183,11 @@ public class StatsRulesProcFactory {
           break;
         case serdeConstants.FLOAT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::floatValue, Float::parseFloat,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows)
-
-          );
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
           break;
         case serdeConstants.DOUBLE_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::doubleValue, Double::parseDouble,
-              (lower, upper, min, max, numRows) -> (long) (((upper - lower) / (max - min)) * numRows)
-
-          );
+              (lower, upper, min, max, numRows) -> (long) (((upper - lower) / (max - min)) * numRows));
           break;
         default:
           return null;
