@@ -1106,20 +1106,12 @@ public class StatsRulesProcFactory {
 
         switch (typeName) {
         case serdeConstants.TINYINT_TYPE_NAME:
-          helper = new EvaluateComparatorHelper<>(Number::byteValue, Byte::parseByte) {
-            @Override
-            public double rescaleNumberOfRows(Byte lower, Byte upper, Byte min, Byte max, long numRows) {
-              return (long) (((double) (upper - lower) / (max - min)) * numRows);
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(Number::byteValue, Byte::parseByte,
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
           break;
         case serdeConstants.SMALLINT_TYPE_NAME:
-          helper = new EvaluateComparatorHelper<>(Number::shortValue, Short::parseShort) {
-            @Override
-            double rescaleNumberOfRows(Short lower, Short upper, Short min, Short max, long numRows) {
-              return (long) (((double) (upper - lower) / (max - min)) * numRows);
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(Number::shortValue, Short::parseShort,
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
           break;
         case serdeConstants.INT_TYPE_NAME, serdeConstants.DATE_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
           Function<String, Long> parse;
@@ -1136,39 +1128,28 @@ public class StatsRulesProcFactory {
           } else {
             parse = Long::parseLong;
           }
-          helper = new EvaluateComparatorHelper<>(Number::longValue, parse) {
-            @Override
-            double rescaleNumberOfRows(Long lower, Long upper, Long min, Long max, long numRows) {
-              return (long) (((double) (upper - lower) / (max - min)) * numRows);
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(Number::longValue, parse,
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows)
+
+          );
           break;
 
         case serdeConstants.DECIMAL_TYPE_NAME, serdeConstants.BIGINT_TYPE_NAME:
-          helper = new EvaluateComparatorHelper<>(num -> new BigDecimal(num.toString()), BigDecimal::new) {
-            @Override
-            double rescaleNumberOfRows(BigDecimal lower, BigDecimal upper, BigDecimal min, BigDecimal max,
-                long numRows) {
-              return (long) ((upper.subtract(lower)).divide(max.subtract(min), 10, RoundingMode.UP)).multiply(
-                  BigDecimal.valueOf(currNumRows)).doubleValue();
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(num -> new BigDecimal(num.toString()), BigDecimal::new,
+              (lower, upper, min, max, numRows) -> (long) ((upper.subtract(lower)).divide(max.subtract(min), 10,
+                  RoundingMode.UP)).multiply(BigDecimal.valueOf(currNumRows)).doubleValue());
           break;
         case serdeConstants.FLOAT_TYPE_NAME:
-          helper = new EvaluateComparatorHelper<>(Number::floatValue, Float::parseFloat) {
-            @Override
-            public double rescaleNumberOfRows(Float lower, Float upper, Float min, Float max, long numRows) {
-              return (long) (((double) (upper - lower) / (max - min)) * numRows);
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(Number::floatValue, Float::parseFloat,
+              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows)
+
+          );
           break;
         case serdeConstants.DOUBLE_TYPE_NAME:
-          helper = new EvaluateComparatorHelper<>(Number::doubleValue, Double::parseDouble) {
-            @Override
-            public double rescaleNumberOfRows(Double lower, Double upper, Double min, Double max, long numRows) {
-              return (long) (((upper - lower) / (max - min)) * numRows);
-            }
-          };
+          helper = new EvaluateComparatorHelper<>(Number::doubleValue, Double::parseDouble,
+              (lower, upper, min, max, numRows) -> (long) (((upper - lower) / (max - min)) * numRows)
+
+          );
           break;
         default:
           return currNumRows / 3;
@@ -1571,17 +1552,22 @@ public class StatsRulesProcFactory {
       return numRows / 2;
     }
 
-    private abstract static class EvaluateComparatorHelper<T extends Number & Comparable<T>> {
+    private static class EvaluateComparatorHelper<T extends Number & Comparable<T>> {
+
+      interface RescaleRows<T> {
+        abstract double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
+      }
 
       private final Function<Number, T> convert;
       private final Function<String, T> parse;
+      private final RescaleRows rescaleRows;
 
-      EvaluateComparatorHelper(Function<Number, T> convert, Function<String, T> parse) {
+      EvaluateComparatorHelper(Function<Number, T> convert, Function<String, T> parse, RescaleRows<T> rescaleRows) {
         this.convert = convert;
         this.parse = parse;
+        this.rescaleRows = rescaleRows;
       }
 
-      abstract double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
 
       long evaluate(Range range, String boundValue, boolean upperBound, boolean closedBound, long currNumRows,
           AnnotateStatsProcCtx aspCtx) {
@@ -1602,7 +1588,7 @@ public class StatsRulesProcFactory {
           if (aspCtx.isUniformWithinRange()) {
             // Assuming uniform distribution, we can use the range to calculate
             // new estimate for the number of rows
-            return Math.round(rescaleNumberOfRows(minValue, value, minValue, maxValue, currNumRows));
+            return Math.round(rescaleRows.rescaleNumberOfRows(minValue, value, minValue, maxValue, currNumRows));
           }
         } else {
           if (minComparison > 0 || minComparison == 0 && closedBound) {
@@ -1614,7 +1600,7 @@ public class StatsRulesProcFactory {
           if (aspCtx.isUniformWithinRange()) {
             // Assuming uniform distribution, we can use the range to calculate
             // new estimate for the number of rows
-            return Math.round(rescaleNumberOfRows(value, maxValue, minValue, maxValue, currNumRows));
+            return Math.round(rescaleRows.rescaleNumberOfRows(value, maxValue, minValue, maxValue, currNumRows));
           }
         }
         return -1;
