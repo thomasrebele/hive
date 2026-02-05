@@ -1361,11 +1361,11 @@ public class StatsRulesProcFactory {
         switch (type) {
         case serdeConstants.TINYINT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::byteValue, Byte::parseByte,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
+              (lower, upper, min, max, numRows) -> ((double) (upper - lower) / (max - min)) * numRows);
           break;
         case serdeConstants.SMALLINT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::shortValue, Short::parseShort,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
+              (lower, upper, min, max, numRows) -> ((double) (upper - lower) / (max - min)) * numRows);
           break;
         case serdeConstants.INT_TYPE_NAME, serdeConstants.DATE_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
           Function<String, Long> parse;
@@ -1383,21 +1383,21 @@ public class StatsRulesProcFactory {
             parse = str -> (long) Integer.parseInt(str);
           }
           helper = new EvaluateComparatorWithRange<>(Number::longValue, parse,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
+              (lower, upper, min, max, numRows) -> ((double) (upper - lower) / (max - min)) * numRows);
           break;
 
         case serdeConstants.DECIMAL_TYPE_NAME, serdeConstants.BIGINT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(num -> new BigDecimal(num.toString()), BigDecimal::new,
-              (lower, upper, min, max, numRows) -> (long) ((upper.subtract(lower)).divide(max.subtract(min), 10,
+              (lower, upper, min, max, numRows) -> ((upper.subtract(lower)).divide(max.subtract(min), 10,
                   RoundingMode.UP)).multiply(BigDecimal.valueOf(currNumRows)).doubleValue());
           break;
         case serdeConstants.FLOAT_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::floatValue, Float::parseFloat,
-              (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
+              (lower, upper, min, max, numRows) -> ((double) (upper - lower) / (max - min)) * numRows);
           break;
         case serdeConstants.DOUBLE_TYPE_NAME:
           helper = new EvaluateComparatorWithRange<>(Number::doubleValue, Double::parseDouble,
-              (lower, upper, min, max, numRows) -> (long) (((upper - lower) / (max - min)) * numRows));
+              (lower, upper, min, max, numRows) -> ((upper - lower) / (max - min)) * numRows);
           break;
         default:
           return null;
