@@ -1170,7 +1170,7 @@ public class StatsRulesProcFactory {
               return timestampWritable.getTimestamp().toEpochSecond();
             };
           } else {
-            parse = Long::parseLong;
+            parse = str -> (long) Integer.parseInt(str);
           }
           helper = new EvaluateComparatorWithRange<>(Number::longValue, parse,
               (lower, upper, min, max, numRows) -> (long) (((double) (upper - lower) / (max - min)) * numRows));
