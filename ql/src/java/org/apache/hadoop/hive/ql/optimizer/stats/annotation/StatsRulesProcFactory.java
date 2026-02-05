@@ -1017,7 +1017,7 @@ public class StatsRulesProcFactory {
       return maxNoNulls;
     }
 
-    private <T extends Number & Comparable<T>> long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx,
+    private long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx,
         ExprNodeGenericFuncDesc genFunc,
         long currNumRows) {
       GenericUDF udf = genFunc.getGenericUDF();
@@ -1080,6 +1080,58 @@ public class StatsRulesProcFactory {
       }
       // default
       return currNumRows / 3;
+    }
+
+    private static class EvaluateComparatorWithRange<T extends Number & Comparable<T>> {
+      interface RescaleRows<T> {
+        double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
+      }
+
+      private final Function<Number, T> convert;
+      private final Function<String, T> parse;
+      private final RescaleRows<T> rescaleRows;
+
+      EvaluateComparatorWithRange(Function<Number, T> convert, Function<String, T> parse, RescaleRows<T> rescaleRows) {
+        this.convert = convert;
+        this.parse = parse;
+        this.rescaleRows = rescaleRows;
+      }
+
+      Long evaluate(Range range, String boundValue, boolean upperBound, boolean closedBound, long currNumRows,
+          AnnotateStatsProcCtx aspCtx) {
+        T maxValue = convert.apply(range.maxValue);
+        T minValue = convert.apply(range.minValue);
+        T value = parse.apply(boundValue);
+
+        int maxComparison = maxValue.compareTo(value);
+        int minComparison = minValue.compareTo(value);
+        if (upperBound) {
+          if (maxComparison < 0 || maxComparison == 0 && closedBound) {
+            return currNumRows;
+          }
+          if (minComparison > 0 || minComparison == 0 && !closedBound) {
+            return 0L;
+          }
+          if (aspCtx.isUniformWithinRange()) {
+            // Assuming uniform distribution, we can use the range to calculate
+            // new estimate for the number of rows
+            return Math.round(rescaleRows.rescaleNumberOfRows(minValue, value, minValue, maxValue, currNumRows));
+          }
+        } else {
+          if (minComparison > 0 || minComparison == 0 && closedBound) {
+            return currNumRows;
+          }
+          if (maxComparison < 0 || maxComparison == 0 && !closedBound) {
+            return 0L;
+          }
+          if (aspCtx.isUniformWithinRange()) {
+            // Assuming uniform distribution, we can use the range to calculate
+            // new estimate for the number of rows
+            return Math.round(rescaleRows.rescaleNumberOfRows(value, maxValue, minValue, maxValue, currNumRows));
+          }
+        }
+        return null;
+      }
     }
 
     private Long evaluateComparatorWithRange(ColStatistics cs, long currNumRows, String typeName, String boundValue,
@@ -1327,57 +1379,6 @@ public class StatsRulesProcFactory {
       return numRows / 2;
     }
 
-    private static class EvaluateComparatorWithRange<T extends Number & Comparable<T>> {
-      interface RescaleRows<T> {
-        double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
-      }
-
-      private final Function<Number, T> convert;
-      private final Function<String, T> parse;
-      private final RescaleRows<T> rescaleRows;
-
-      EvaluateComparatorWithRange(Function<Number, T> convert, Function<String, T> parse, RescaleRows<T> rescaleRows) {
-        this.convert = convert;
-        this.parse = parse;
-        this.rescaleRows = rescaleRows;
-      }
-
-      Long evaluate(Range range, String boundValue, boolean upperBound, boolean closedBound, long currNumRows,
-          AnnotateStatsProcCtx aspCtx) {
-        T maxValue = convert.apply(range.maxValue);
-        T minValue = convert.apply(range.minValue);
-        T value = parse.apply(boundValue);
-
-        int maxComparison = maxValue.compareTo(value);
-        int minComparison = minValue.compareTo(value);
-        if (upperBound) {
-          if (maxComparison < 0 || maxComparison == 0 && closedBound) {
-            return currNumRows;
-          }
-          if (minComparison > 0 || minComparison == 0 && !closedBound) {
-            return 0L;
-          }
-          if (aspCtx.isUniformWithinRange()) {
-            // Assuming uniform distribution, we can use the range to calculate
-            // new estimate for the number of rows
-            return Math.round(rescaleRows.rescaleNumberOfRows(minValue, value, minValue, maxValue, currNumRows));
-          }
-        } else {
-          if (minComparison > 0 || minComparison == 0 && closedBound) {
-            return currNumRows;
-          }
-          if (maxComparison < 0 || maxComparison == 0 && !closedBound) {
-            return 0L;
-          }
-          if (aspCtx.isUniformWithinRange()) {
-            // Assuming uniform distribution, we can use the range to calculate
-            // new estimate for the number of rows
-            return Math.round(rescaleRows.rescaleNumberOfRows(value, maxValue, minValue, maxValue, currNumRows));
-          }
-        }
-        return null;
-      }
-    }
   }
 
   /**
