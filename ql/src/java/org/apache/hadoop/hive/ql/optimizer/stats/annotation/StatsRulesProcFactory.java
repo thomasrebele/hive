@@ -18,9 +18,14 @@
 
 package org.apache.hadoop.hive.ql.optimizer.stats.annotation;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +38,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -132,6 +139,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,6 +153,8 @@ import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivit
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.lessThanSelectivity;
 
 public class StatsRulesProcFactory {
+
+  private static AtomicInteger CNT = new AtomicInteger();
 
   private static final Logger LOG = LoggerFactory.getLogger(StatsRulesProcFactory.class.getName());
 
@@ -1016,7 +1026,8 @@ public class StatsRulesProcFactory {
       return maxNoNulls;
     }
 
-    private long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx, ExprNodeGenericFuncDesc genFunc,
+    private <T extends Number & Comparable<T>> long evaluateComparator(Statistics stats, AnnotateStatsProcCtx aspCtx,
+        ExprNodeGenericFuncDesc genFunc,
         long currNumRows) {
       GenericUDF udf = genFunc.getGenericUDF();
 
@@ -1070,208 +1081,309 @@ public class StatsRulesProcFactory {
 
       if (cs != null && cs.getRange() != null &&
           cs.getRange().maxValue != null && cs.getRange().minValue != null) {
-        try {
-          if (colTypeLowerCase.equals(serdeConstants.TINYINT_TYPE_NAME)) {
-            byte value = Byte.parseByte(boundValue);
-            byte maxValue = cs.getRange().maxValue.byteValue();
-            byte minValue = cs.getRange().minValue.byteValue();
-            if (upperBound) {
-              if (maxValue < value || maxValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (minValue > value || minValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
-              }
-            } else {
-              if (minValue > value || minValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (maxValue < value || maxValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
-              }
-            }
-          } else if (colTypeLowerCase.equals(serdeConstants.SMALLINT_TYPE_NAME)) {
-            short value = Short.parseShort(boundValue);
-            short maxValue = cs.getRange().maxValue.shortValue();
-            short minValue = cs.getRange().minValue.shortValue();
-            if (upperBound) {
-              if (maxValue < value || maxValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (minValue > value || minValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
-              }
-            } else {
-              if (minValue > value || minValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (maxValue < value || maxValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
-              }
-            }
-          } else if (colTypeLowerCase.equals(serdeConstants.INT_TYPE_NAME) ||
-              colTypeLowerCase.equals(serdeConstants.DATE_TYPE_NAME) ||
-              colTypeLowerCase.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
-            long value;
-            if (colTypeLowerCase.equals(serdeConstants.DATE_TYPE_NAME)) {
-              DateWritable writableVal = new DateWritable(java.sql.Date.valueOf(boundValue));
-              value = writableVal.getDays();
-            } else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
-              TimestampWritableV2 timestampWritable = new TimestampWritableV2(Timestamp.valueOf(boundValue));
-              value = timestampWritable.getTimestamp().toEpochSecond();
-            } else {
-              value = Integer.parseInt(boundValue);
-            }
-            long maxValue = cs.getRange().maxValue.longValue();
-            long minValue = cs.getRange().minValue.longValue();
-            if (upperBound) {
-              if (maxValue < value || maxValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (minValue > value || minValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
-              }
-            } else {
-              if (minValue > value || minValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (maxValue < value || maxValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
-              }
-            }
-          } else if (colTypeLowerCase.startsWith(serdeConstants.DECIMAL_TYPE_NAME) ||
-              colTypeLowerCase.equals(serdeConstants.BIGINT_TYPE_NAME)) {
-            BigDecimal value = new BigDecimal(boundValue);
-            BigDecimal maxValue = new BigDecimal(cs.getRange().maxValue.toString());
-            BigDecimal minValue = new BigDecimal(cs.getRange().minValue.toString());
-            int minComparison = value.compareTo(minValue);
-            int maxComparison = value.compareTo(maxValue);
-            if (upperBound) {
-              if (maxComparison > 0 || maxComparison == 0 && closedBound) {
-                return currNumRows;
-              }
-              if (minComparison < 0 || minComparison == 0 && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(
-                    ((value.subtract(minValue)).divide(maxValue.subtract(minValue), 10, RoundingMode.UP))
-                        .multiply(BigDecimal.valueOf(currNumRows))
-                        .doubleValue());
-              }
-            } else {
-              if (minComparison < 0 || minComparison == 0 && closedBound) {
-                return currNumRows;
-              }
-              if (maxComparison > 0 || maxComparison == 0 && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(
-                    ((maxValue.subtract(value)).divide(maxValue.subtract(minValue), 10, RoundingMode.UP))
-                        .multiply(BigDecimal.valueOf(currNumRows))
-                        .doubleValue());
-              }
-            }
-          } else if (colTypeLowerCase.equals(serdeConstants.FLOAT_TYPE_NAME)) {
-            float value = Float.parseFloat(boundValue);
-            float maxValue = cs.getRange().maxValue.floatValue();
-            float minValue = cs.getRange().minValue.floatValue();
-            if (upperBound) {
-              if (maxValue < value || maxValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (minValue > value || minValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
-              }
-            } else {
-              if (minValue > value || minValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (maxValue < value || maxValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
-              }
-            }
-          } else if (colTypeLowerCase.equals(serdeConstants.DOUBLE_TYPE_NAME)) {
-            double value = Double.parseDouble(boundValue);
-            double maxValue = cs.getRange().maxValue.doubleValue();
-            double minValue = cs.getRange().minValue.doubleValue();
-            if (upperBound) {
-              if (maxValue < value || maxValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (minValue > value || minValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((value - minValue) / (maxValue - minValue)) * currNumRows);
-              }
-            } else {
-              if (minValue > value || minValue == value && closedBound) {
-                return currNumRows;
-              }
-              if (maxValue < value || maxValue == value && !closedBound) {
-                return 0;
-              }
-              if (aspCtx.isUniformWithinRange()) {
-                // Assuming uniform distribution, we can use the range to calculate
-                // new estimate for the number of rows
-                return Math.round(((maxValue - value) / (maxValue - minValue)) * currNumRows);
-              }
-            }
-          }
-        } catch (NumberFormatException nfe) {
-          return currNumRows / 3;
+
+        Long currNumRows1 = refactored(aspCtx, currNumRows, colTypeLowerCase, boundValue, cs, upperBound, closedBound);
+        Long currNumRows2 = original(aspCtx, currNumRows, colTypeLowerCase, boundValue, cs, upperBound, closedBound);
+
+        if (!Objects.equals(currNumRows1, currNumRows2)) {
+          System.out.println("here");
         }
+
+        if (currNumRows1 != null)
+          return currNumRows1;
       }
       // default
       return currNumRows / 3;
+    }
+
+    private @Nullable Long refactored(AnnotateStatsProcCtx aspCtx, long currNumRows, String typeName, String boundValue,
+        ColStatistics cs, boolean upperBound, boolean closedBound) {
+      try {
+        EvaluateComparatorHelper<?> helper;
+        if (typeName.startsWith(serdeConstants.DECIMAL_TYPE_NAME)) {
+          typeName = serdeConstants.DECIMAL_TYPE_NAME;
+        }
+
+        switch (typeName) {
+        case serdeConstants.TINYINT_TYPE_NAME:
+          helper = new EvaluateComparatorHelper<>(Number::byteValue, Byte::parseByte) {
+            @Override
+            public double rescaleNumberOfRows(Byte lower, Byte upper, Byte min, Byte max, long numRows) {
+              return (long) (((double) (upper - lower) / (max - min)) * numRows);
+            }
+          };
+          break;
+        case serdeConstants.SMALLINT_TYPE_NAME:
+          helper = new EvaluateComparatorHelper<>(Number::shortValue, Short::parseShort) {
+            @Override
+            double rescaleNumberOfRows(Short lower, Short upper, Short min, Short max, long numRows) {
+              return (long) (((double) (upper - lower) / (max - min)) * numRows);
+            }
+          };
+          break;
+        case serdeConstants.INT_TYPE_NAME, serdeConstants.DATE_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
+          Function<String, Long> parse;
+          if (typeName.equals(serdeConstants.DATE_TYPE_NAME)) {
+            parse = str -> {
+              DateWritable writableVal = new DateWritable(java.sql.Date.valueOf(str));
+              return Long.valueOf(writableVal.getDays());
+            };
+          } else if (typeName.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
+            parse = str -> {
+              TimestampWritableV2 timestampWritable = new TimestampWritableV2(Timestamp.valueOf(boundValue));
+              return timestampWritable.getTimestamp().toEpochSecond();
+            };
+          } else {
+            parse = Long::parseLong;
+          }
+          helper = new EvaluateComparatorHelper<>(Number::longValue, parse) {
+            @Override
+            double rescaleNumberOfRows(Long lower, Long upper, Long min, Long max, long numRows) {
+              return (long) (((double) (upper - lower) / (max - min)) * numRows);
+            }
+          };
+          break;
+
+        case serdeConstants.DECIMAL_TYPE_NAME, serdeConstants.BIGINT_TYPE_NAME:
+          helper = new EvaluateComparatorHelper<>(num -> new BigDecimal(num.toString()), BigDecimal::new) {
+            @Override
+            double rescaleNumberOfRows(BigDecimal lower, BigDecimal upper, BigDecimal min, BigDecimal max,
+                long numRows) {
+              return (long) ((upper.subtract(lower)).divide(max.subtract(min), 10, RoundingMode.UP)).multiply(
+                  BigDecimal.valueOf(currNumRows)).doubleValue();
+            }
+          };
+          break;
+        case serdeConstants.FLOAT_TYPE_NAME:
+          helper = new EvaluateComparatorHelper<>(Number::floatValue, Float::parseFloat) {
+            @Override
+            public double rescaleNumberOfRows(Float lower, Float upper, Float min, Float max, long numRows) {
+              return (long) (((double) (upper - lower) / (max - min)) * numRows);
+            }
+          };
+          break;
+        case serdeConstants.DOUBLE_TYPE_NAME:
+          helper = new EvaluateComparatorHelper<>(Number::doubleValue, Double::parseDouble) {
+            @Override
+            public double rescaleNumberOfRows(Double lower, Double upper, Double min, Double max, long numRows) {
+              return (long) (((upper - lower) / (max - min)) * numRows);
+            }
+          };
+          break;
+        default:
+          return currNumRows / 3;
+        }
+
+        long helperResult = helper.evaluate(cs.getRange(), boundValue, upperBound, closedBound, currNumRows, aspCtx);
+        if (helperResult >= 0) {
+          return helperResult;
+        }
+
+      } catch (NumberFormatException nfe) {
+        return currNumRows / 3;
+      }
+      return null;
+    }
+
+    private static @Nullable Long original(AnnotateStatsProcCtx aspCtx, long currNumRows, String colTypeLowerCase,
+        String boundValue, ColStatistics cs, boolean upperBound, boolean closedBound) {
+      try {
+        if (colTypeLowerCase.equals(serdeConstants.TINYINT_TYPE_NAME)) {
+          byte value = Byte.parseByte(boundValue);
+          byte maxValue = cs.getRange().maxValue.byteValue();
+          byte minValue = cs.getRange().minValue.byteValue();
+          if (upperBound) {
+            if (maxValue < value || maxValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (minValue > value || minValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
+            }
+          } else {
+            if (minValue > value || minValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (maxValue < value || maxValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
+            }
+          }
+        } else if (colTypeLowerCase.equals(serdeConstants.SMALLINT_TYPE_NAME)) {
+          short value = Short.parseShort(boundValue);
+          short maxValue = cs.getRange().maxValue.shortValue();
+          short minValue = cs.getRange().minValue.shortValue();
+          if (upperBound) {
+            if (maxValue < value || maxValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (minValue > value || minValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
+            }
+          } else {
+            if (minValue > value || minValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (maxValue < value || maxValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
+            }
+          }
+        } else if (colTypeLowerCase.equals(serdeConstants.INT_TYPE_NAME) || colTypeLowerCase.equals(
+            serdeConstants.DATE_TYPE_NAME) || colTypeLowerCase.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
+          long value;
+          if (colTypeLowerCase.equals(serdeConstants.DATE_TYPE_NAME)) {
+            DateWritable writableVal = new DateWritable(java.sql.Date.valueOf(boundValue));
+            value = writableVal.getDays();
+          } else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
+            TimestampWritableV2 timestampWritable = new TimestampWritableV2(Timestamp.valueOf(boundValue));
+            value = timestampWritable.getTimestamp().toEpochSecond();
+          } else {
+            value = Integer.parseInt(boundValue);
+          }
+          long maxValue = cs.getRange().maxValue.longValue();
+          long minValue = cs.getRange().minValue.longValue();
+          if (upperBound) {
+            if (maxValue < value || maxValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (minValue > value || minValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
+            }
+          } else {
+            if (minValue > value || minValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (maxValue < value || maxValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
+            }
+          }
+        } else if (colTypeLowerCase.startsWith(serdeConstants.DECIMAL_TYPE_NAME) || colTypeLowerCase.equals(
+            serdeConstants.BIGINT_TYPE_NAME)) {
+          BigDecimal value = new BigDecimal(boundValue);
+          BigDecimal maxValue = new BigDecimal(cs.getRange().maxValue.toString());
+          BigDecimal minValue = new BigDecimal(cs.getRange().minValue.toString());
+          int minComparison = value.compareTo(minValue);
+          int maxComparison = value.compareTo(maxValue);
+          if (upperBound) {
+            if (maxComparison > 0 || maxComparison == 0 && closedBound) {
+              return currNumRows;
+            }
+            if (minComparison < 0 || minComparison == 0 && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(
+                  ((value.subtract(minValue)).divide(maxValue.subtract(minValue), 10, RoundingMode.UP)).multiply(
+                      BigDecimal.valueOf(currNumRows)).doubleValue());
+            }
+          } else {
+            if (minComparison < 0 || minComparison == 0 && closedBound) {
+              return currNumRows;
+            }
+            if (maxComparison > 0 || maxComparison == 0 && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(
+                  ((maxValue.subtract(value)).divide(maxValue.subtract(minValue), 10, RoundingMode.UP)).multiply(
+                      BigDecimal.valueOf(currNumRows)).doubleValue());
+            }
+          }
+        } else if (colTypeLowerCase.equals(serdeConstants.FLOAT_TYPE_NAME)) {
+          float value = Float.parseFloat(boundValue);
+          float maxValue = cs.getRange().maxValue.floatValue();
+          float minValue = cs.getRange().minValue.floatValue();
+          if (upperBound) {
+            if (maxValue < value || maxValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (minValue > value || minValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (value - minValue) / (maxValue - minValue)) * currNumRows);
+            }
+          } else {
+            if (minValue > value || minValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (maxValue < value || maxValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((double) (maxValue - value) / (maxValue - minValue)) * currNumRows);
+            }
+          }
+        } else if (colTypeLowerCase.equals(serdeConstants.DOUBLE_TYPE_NAME)) {
+          double value = Double.parseDouble(boundValue);
+          double maxValue = cs.getRange().maxValue.doubleValue();
+          double minValue = cs.getRange().minValue.doubleValue();
+          if (upperBound) {
+            if (maxValue < value || maxValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (minValue > value || minValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((value - minValue) / (maxValue - minValue)) * currNumRows);
+            }
+          } else {
+            if (minValue > value || minValue == value && closedBound) {
+              return currNumRows;
+            }
+            if (maxValue < value || maxValue == value && !closedBound) {
+              return 0L;
+            }
+            if (aspCtx.isUniformWithinRange()) {
+              // Assuming uniform distribution, we can use the range to calculate
+              // new estimate for the number of rows
+              return Math.round(((maxValue - value) / (maxValue - minValue)) * currNumRows);
+            }
+          }
+        }
+      } catch (NumberFormatException nfe) {
+        return currNumRows / 3;
+      }
+      return null;
     }
 
     private long evaluateComparatorWithHistogram(ColStatistics cs, long currNumRows, String colTypeLowerCase,
@@ -1420,7 +1532,17 @@ public class StatsRulesProcFactory {
             || udf instanceof GenericUDFOPEqualOrLessThan
             || udf instanceof GenericUDFOPGreaterThan
             || udf instanceof GenericUDFOPLessThan) {
-          return evaluateComparator(stats, aspCtx, genFunc, numRows);
+
+          long l = evaluateComparator(stats, aspCtx, genFunc, numRows);
+          String str = "\n" + CNT.incrementAndGet() + ":" + l;
+          try {
+            Files.write(Path.of("/tmp/srpf-orig.txt"), str.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+
+          return l;
         } else if (udf instanceof GenericUDFOPNotNull) {
           return evaluateNotNullExpr(stats, aspCtx, genFunc, numRows);
         } else if (udf instanceof GenericUDFOPNull) {
@@ -1449,6 +1571,55 @@ public class StatsRulesProcFactory {
       return numRows / 2;
     }
 
+    private abstract static class EvaluateComparatorHelper<T extends Number & Comparable<T>> {
+
+      private final Function<Number, T> convert;
+      private final Function<String, T> parse;
+
+      EvaluateComparatorHelper(Function<Number, T> convert, Function<String, T> parse) {
+        this.convert = convert;
+        this.parse = parse;
+      }
+
+      abstract double rescaleNumberOfRows(T lower, T upper, T min, T max, long numRows);
+
+      long evaluate(Range range, String boundValue, boolean upperBound, boolean closedBound, long currNumRows,
+          AnnotateStatsProcCtx aspCtx) {
+
+        T maxValue = convert.apply(range.maxValue);
+        T minValue = convert.apply(range.minValue);
+        T value = parse.apply(boundValue);
+
+        int maxComparison = maxValue.compareTo(value);
+        int minComparison = minValue.compareTo(value);
+        if (upperBound) {
+          if (maxComparison < 0 || maxComparison == 0 && closedBound) {
+            return currNumRows;
+          }
+          if (minComparison > 0 || minComparison == 0 && !closedBound) {
+            return 0;
+          }
+          if (aspCtx.isUniformWithinRange()) {
+            // Assuming uniform distribution, we can use the range to calculate
+            // new estimate for the number of rows
+            return Math.round(rescaleNumberOfRows(minValue, value, minValue, maxValue, currNumRows));
+          }
+        } else {
+          if (minComparison > 0 || minComparison == 0 && closedBound) {
+            return currNumRows;
+          }
+          if (maxComparison < 0 || maxComparison == 0 && !closedBound) {
+            return 0;
+          }
+          if (aspCtx.isUniformWithinRange()) {
+            // Assuming uniform distribution, we can use the range to calculate
+            // new estimate for the number of rows
+            return Math.round(rescaleNumberOfRows(value, maxValue, minValue, maxValue, currNumRows));
+          }
+        }
+        return -1;
+      }
+    }
   }
 
   /**
