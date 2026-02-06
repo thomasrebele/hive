@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -199,13 +200,24 @@ public final class ShowUtils {
           }
         } else if (statsData.isSetLongStats()) {
           LongColumnStatsData longStats = statsData.getLongStats();
-          String lowVal = longStats.isSetLowValue() ? "" + longStats.getLowValue() : "";
-          String highVal = longStats.isSetHighValue() ? "" + longStats.getHighValue() : "";
-          values.addAll(Lists.newArrayList(lowVal, highVal,
+          String lowValue, highValue;
+          if (column.getType().equalsIgnoreCase("timestamp")) {
+            lowValue = convertTimestampToString(longStats.getLowValue());
+            highValue = convertTimestampToString(longStats.getHighValue());
+          }
+          else {
+            lowValue = "" + longStats.getLowValue();
+            highValue = "" + longStats.getHighValue();
+          }
+          values.addAll(Lists.newArrayList(lowValue, highValue,
               "" + longStats.getNumNulls(), "" + longStats.getNumDVs(), "", "", "", "",
               convertToString(longStats.getBitVectors())));
           if (histogramEnabled) {
-            values.add(convertHistogram(statsData.getLongStats().getHistogram(), statsData.getSetField()));
+            if (column.getType().equalsIgnoreCase("timestamp")) {
+              values.add(convertTimestampHistogram(statsData.getLongStats().getHistogram(), statsData.getSetField()));
+            } else {
+              values.add(convertHistogram(statsData.getLongStats().getHistogram(), statsData.getSetField()));
+            }
           }
         } else if (statsData.isSetDateStats()) {
           DateColumnStatsData dateStats = statsData.getDateStats();
@@ -249,6 +261,15 @@ public final class ShowUtils {
     return writableValue.toString();
   }
 
+  public static String convertTimestampToString(Long epochSecond) {
+    if (epochSecond == null) {
+      return "";
+    }
+
+    TimestampWritableV2 writableValue = new TimestampWritableV2(Timestamp.ofEpochSecond(epochSecond));
+    return writableValue.toString();
+  }
+
   // converts the histogram from its serialization to a string representing its quantiles
   private static String convertHistogram(byte[] buffer, ColumnStatisticsData._Fields field) {
     if (buffer == null || buffer.length == 0) {
@@ -279,6 +300,28 @@ public final class ShowUtils {
         break;
       default:
         return "";
+    }
+
+    return kll.isEmpty() ? "" : "Q1: " + converter.apply(quantiles[0]) + ", Q2: "
+        + converter.apply(quantiles[1]) + ", Q3: " + converter.apply(quantiles[2]);
+  }
+
+  // converts the histogram from its serialization to a string representing its quantiles
+  private static String convertTimestampHistogram(byte[] buffer, ColumnStatisticsData._Fields field) {
+    if (buffer == null || buffer.length == 0) {
+      return "";
+    }
+    final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(buffer));
+    // to keep the visualization compact, we print only the quartiles (Q1, Q2 and Q3),
+    // as min and max are displayed as separate statistics already
+    final float[] quantiles = kll.getQuantiles(new double[]{ 0.25, 0.5, 0.75 },  QuantileSearchCriteria.EXCLUSIVE);
+
+    Function<Float, Object> converter;
+
+    if (Objects.requireNonNull(field) == ColumnStatisticsData._Fields.LONG_STATS) {
+      converter = f -> convertTimestampToString(f.longValue());
+    } else {
+      return "";
     }
 
     return kll.isEmpty() ? "" : "Q1: " + converter.apply(quantiles[0]) + ", Q2: "

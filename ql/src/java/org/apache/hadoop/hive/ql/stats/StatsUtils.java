@@ -832,14 +832,12 @@ public class StatsUtils {
       cs.setNumNulls(csd.getBinaryStats().getNumNulls());
     } else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMP_TYPE_NAME)) {
       cs.setAvgColLen(JavaDataModel.get().lengthOfTimestamp());
-      cs.setNumNulls(csd.getTimestampStats().getNumNulls());
-      Long lowVal = (csd.getTimestampStats().getLowValue() != null) ? csd.getTimestampStats().getLowValue()
-          .getSecondsSinceEpoch() : null;
-      Long highVal = (csd.getTimestampStats().getHighValue() != null) ? csd.getTimestampStats().getHighValue()
-          .getSecondsSinceEpoch() : null;
+      cs.setNumNulls(csd.getLongStats().getNumNulls());
+      Long lowVal = csd.getLongStats().getLowValue();
+      Long highVal = csd.getLongStats().getHighValue();
       cs.setRange(lowVal, highVal);
-      cs.setHistogram(csd.getTimestampStats().getHistogram());
-    } else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME)) {
+    }
+    else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME)) {
       cs.setAvgColLen(JavaDataModel.get().lengthOfTimestamp());
     } else if (colTypeLowerCase.startsWith(serdeConstants.DECIMAL_TYPE_NAME)) {
       cs.setAvgColLen(JavaDataModel.get().lengthOfDecimal());
@@ -959,7 +957,8 @@ public class StatsUtils {
       cs.setAvgColLen(JavaDataModel.get().lengthOfTimestamp());
       // epoch, seconds since epoch
       cs.setRange(TIMESTAMP_RANGE_LOWER_LIMIT, TIMESTAMP_RANGE_UPPER_LIMIT);
-    } else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME)) {
+    }
+    else if (colTypeLowerCase.equals(serdeConstants.TIMESTAMPLOCALTZ_TYPE_NAME)) {
       cs.setAvgColLen(JavaDataModel.get().lengthOfTimestamp());
     } else if (colTypeLowerCase.startsWith(serdeConstants.DECIMAL_TYPE_NAME)) {
       cs.setAvgColLen(JavaDataModel.get().lengthOfDecimal());

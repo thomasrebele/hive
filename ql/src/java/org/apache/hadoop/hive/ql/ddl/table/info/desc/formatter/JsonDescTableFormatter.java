@@ -112,7 +112,12 @@ public class JsonDescTableFormatter extends DescTableFormatter {
       } else if (statistics.isSetDoubleStats()) {
         addDoubleStats(statistics, result);
       } else if (statistics.isSetLongStats()) {
-        addLongStats(statistics, result);
+        if (column.getType().equalsIgnoreCase("timestamp")) {
+          addTimeStats(statistics, result);
+        }
+        else {
+          addLongStats(statistics, result);
+        }
       } else if (statistics.isSetDateStats()) {
         addDateStats(statistics, result);
       } else if (statistics.isSetTimestampStats()) {
@@ -222,18 +227,18 @@ public class JsonDescTableFormatter extends DescTableFormatter {
     }
   }
 
-  private static void addTimeStampStats(ColumnStatisticsData statistics, Map<String, Object> result) {
-    if (statistics.getTimestampStats().isSetLowValue()) {
-      result.put(COLUMN_MIN, ShowUtils.convertToString(statistics.getTimestampStats().getLowValue()));
+  private static void addTimeStats(ColumnStatisticsData statistics, Map<String, Object> result) {
+    if (statistics.getLongStats().isSetLowValue()) {
+      result.put(COLUMN_MIN, ShowUtils.convertTimestampToString(statistics.getLongStats().getLowValue()));
     }
-    if (statistics.getTimestampStats().isSetHighValue()) {
-      result.put(COLUMN_MAX, ShowUtils.convertToString(statistics.getTimestampStats().getHighValue()));
+    if (statistics.getLongStats().isSetHighValue()) {
+      result.put(COLUMN_MAX, ShowUtils.convertTimestampToString(statistics.getLongStats().getHighValue()));
     }
-    if (statistics.getTimestampStats().isSetNumNulls()) {
-      result.put(COLUMN_NUM_NULLS, statistics.getTimestampStats().getNumNulls());
+    if (statistics.getLongStats().isSetNumNulls()) {
+      result.put(COLUMN_NUM_NULLS, statistics.getLongStats().getNumNulls());
     }
-    if (statistics.getTimestampStats().isSetNumDVs()) {
-      result.put(COLUMN_DISTINCT_COUNT, statistics.getTimestampStats().getNumDVs());
+    if (statistics.getLongStats().isSetNumDVs()) {
+      result.put(COLUMN_DISTINCT_COUNT, statistics.getLongStats().getNumDVs());
     }
   }
 
