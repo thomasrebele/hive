@@ -227,14 +227,6 @@ public final class ShowUtils {
           if (histogramEnabled) {
             values.add(convertHistogram(statsData.getDateStats().getHistogram(), statsData.getSetField()));
           }
-        } else if (statsData.isSetTimestampStats()) {
-          TimestampColumnStatsData timestampStats = statsData.getTimestampStats();
-          values.addAll(Lists.newArrayList(convertToString(timestampStats.getLowValue()),
-              convertToString(timestampStats.getHighValue()), "" + timestampStats.getNumNulls(),
-              "" + timestampStats.getNumDVs(), "", "", "", "", convertToString(timestampStats.getBitVectors())));
-          if (histogramEnabled) {
-            values.add(convertHistogram(statsData.getTimestampStats().getHistogram(), statsData.getSetField()));
-          }
         }
       } else {
         values.addAll(Lists.newArrayList("", "", "", "", "", "", "", "", ""));

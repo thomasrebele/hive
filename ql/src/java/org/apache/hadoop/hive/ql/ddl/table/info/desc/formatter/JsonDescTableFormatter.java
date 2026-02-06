@@ -120,8 +120,6 @@ public class JsonDescTableFormatter extends DescTableFormatter {
         }
       } else if (statistics.isSetDateStats()) {
         addDateStats(statistics, result);
-      } else if (statistics.isSetTimestampStats()) {
-        addTimeStampStats(statistics, result);
       }
     }
 

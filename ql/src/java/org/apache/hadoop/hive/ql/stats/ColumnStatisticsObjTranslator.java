@@ -338,7 +338,8 @@ public class ColumnStatisticsObjTranslator {
       String s = ((StringObjectInspector) poi).getPrimitiveJavaObject(o);
       ColumnStatisticsData statsData = new ColumnStatisticsData();
 
-      if (s.equalsIgnoreCase(ColumnStatsType.LONG.toString())) {
+      if (s.equalsIgnoreCase(ColumnStatsType.LONG.toString()) || s.equalsIgnoreCase(
+          ColumnStatsType.TIMESTAMP.toString())) {
         LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
         statsData.setLongStats(longStats);
         statsObj.setStatsData(statsData);
@@ -387,8 +388,6 @@ public class ColumnStatisticsObjTranslator {
         unpackDecimalStats(oi, o, csf, statsObj);
       } else if (statsObj.getStatsData().isSetDateStats()) {
         unpackDateStats(oi, o, csf, statsObj);
-      } else if (statsObj.getStatsData().isSetTimestampStats()) {
-        unpackTimestampStats(oi, o, csf, statsObj);
       }
     }
   }
