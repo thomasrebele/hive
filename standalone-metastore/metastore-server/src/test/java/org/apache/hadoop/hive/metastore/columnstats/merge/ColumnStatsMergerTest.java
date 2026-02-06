@@ -51,9 +51,7 @@ public class ColumnStatsMergerTest {
       new DateColumnStatsMerger(),
       new DecimalColumnStatsMerger(),
       new DoubleColumnStatsMerger(),
-      new LongColumnStatsMerger(),
-      new StringColumnStatsMerger(),
-      new TimestampColumnStatsMerger()
+      new LongColumnStatsMerger(), new StringColumnStatsMerger()
   );
 
   private final static long[] VALUES_1 = { 1, 2 };

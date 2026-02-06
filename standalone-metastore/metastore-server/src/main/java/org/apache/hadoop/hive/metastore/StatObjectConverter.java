@@ -40,15 +40,12 @@ import org.apache.hadoop.hive.metastore.api.LongColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.StringColumnStatsData;
-import org.apache.hadoop.hive.metastore.api.Timestamp;
-import org.apache.hadoop.hive.metastore.api.TimestampColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DateColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DoubleColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.LongColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataInspector;
-import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.model.MPartition;
 import org.apache.hadoop.hive.metastore.model.MPartitionColumnStatistics;
 import org.apache.hadoop.hive.metastore.model.MTable;
@@ -131,15 +128,6 @@ public class StatObjectConverter {
            dateStats.isSetHistogram() ? dateStats.getHistogram() : null,
            dateStats.isSetLowValue() ? dateStats.getLowValue().getDaysSinceEpoch() : null,
            dateStats.isSetHighValue() ? dateStats.getHighValue().getDaysSinceEpoch() : null);
-     } else if (statsObj.getStatsData().isSetTimestampStats()) {
-       TimestampColumnStatsData timestampStats = statsObj.getStatsData().getTimestampStats();
-       mColStats.setTimestampStats(
-           timestampStats.isSetNumNulls() ? timestampStats.getNumNulls() : null,
-           timestampStats.isSetNumDVs() ? timestampStats.getNumDVs() : null,
-           timestampStats.isSetBitVectors() ? timestampStats.getBitVectors() : null,
-           timestampStats.isSetHistogram() ? timestampStats.getHistogram() : null,
-           timestampStats.isSetLowValue() ? timestampStats.getLowValue().getSecondsSinceEpoch() : null,
-           timestampStats.isSetHighValue() ? timestampStats.getHighValue().getSecondsSinceEpoch() : null);
      }
      mColStats.setEngine(engine);
      return mColStats;
@@ -369,8 +357,8 @@ public class StatObjectConverter {
       binaryStats.setAvgColLen(mStatsObj.getAvgColLen());
       binaryStats.setMaxColLen(mStatsObj.getMaxColLen());
       colStatsData.setBinaryStats(binaryStats);
-    } else if (colType.equals("bigint") || colType.equals("int") ||
-        colType.equals("smallint") || colType.equals("tinyint")) {
+    } else if (colType.equals("bigint") || colType.equals("int") || colType.equals("smallint") || colType.equals(
+        "tinyint") || colType.equals("timestamp")) {
       LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
       longStats.setNumNulls(mStatsObj.getNumNulls());
       Long longHighValue = mStatsObj.getLongHighValue();
@@ -430,21 +418,6 @@ public class StatObjectConverter {
       dateStats.setBitVectors((mStatsObj.getBitVector()==null||!enableBitVector)? null : mStatsObj.getBitVector());
       dateStats.setHistogram((mStatsObj.getHistogram()==null||!enableKll)? null : mStatsObj.getHistogram());
       colStatsData.setDateStats(dateStats);
-    } else if (colType.equals("timestamp")) {
-      TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-      timestampStats.setNumNulls(mStatsObj.getNumNulls());
-      Long highValue = mStatsObj.getLongHighValue();
-      if (highValue != null) {
-        timestampStats.setHighValue(new Timestamp(highValue));
-      }
-      Long lowValue = mStatsObj.getLongLowValue();
-      if (lowValue != null) {
-        timestampStats.setLowValue(new Timestamp(lowValue));
-      }
-      timestampStats.setNumDVs(mStatsObj.getNumDVs());
-      timestampStats.setBitVectors((mStatsObj.getBitVector()==null||!enableBitVector)? null : mStatsObj.getBitVector());
-      timestampStats.setHistogram((mStatsObj.getHistogram()==null||!enableKll)? null : mStatsObj.getHistogram());
-      colStatsData.setTimestampStats(timestampStats);
     }
     statsObj.setStatsData(colStatsData);
     return statsObj;
@@ -531,15 +504,6 @@ public class StatObjectConverter {
           dateStats.isSetHistogram() ? dateStats.getHistogram() : null,
           dateStats.isSetLowValue() ? dateStats.getLowValue().getDaysSinceEpoch() : null,
           dateStats.isSetHighValue() ? dateStats.getHighValue().getDaysSinceEpoch() : null);
-    } else if (statsObj.getStatsData().isSetTimestampStats()) {
-      TimestampColumnStatsData timestampStats = statsObj.getStatsData().getTimestampStats();
-      mColStats.setTimestampStats(
-          timestampStats.isSetNumNulls() ? timestampStats.getNumNulls() : null,
-          timestampStats.isSetNumDVs() ? timestampStats.getNumDVs() : null,
-          timestampStats.isSetBitVectors() ? timestampStats.getBitVectors() : null,
-          timestampStats.isSetHistogram() ? timestampStats.getHistogram() : null,
-          timestampStats.isSetLowValue() ? timestampStats.getLowValue().getSecondsSinceEpoch() : null,
-          timestampStats.isSetHighValue() ? timestampStats.getHighValue().getSecondsSinceEpoch() : null);
     }
     mColStats.setEngine(engine);
     return mColStats;
@@ -574,8 +538,8 @@ public class StatObjectConverter {
       binaryStats.setAvgColLen(mStatsObj.getAvgColLen());
       binaryStats.setMaxColLen(mStatsObj.getMaxColLen());
       colStatsData.setBinaryStats(binaryStats);
-    } else if (colType.equals("tinyint") || colType.equals("smallint") ||
-        colType.equals("int") || colType.equals("bigint")) {
+    } else if (colType.equals("tinyint") || colType.equals("smallint") || colType.equals("int") || colType.equals(
+        "bigint") || colType.equals("timestamp")) {
       LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
       longStats.setNumNulls(mStatsObj.getNumNulls());
       if (mStatsObj.getLongHighValue() != null) {
@@ -629,21 +593,6 @@ public class StatObjectConverter {
       dateStats.setBitVectors((mStatsObj.getBitVector()==null||!enableBitVector)? null : mStatsObj.getBitVector());
       dateStats.setHistogram((mStatsObj.getHistogram()==null||!enableKll)? null : mStatsObj.getHistogram());
       colStatsData.setDateStats(dateStats);
-    } else if (colType.equals("timestamp")) {
-      TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-      timestampStats.setNumNulls(mStatsObj.getNumNulls());
-      Long highValue = mStatsObj.getLongHighValue();
-      if (highValue != null) {
-        timestampStats.setHighValue(new Timestamp(highValue));
-      }
-      Long lowValue = mStatsObj.getLongLowValue();
-      if (lowValue != null) {
-        timestampStats.setLowValue(new Timestamp(lowValue));
-      }
-      timestampStats.setNumDVs(mStatsObj.getNumDVs());
-      timestampStats.setBitVectors((mStatsObj.getBitVector()==null||!enableBitVector)? null : mStatsObj.getBitVector());
-      timestampStats.setHistogram((mStatsObj.getHistogram()==null||!enableKll)? null : mStatsObj.getHistogram());
-      colStatsData.setTimestampStats(timestampStats);
     }
     statsObj.setStatsData(colStatsData);
     return statsObj;
@@ -716,8 +665,8 @@ public class StatObjectConverter {
       binaryStats.setAvgColLen(MetastoreDirectSqlUtils.extractSqlDouble(avglen));
       binaryStats.setMaxColLen(MetastoreDirectSqlUtils.extractSqlLong(maxlen));
       data.setBinaryStats(binaryStats);
-    } else if (colType.equals("bigint") || colType.equals("int") ||
-        colType.equals("smallint") || colType.equals("tinyint")) {
+    } else if (colType.equals("bigint") || colType.equals("int") || colType.equals("smallint") || colType.equals(
+        "tinyint") || colType.equals("timestamp")) {
       LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
       longStats.setNumNulls(MetastoreDirectSqlUtils.extractSqlLong(nulls));
       if (lhigh != null) {
@@ -769,19 +718,6 @@ public class StatObjectConverter {
       dateStats.setBitVectors(getBitVector(MetastoreDirectSqlUtils.extractSqlBlob(bitVector)));
       dateStats.setHistogram(getHistogram(MetastoreDirectSqlUtils.extractSqlBlob(histogram)));
       data.setDateStats(dateStats);
-    } else if (colType.equals("timestamp")) {
-      TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-      timestampStats.setNumNulls(MetastoreDirectSqlUtils.extractSqlLong(nulls));
-      if (lhigh != null) {
-        timestampStats.setHighValue(new Timestamp(MetastoreDirectSqlUtils.extractSqlLong(lhigh)));
-      }
-      if (llow != null) {
-        timestampStats.setLowValue(new Timestamp(MetastoreDirectSqlUtils.extractSqlLong(llow)));
-      }
-      timestampStats.setNumDVs(MetastoreDirectSqlUtils.extractSqlLong(dist));
-      timestampStats.setBitVectors(getBitVector(MetastoreDirectSqlUtils.extractSqlBlob(bitVector)));
-      timestampStats.setHistogram(getHistogram(MetastoreDirectSqlUtils.extractSqlBlob(histogram)));
-      data.setTimestampStats(timestampStats);
     }
   }
 
@@ -812,8 +748,8 @@ public class StatObjectConverter {
       binaryStats.setAvgColLen(MetastoreDirectSqlUtils.extractSqlDouble(avglen));
       binaryStats.setMaxColLen(MetastoreDirectSqlUtils.extractSqlLong(maxlen));
       data.setBinaryStats(binaryStats);
-    } else if (colType.equals("bigint") || colType.equals("int") || colType.equals("smallint")
-        || colType.equals("tinyint")) {
+    } else if (colType.equals("bigint") || colType.equals("int") || colType.equals("smallint") || colType.equals(
+        "tinyint") || colType.equals("timestamp")) {
       LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
       longStats.setNumNulls(MetastoreDirectSqlUtils.extractSqlLong(nulls));
       if (lhigh != null) {
@@ -883,41 +819,6 @@ public class StatObjectConverter {
       estimation = Math.min(estimation, rangeBound);
       dateStats.setNumDVs(estimation);
       data.setDateStats(dateStats);
-    } else if (colType.equals("timestamp")) {
-      TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-      timestampStats.setNumNulls(MetastoreDirectSqlUtils.extractSqlLong(nulls));
-      if (lhigh != null) {
-        timestampStats.setHighValue(new Timestamp(MetastoreDirectSqlUtils.extractSqlLong(lhigh)));
-      }
-      if (llow != null) {
-        timestampStats.setLowValue(new Timestamp(MetastoreDirectSqlUtils.extractSqlLong(llow)));
-      }
-      long lowerBound = MetastoreDirectSqlUtils.extractSqlLong(dist);
-      long higherBound = MetastoreDirectSqlUtils.extractSqlLong(sumDist);
-      long rangeBound = Long.MAX_VALUE;
-      if (lhigh != null && llow != null) {
-        rangeBound = MetastoreDirectSqlUtils.extractSqlLong(lhigh)
-            - MetastoreDirectSqlUtils.extractSqlLong(llow) + 1;
-      }
-      long estimation;
-      if (useDensityFunctionForNDVEstimation && lhigh != null && llow != null && avgLong != null
-          && MetastoreDirectSqlUtils.extractSqlDouble(avgLong) != 0.0) {
-        // We have estimation, lowerbound and higherbound. We use estimation if
-        // it is between lowerbound and higherbound.
-        estimation = MetastoreDirectSqlUtils
-            .extractSqlLong((MetastoreDirectSqlUtils.extractSqlLong(lhigh) - MetastoreDirectSqlUtils
-                .extractSqlLong(llow)) / MetastoreDirectSqlUtils.extractSqlDouble(avgLong));
-        if (estimation < lowerBound) {
-          estimation = lowerBound;
-        } else if (estimation > higherBound) {
-          estimation = higherBound;
-        }
-      } else {
-        estimation = (long) (lowerBound + (higherBound - lowerBound) * ndvTuner);
-      }
-      estimation = Math.min(estimation, rangeBound);
-      timestampStats.setNumDVs(estimation);
-      data.setTimestampStats(timestampStats);
     } else if (colType.equals("double") || colType.equals("float")) {
       DoubleColumnStatsDataInspector doubleStats = new DoubleColumnStatsDataInspector();
       doubleStats.setNumNulls(MetastoreDirectSqlUtils.extractSqlLong(nulls));
@@ -1141,29 +1042,6 @@ public class StatObjectConverter {
       }
       if (newDateStatsData.isSetHistogram()) {
         oldDateStatsData.setHistogram(newDateStatsData.getHistogram());
-      }
-      break;
-    }
-    case TIMESTAMP_STATS: {
-      TimestampColumnStatsData oldTimestampStatsData = oldStatObj.getStatsData().getTimestampStats();
-      TimestampColumnStatsData newTimestampStatsData = newStatObj.getStatsData().getTimestampStats();
-      if (newTimestampStatsData.isSetHighValue()) {
-        oldTimestampStatsData.setHighValue(newTimestampStatsData.getHighValue());
-      }
-      if (newTimestampStatsData.isSetLowValue()) {
-        oldTimestampStatsData.setLowValue(newTimestampStatsData.getLowValue());
-      }
-      if (newTimestampStatsData.isSetNumNulls()) {
-        oldTimestampStatsData.setNumNulls(newTimestampStatsData.getNumNulls());
-      }
-      if (newTimestampStatsData.isSetNumDVs()) {
-        oldTimestampStatsData.setNumDVs(newTimestampStatsData.getNumDVs());
-      }
-      if (newTimestampStatsData.isSetBitVectors()) {
-        oldTimestampStatsData.setBitVectors(newTimestampStatsData.getBitVectors());
-      }
-      if (newTimestampStatsData.isSetHistogram()) {
-        oldTimestampStatsData.setHistogram(newTimestampStatsData.getHistogram());
       }
       break;
     }

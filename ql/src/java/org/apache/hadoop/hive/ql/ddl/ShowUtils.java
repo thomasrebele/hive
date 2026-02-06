@@ -42,7 +42,6 @@ import org.apache.hadoop.hive.metastore.api.DoubleColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.LongColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.StringColumnStatsData;
-import org.apache.hadoop.hive.metastore.api.TimestampColumnStatsData;
 import org.apache.hadoop.hive.metastore.utils.MetaStoreServerUtils;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -284,9 +283,6 @@ public final class ShowUtils {
       case DOUBLE_STATS:
         converter = f -> f;
         break;
-      case TIMESTAMP_STATS:
-        converter = f -> Timestamp.ofEpochSecond(f.longValue(), 0, getZoneIdFromConf());
-        break;
       case LONG_STATS:
         converter = Float::longValue;
         break;
@@ -330,15 +326,6 @@ public final class ShowUtils {
       return "";
     }
     return new String(Arrays.copyOfRange(buffer, 0, 2));
-  }
-
-  public static String convertToString(org.apache.hadoop.hive.metastore.api.Timestamp val) {
-    if (val == null) {
-      return "";
-    }
-
-    TimestampWritableV2 writableValue = new TimestampWritableV2(Timestamp.ofEpochSecond(val.getSecondsSinceEpoch()));
-    return writableValue.toString();
   }
 
   /**

@@ -360,10 +360,6 @@ class Date; end
 
 class DateColumnStatsData; end
 
-class Timestamp; end
-
-class TimestampColumnStatsData; end
-
 class ColumnStatisticsData < ::Thrift::Union; end
 
 class ColumnStatisticsObj; end
@@ -2235,51 +2231,6 @@ class DateColumnStatsData
   ::Thrift::Struct.generate_accessors self
 end
 
-class Timestamp
-  include ::Thrift::Struct, ::Thrift::Struct_Union
-  SECONDSSINCEEPOCH = 1
-
-  FIELDS = {
-    SECONDSSINCEEPOCH => {:type => ::Thrift::Types::I64, :name => 'secondsSinceEpoch'}
-  }
-
-  def struct_fields; FIELDS; end
-
-  def validate
-    raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field secondsSinceEpoch is unset!') unless @secondsSinceEpoch
-  end
-
-  ::Thrift::Struct.generate_accessors self
-end
-
-class TimestampColumnStatsData
-  include ::Thrift::Struct, ::Thrift::Struct_Union
-  LOWVALUE = 1
-  HIGHVALUE = 2
-  NUMNULLS = 3
-  NUMDVS = 4
-  BITVECTORS = 5
-  HISTOGRAM = 6
-
-  FIELDS = {
-    LOWVALUE => {:type => ::Thrift::Types::STRUCT, :name => 'lowValue', :class => ::Timestamp, :optional => true},
-    HIGHVALUE => {:type => ::Thrift::Types::STRUCT, :name => 'highValue', :class => ::Timestamp, :optional => true},
-    NUMNULLS => {:type => ::Thrift::Types::I64, :name => 'numNulls'},
-    NUMDVS => {:type => ::Thrift::Types::I64, :name => 'numDVs'},
-    BITVECTORS => {:type => ::Thrift::Types::STRING, :name => 'bitVectors', :binary => true, :optional => true},
-    HISTOGRAM => {:type => ::Thrift::Types::STRING, :name => 'histogram', :binary => true, :optional => true}
-  }
-
-  def struct_fields; FIELDS; end
-
-  def validate
-    raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field numNulls is unset!') unless @numNulls
-    raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field numDVs is unset!') unless @numDVs
-  end
-
-  ::Thrift::Struct.generate_accessors self
-end
-
 class ColumnStatisticsData < ::Thrift::Union
   include ::Thrift::Struct_Union
   class << self
@@ -2310,10 +2261,6 @@ class ColumnStatisticsData < ::Thrift::Union
     def dateStats(val)
       ColumnStatisticsData.new(:dateStats, val)
     end
-
-    def timestampStats(val)
-      ColumnStatisticsData.new(:timestampStats, val)
-    end
   end
 
   BOOLEANSTATS = 1
@@ -2323,7 +2270,6 @@ class ColumnStatisticsData < ::Thrift::Union
   BINARYSTATS = 5
   DECIMALSTATS = 6
   DATESTATS = 7
-  TIMESTAMPSTATS = 8
 
   FIELDS = {
     BOOLEANSTATS => {:type => ::Thrift::Types::STRUCT, :name => 'booleanStats', :class => ::BooleanColumnStatsData, :optional => true},
@@ -2332,8 +2278,7 @@ class ColumnStatisticsData < ::Thrift::Union
     STRINGSTATS => {:type => ::Thrift::Types::STRUCT, :name => 'stringStats', :class => ::StringColumnStatsData, :optional => true},
     BINARYSTATS => {:type => ::Thrift::Types::STRUCT, :name => 'binaryStats', :class => ::BinaryColumnStatsData, :optional => true},
     DECIMALSTATS => {:type => ::Thrift::Types::STRUCT, :name => 'decimalStats', :class => ::DecimalColumnStatsData, :optional => true},
-    DATESTATS => {:type => ::Thrift::Types::STRUCT, :name => 'dateStats', :class => ::DateColumnStatsData, :optional => true},
-    TIMESTAMPSTATS => {:type => ::Thrift::Types::STRUCT, :name => 'timestampStats', :class => ::TimestampColumnStatsData, :optional => true}
+    DATESTATS => {:type => ::Thrift::Types::STRUCT, :name => 'dateStats', :class => ::DateColumnStatsData, :optional => true}
   }
 
   def struct_fields; FIELDS; end

@@ -28,19 +28,16 @@ import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Date;
 import org.apache.hadoop.hive.metastore.api.Decimal;
-import org.apache.hadoop.hive.metastore.api.Timestamp;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DateColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DoubleColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.LongColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataInspector;
-import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsField;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsType;
 import org.apache.hadoop.hive.serde2.io.DateWritableV2;
-import org.apache.hadoop.hive.serde2.io.TimestampWritableV2;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
@@ -50,7 +47,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.DoubleObjectInspe
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.HiveDecimalObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.TimestampObjectInspector;
 
 
 public class ColumnStatisticsObjTranslator {
@@ -293,40 +289,6 @@ public class ColumnStatisticsObjTranslator {
     }
   }
 
-  private static void unpackTimestampStats(ObjectInspector oi, Object o,
-      ColumnStatsField csf, ColumnStatisticsObj statsObj) {
-    switch (csf) {
-    case COUNT_NULLS:
-      long cn = ((LongObjectInspector) oi).get(o);
-      statsObj.getStatsData().getTimestampStats().setNumNulls(cn);
-      break;
-    case MIN:
-      TimestampWritableV2 min = ((TimestampObjectInspector) oi).getPrimitiveWritableObject(o);
-      statsObj.getStatsData().getTimestampStats().setLowValue(new Timestamp(min.getSeconds()));
-      break;
-    case MAX:
-      TimestampWritableV2 max = ((TimestampObjectInspector) oi).getPrimitiveWritableObject(o);
-      statsObj.getStatsData().getTimestampStats().setHighValue(new Timestamp(max.getSeconds()));
-      break;
-    case NDV:
-      long ndv = ((LongObjectInspector) oi).get(o);
-      statsObj.getStatsData().getTimestampStats().setNumDVs(ndv);
-      break;
-    case BITVECTOR:
-      PrimitiveObjectInspector poi = (PrimitiveObjectInspector) oi;
-      byte[] buf = ((BinaryObjectInspector) poi).getPrimitiveJavaObject(o);
-      statsObj.getStatsData().getTimestampStats().setBitVectors(buf);
-      break;
-    case KLL_SKETCH:
-      PrimitiveObjectInspector poi2 = (PrimitiveObjectInspector) oi;
-      byte[] buf2 = ((BinaryObjectInspector) poi2).getPrimitiveJavaObject(o);
-      statsObj.getStatsData().getTimestampStats().setHistogram(buf2);
-      break;
-    default:
-      throw new RuntimeException("Unsupported column stat for TIMESTAMP : " + csf);
-    }
-  }
-
   private static void unpackPrimitiveObject(ObjectInspector oi, Object o,
       ColumnStatsField csf, ColumnStatisticsObj statsObj) throws UnsupportedDoubleException {
     if (o == null) {
@@ -366,10 +328,6 @@ public class ColumnStatisticsObjTranslator {
       } else if (s.equalsIgnoreCase(ColumnStatsType.DATE.toString())) {
         DateColumnStatsDataInspector dateStats = new DateColumnStatsDataInspector();
         statsData.setDateStats(dateStats);
-        statsObj.setStatsData(statsData);
-      } else if (s.equalsIgnoreCase(ColumnStatsType.TIMESTAMP.toString())) {
-        TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-        statsData.setTimestampStats(timestampStats);
         statsObj.setStatsData(statsData);
       }
     } else {

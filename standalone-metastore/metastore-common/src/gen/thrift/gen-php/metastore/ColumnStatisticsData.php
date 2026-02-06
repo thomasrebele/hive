@@ -63,12 +63,6 @@ class ColumnStatisticsData
             'type' => TType::STRUCT,
             'class' => '\metastore\DateColumnStatsData',
         ),
-        8 => array(
-            'var' => 'timestampStats',
-            'isRequired' => false,
-            'type' => TType::STRUCT,
-            'class' => '\metastore\TimestampColumnStatsData',
-        ),
     );
 
     /**
@@ -99,10 +93,6 @@ class ColumnStatisticsData
      * @var \metastore\DateColumnStatsData
      */
     public $dateStats = null;
-    /**
-     * @var \metastore\TimestampColumnStatsData
-     */
-    public $timestampStats = null;
 
     public function __construct($vals = null)
     {
@@ -127,9 +117,6 @@ class ColumnStatisticsData
             }
             if (isset($vals['dateStats'])) {
                 $this->dateStats = $vals['dateStats'];
-            }
-            if (isset($vals['timestampStats'])) {
-                $this->timestampStats = $vals['timestampStats'];
             }
         }
     }
@@ -209,14 +196,6 @@ class ColumnStatisticsData
                         $xfer += $input->skip($ftype);
                     }
                     break;
-                case 8:
-                    if ($ftype == TType::STRUCT) {
-                        $this->timestampStats = new \metastore\TimestampColumnStatsData();
-                        $xfer += $this->timestampStats->read($input);
-                    } else {
-                        $xfer += $input->skip($ftype);
-                    }
-                    break;
                 default:
                     $xfer += $input->skip($ftype);
                     break;
@@ -285,14 +264,6 @@ class ColumnStatisticsData
             }
             $xfer += $output->writeFieldBegin('dateStats', TType::STRUCT, 7);
             $xfer += $this->dateStats->write($output);
-            $xfer += $output->writeFieldEnd();
-        }
-        if ($this->timestampStats !== null) {
-            if (!is_object($this->timestampStats)) {
-                throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
-            }
-            $xfer += $output->writeFieldBegin('timestampStats', TType::STRUCT, 8);
-            $xfer += $this->timestampStats->write($output);
             $xfer += $output->writeFieldEnd();
         }
         $xfer += $output->writeFieldStop();
