@@ -300,7 +300,7 @@ public class ColumnStatisticsObjTranslator {
       String s = ((StringObjectInspector) poi).getPrimitiveJavaObject(o);
       ColumnStatisticsData statsData = new ColumnStatisticsData();
 
-      if (s.equalsIgnoreCase(ColumnStatsType.LONG.toString())) {
+      if (s.equalsIgnoreCase(ColumnStatsType.LONG.toString()) || s.equalsIgnoreCase(ColumnStatsType.TIMESTAMP.name())) {
         LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
         statsData.setLongStats(longStats);
         statsObj.setStatsData(statsData);
