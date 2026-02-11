@@ -39,15 +39,12 @@ import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Date;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.SetPartitionsStatsRequest;
-import org.apache.hadoop.hive.metastore.api.Timestamp;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DateColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DoubleColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.LongColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataInspector;
-import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
-import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
 import org.apache.hadoop.hive.ql.exec.repl.util.ReplUtils;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.ql.metadata.Hive;
@@ -58,7 +55,6 @@ import org.apache.hadoop.hive.ql.plan.ColumnStatsUpdateWork;
 import org.apache.hadoop.hive.ql.plan.api.StageType;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.io.DateWritableV2;
-import org.apache.hadoop.hive.serde2.io.TimestampWritableV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -364,17 +360,6 @@ public class ColumnStatsUpdateTask extends Task<ColumnStatsUpdateWork> {
       // Fallback to integer parsing
       LOG.debug("Reading date value as days since epoch: {}", dateStr);
       return new Date(Long.parseLong(dateStr));
-    }
-  }
-
-  private Timestamp readTimestampValue(String timestampStr) {
-    try {
-      TimestampWritableV2 writableVal = new TimestampWritableV2(
-          org.apache.hadoop.hive.common.type.Timestamp.valueOf(timestampStr));
-      return new Timestamp(writableVal.getSeconds());
-    } catch (IllegalArgumentException err) {
-      LOG.debug("Reading timestamp value as seconds since epoch: {}", timestampStr);
-      return new Timestamp(Long.parseLong(timestampStr));
     }
   }
 }

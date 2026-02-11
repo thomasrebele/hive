@@ -32,7 +32,6 @@ import org.apache.hadoop.hive.metastore.api.DoubleColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.LongColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.hadoop.hive.metastore.api.TimestampColumnStatsData;
 import org.apache.hadoop.hive.metastore.utils.MetaStoreServerUtils.ColStatsObjWithSourceInfo;
 import org.junit.Assert;
 
@@ -215,9 +214,6 @@ public class StatisticsTestUtils {
       break;
     case DECIMAL_STATS:
       dataClass = DecimalColumnStatsData.class;
-      break;
-    case TIMESTAMP_STATS:
-      dataClass = TimestampColumnStatsData.class;
       break;
     default:
       // it's an unsupported class for KLL, no special treatment needed

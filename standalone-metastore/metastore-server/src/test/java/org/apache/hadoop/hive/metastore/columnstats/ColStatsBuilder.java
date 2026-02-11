@@ -25,13 +25,11 @@ import org.apache.hadoop.hive.metastore.api.BooleanColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
 import org.apache.hadoop.hive.metastore.api.Date;
 import org.apache.hadoop.hive.metastore.api.Decimal;
-import org.apache.hadoop.hive.metastore.api.Timestamp;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DateColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DoubleColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.LongColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataInspector;
-import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -151,8 +149,6 @@ public class ColStatsBuilder<T> {
       data.setLongStats(newColData(LongColumnStatsDataInspector.class));
     } else if (type == String.class) {
       data.setStringStats(newColData(StringColumnStatsDataInspector.class));
-    } else if (type == Timestamp.class) {
-      data.setTimestampStats(newColData(TimestampColumnStatsDataInspector.class));
     } else {
       throw new IllegalStateException(type.getSimpleName() + " is not supported");
     }

@@ -40,7 +40,6 @@ import org.apache.hadoop.hive.metastore.api.LongColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.StringColumnStatsData;
-import org.apache.hadoop.hive.metastore.api.TimestampColumnStatsData;
 import org.apache.hadoop.hive.metastore.api.utils.DecimalUtils;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DateColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.DecimalColumnStatsDataInspector;
@@ -129,15 +128,6 @@ public class StatObjectConverter {
            dateStats.isSetHistogram() ? dateStats.getHistogram() : null,
            dateStats.isSetLowValue() ? dateStats.getLowValue().getDaysSinceEpoch() : null,
            dateStats.isSetHighValue() ? dateStats.getHighValue().getDaysSinceEpoch() : null);
-     } else if (statsObj.getStatsData().isSetTimestampStats()) {
-       TimestampColumnStatsData timestampStats = statsObj.getStatsData().getTimestampStats();
-       mColStats.setTimestampStats(
-           timestampStats.isSetNumNulls() ? timestampStats.getNumNulls() : null,
-           timestampStats.isSetNumDVs() ? timestampStats.getNumDVs() : null,
-           timestampStats.isSetBitVectors() ? timestampStats.getBitVectors() : null,
-           timestampStats.isSetHistogram() ? timestampStats.getHistogram() : null,
-           timestampStats.isSetLowValue() ? timestampStats.getLowValue().getSecondsSinceEpoch() : null,
-           timestampStats.isSetHighValue() ? timestampStats.getHighValue().getSecondsSinceEpoch() : null);
      }
      mColStats.setEngine(engine);
      return mColStats;
@@ -514,15 +504,6 @@ public class StatObjectConverter {
           dateStats.isSetHistogram() ? dateStats.getHistogram() : null,
           dateStats.isSetLowValue() ? dateStats.getLowValue().getDaysSinceEpoch() : null,
           dateStats.isSetHighValue() ? dateStats.getHighValue().getDaysSinceEpoch() : null);
-    } else if (statsObj.getStatsData().isSetTimestampStats()) {
-      TimestampColumnStatsData timestampStats = statsObj.getStatsData().getTimestampStats();
-      mColStats.setTimestampStats(
-          timestampStats.isSetNumNulls() ? timestampStats.getNumNulls() : null,
-          timestampStats.isSetNumDVs() ? timestampStats.getNumDVs() : null,
-          timestampStats.isSetBitVectors() ? timestampStats.getBitVectors() : null,
-          timestampStats.isSetHistogram() ? timestampStats.getHistogram() : null,
-          timestampStats.isSetLowValue() ? timestampStats.getLowValue().getSecondsSinceEpoch() : null,
-          timestampStats.isSetHighValue() ? timestampStats.getHighValue().getSecondsSinceEpoch() : null);
     }
     mColStats.setEngine(engine);
     return mColStats;
@@ -1061,29 +1042,6 @@ public class StatObjectConverter {
       }
       if (newDateStatsData.isSetHistogram()) {
         oldDateStatsData.setHistogram(newDateStatsData.getHistogram());
-      }
-      break;
-    }
-    case TIMESTAMP_STATS: {
-      TimestampColumnStatsData oldTimestampStatsData = oldStatObj.getStatsData().getTimestampStats();
-      TimestampColumnStatsData newTimestampStatsData = newStatObj.getStatsData().getTimestampStats();
-      if (newTimestampStatsData.isSetHighValue()) {
-        oldTimestampStatsData.setHighValue(newTimestampStatsData.getHighValue());
-      }
-      if (newTimestampStatsData.isSetLowValue()) {
-        oldTimestampStatsData.setLowValue(newTimestampStatsData.getLowValue());
-      }
-      if (newTimestampStatsData.isSetNumNulls()) {
-        oldTimestampStatsData.setNumNulls(newTimestampStatsData.getNumNulls());
-      }
-      if (newTimestampStatsData.isSetNumDVs()) {
-        oldTimestampStatsData.setNumDVs(newTimestampStatsData.getNumDVs());
-      }
-      if (newTimestampStatsData.isSetBitVectors()) {
-        oldTimestampStatsData.setBitVectors(newTimestampStatsData.getBitVectors());
-      }
-      if (newTimestampStatsData.isSetHistogram()) {
-        oldTimestampStatsData.setHistogram(newTimestampStatsData.getHistogram());
       }
       break;
     }

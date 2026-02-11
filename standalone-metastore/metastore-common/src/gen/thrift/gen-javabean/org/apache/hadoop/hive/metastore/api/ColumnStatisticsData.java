@@ -17,7 +17,6 @@ package org.apache.hadoop.hive.metastore.api;
   private static final org.apache.thrift.protocol.TField BINARY_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("binaryStats", org.apache.thrift.protocol.TType.STRUCT, (short)5);
   private static final org.apache.thrift.protocol.TField DECIMAL_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("decimalStats", org.apache.thrift.protocol.TType.STRUCT, (short)6);
   private static final org.apache.thrift.protocol.TField DATE_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("dateStats", org.apache.thrift.protocol.TType.STRUCT, (short)7);
-  private static final org.apache.thrift.protocol.TField TIMESTAMP_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("timestampStats", org.apache.thrift.protocol.TType.STRUCT, (short)8);
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -27,8 +26,7 @@ package org.apache.hadoop.hive.metastore.api;
     STRING_STATS((short)4, "stringStats"),
     BINARY_STATS((short)5, "binaryStats"),
     DECIMAL_STATS((short)6, "decimalStats"),
-    DATE_STATS((short)7, "dateStats"),
-    TIMESTAMP_STATS((short)8, "timestampStats");
+    DATE_STATS((short)7, "dateStats");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -58,8 +56,6 @@ package org.apache.hadoop.hive.metastore.api;
           return DECIMAL_STATS;
         case 7: // DATE_STATS
           return DATE_STATS;
-        case 8: // TIMESTAMP_STATS
-          return TIMESTAMP_STATS;
         default:
           return null;
       }
@@ -117,8 +113,6 @@ package org.apache.hadoop.hive.metastore.api;
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, DecimalColumnStatsData.class)));
     tmpMap.put(_Fields.DATE_STATS, new org.apache.thrift.meta_data.FieldMetaData("dateStats", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, DateColumnStatsData.class)));
-    tmpMap.put(_Fields.TIMESTAMP_STATS, new org.apache.thrift.meta_data.FieldMetaData("timestampStats", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TimestampColumnStatsData.class)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ColumnStatisticsData.class, metaDataMap);
   }
@@ -180,12 +174,6 @@ package org.apache.hadoop.hive.metastore.api;
     return x;
   }
 
-  public static ColumnStatisticsData timestampStats(TimestampColumnStatsData value) {
-    ColumnStatisticsData x = new ColumnStatisticsData();
-    x.setTimestampStats(value);
-    return x;
-  }
-
 
   @Override
   protected void checkType(_Fields setField, java.lang.Object value) throws java.lang.ClassCastException {
@@ -225,11 +213,6 @@ package org.apache.hadoop.hive.metastore.api;
           break;
         }
         throw new java.lang.ClassCastException("Was expecting value of type DateColumnStatsData for field 'dateStats', but got " + value.getClass().getSimpleName());
-      case TIMESTAMP_STATS:
-        if (value instanceof TimestampColumnStatsData) {
-          break;
-        }
-        throw new java.lang.ClassCastException("Was expecting value of type TimestampColumnStatsData for field 'timestampStats', but got " + value.getClass().getSimpleName());
       default:
         throw new java.lang.IllegalArgumentException("Unknown field id " + setField);
     }
@@ -310,16 +293,6 @@ package org.apache.hadoop.hive.metastore.api;
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
             return null;
           }
-        case TIMESTAMP_STATS:
-          if (field.type == TIMESTAMP_STATS_FIELD_DESC.type) {
-            TimestampColumnStatsData timestampStats;
-            timestampStats = new TimestampColumnStatsData();
-            timestampStats.read(iprot);
-            return timestampStats;
-          } else {
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
-            return null;
-          }
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
@@ -359,10 +332,6 @@ package org.apache.hadoop.hive.metastore.api;
       case DATE_STATS:
         DateColumnStatsData dateStats = (DateColumnStatsData)value_;
         dateStats.write(oprot);
-        return;
-      case TIMESTAMP_STATS:
-        TimestampColumnStatsData timestampStats = (TimestampColumnStatsData)value_;
-        timestampStats.write(oprot);
         return;
       default:
         throw new java.lang.IllegalStateException("Cannot write union with unknown field " + setField_);
@@ -409,11 +378,6 @@ package org.apache.hadoop.hive.metastore.api;
           dateStats = new DateColumnStatsData();
           dateStats.read(iprot);
           return dateStats;
-        case TIMESTAMP_STATS:
-          TimestampColumnStatsData timestampStats;
-          timestampStats = new TimestampColumnStatsData();
-          timestampStats.read(iprot);
-          return timestampStats;
         default:
           throw new java.lang.IllegalStateException("setField wasn't null, but didn't match any of the case statements!");
       }
@@ -453,10 +417,6 @@ package org.apache.hadoop.hive.metastore.api;
         DateColumnStatsData dateStats = (DateColumnStatsData)value_;
         dateStats.write(oprot);
         return;
-      case TIMESTAMP_STATS:
-        TimestampColumnStatsData timestampStats = (TimestampColumnStatsData)value_;
-        timestampStats.write(oprot);
-        return;
       default:
         throw new java.lang.IllegalStateException("Cannot write union with unknown field " + setField_);
     }
@@ -479,8 +439,6 @@ package org.apache.hadoop.hive.metastore.api;
         return DECIMAL_STATS_FIELD_DESC;
       case DATE_STATS:
         return DATE_STATS_FIELD_DESC;
-      case TIMESTAMP_STATS:
-        return TIMESTAMP_STATS_FIELD_DESC;
       default:
         throw new java.lang.IllegalArgumentException("Unknown field id " + setField);
     }
@@ -593,19 +551,6 @@ package org.apache.hadoop.hive.metastore.api;
     value_ = java.util.Objects.requireNonNull(value,"_Fields.DATE_STATS");
   }
 
-  public TimestampColumnStatsData getTimestampStats() {
-    if (getSetField() == _Fields.TIMESTAMP_STATS) {
-      return (TimestampColumnStatsData)getFieldValue();
-    } else {
-      throw new java.lang.RuntimeException("Cannot get field 'timestampStats' because union is currently set to " + getFieldDesc(getSetField()).name);
-    }
-  }
-
-  public void setTimestampStats(TimestampColumnStatsData value) {
-    setField_ = _Fields.TIMESTAMP_STATS;
-    value_ = java.util.Objects.requireNonNull(value,"_Fields.TIMESTAMP_STATS");
-  }
-
   public boolean isSetBooleanStats() {
     return setField_ == _Fields.BOOLEAN_STATS;
   }
@@ -638,11 +583,6 @@ package org.apache.hadoop.hive.metastore.api;
 
   public boolean isSetDateStats() {
     return setField_ == _Fields.DATE_STATS;
-  }
-
-
-  public boolean isSetTimestampStats() {
-    return setField_ == _Fields.TIMESTAMP_STATS;
   }
 
 

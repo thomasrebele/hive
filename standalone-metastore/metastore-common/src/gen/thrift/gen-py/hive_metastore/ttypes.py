@@ -6115,183 +6115,6 @@ class DateColumnStatsData(object):
         return not (self == other)
 
 
-class Timestamp(object):
-    """
-    Attributes:
-     - secondsSinceEpoch
-
-    """
-
-
-    def __init__(self, secondsSinceEpoch=None,):
-        self.secondsSinceEpoch = secondsSinceEpoch
-
-    def read(self, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
-            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
-            return
-        iprot.readStructBegin()
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.I64:
-                    self.secondsSinceEpoch = iprot.readI64()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('Timestamp')
-        if self.secondsSinceEpoch is not None:
-            oprot.writeFieldBegin('secondsSinceEpoch', TType.I64, 1)
-            oprot.writeI64(self.secondsSinceEpoch)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.secondsSinceEpoch is None:
-            raise TProtocolException(message='Required field secondsSinceEpoch is unset!')
-        return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class TimestampColumnStatsData(object):
-    """
-    Attributes:
-     - lowValue
-     - highValue
-     - numNulls
-     - numDVs
-     - bitVectors
-     - histogram
-
-    """
-
-
-    def __init__(self, lowValue=None, highValue=None, numNulls=None, numDVs=None, bitVectors=None, histogram=None,):
-        self.lowValue = lowValue
-        self.highValue = highValue
-        self.numNulls = numNulls
-        self.numDVs = numDVs
-        self.bitVectors = bitVectors
-        self.histogram = histogram
-
-    def read(self, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
-            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
-            return
-        iprot.readStructBegin()
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRUCT:
-                    self.lowValue = Timestamp()
-                    self.lowValue.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 2:
-                if ftype == TType.STRUCT:
-                    self.highValue = Timestamp()
-                    self.highValue.read(iprot)
-                else:
-                    iprot.skip(ftype)
-            elif fid == 3:
-                if ftype == TType.I64:
-                    self.numNulls = iprot.readI64()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 4:
-                if ftype == TType.I64:
-                    self.numDVs = iprot.readI64()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 5:
-                if ftype == TType.STRING:
-                    self.bitVectors = iprot.readBinary()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 6:
-                if ftype == TType.STRING:
-                    self.histogram = iprot.readBinary()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('TimestampColumnStatsData')
-        if self.lowValue is not None:
-            oprot.writeFieldBegin('lowValue', TType.STRUCT, 1)
-            self.lowValue.write(oprot)
-            oprot.writeFieldEnd()
-        if self.highValue is not None:
-            oprot.writeFieldBegin('highValue', TType.STRUCT, 2)
-            self.highValue.write(oprot)
-            oprot.writeFieldEnd()
-        if self.numNulls is not None:
-            oprot.writeFieldBegin('numNulls', TType.I64, 3)
-            oprot.writeI64(self.numNulls)
-            oprot.writeFieldEnd()
-        if self.numDVs is not None:
-            oprot.writeFieldBegin('numDVs', TType.I64, 4)
-            oprot.writeI64(self.numDVs)
-            oprot.writeFieldEnd()
-        if self.bitVectors is not None:
-            oprot.writeFieldBegin('bitVectors', TType.STRING, 5)
-            oprot.writeBinary(self.bitVectors)
-            oprot.writeFieldEnd()
-        if self.histogram is not None:
-            oprot.writeFieldBegin('histogram', TType.STRING, 6)
-            oprot.writeBinary(self.histogram)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.numNulls is None:
-            raise TProtocolException(message='Required field numNulls is unset!')
-        if self.numDVs is None:
-            raise TProtocolException(message='Required field numDVs is unset!')
-        return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
 class ColumnStatisticsData(object):
     """
     Attributes:
@@ -6302,12 +6125,11 @@ class ColumnStatisticsData(object):
      - binaryStats
      - decimalStats
      - dateStats
-     - timestampStats
 
     """
 
 
-    def __init__(self, booleanStats=None, longStats=None, doubleStats=None, stringStats=None, binaryStats=None, decimalStats=None, dateStats=None, timestampStats=None,):
+    def __init__(self, booleanStats=None, longStats=None, doubleStats=None, stringStats=None, binaryStats=None, decimalStats=None, dateStats=None,):
         self.booleanStats = booleanStats
         self.longStats = longStats
         self.doubleStats = doubleStats
@@ -6315,7 +6137,6 @@ class ColumnStatisticsData(object):
         self.binaryStats = binaryStats
         self.decimalStats = decimalStats
         self.dateStats = dateStats
-        self.timestampStats = timestampStats
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -6368,12 +6189,6 @@ class ColumnStatisticsData(object):
                     self.dateStats.read(iprot)
                 else:
                     iprot.skip(ftype)
-            elif fid == 8:
-                if ftype == TType.STRUCT:
-                    self.timestampStats = TimestampColumnStatsData()
-                    self.timestampStats.read(iprot)
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -6411,10 +6226,6 @@ class ColumnStatisticsData(object):
         if self.dateStats is not None:
             oprot.writeFieldBegin('dateStats', TType.STRUCT, 7)
             self.dateStats.write(oprot)
-            oprot.writeFieldEnd()
-        if self.timestampStats is not None:
-            oprot.writeFieldBegin('timestampStats', TType.STRUCT, 8)
-            self.timestampStats.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -32911,21 +32722,6 @@ DateColumnStatsData.thrift_spec = (
     (5, TType.STRING, 'bitVectors', 'BINARY', None, ),  # 5
     (6, TType.STRING, 'histogram', 'BINARY', None, ),  # 6
 )
-all_structs.append(Timestamp)
-Timestamp.thrift_spec = (
-    None,  # 0
-    (1, TType.I64, 'secondsSinceEpoch', None, None, ),  # 1
-)
-all_structs.append(TimestampColumnStatsData)
-TimestampColumnStatsData.thrift_spec = (
-    None,  # 0
-    (1, TType.STRUCT, 'lowValue', [Timestamp, None], None, ),  # 1
-    (2, TType.STRUCT, 'highValue', [Timestamp, None], None, ),  # 2
-    (3, TType.I64, 'numNulls', None, None, ),  # 3
-    (4, TType.I64, 'numDVs', None, None, ),  # 4
-    (5, TType.STRING, 'bitVectors', 'BINARY', None, ),  # 5
-    (6, TType.STRING, 'histogram', 'BINARY', None, ),  # 6
-)
 all_structs.append(ColumnStatisticsData)
 ColumnStatisticsData.thrift_spec = (
     None,  # 0
@@ -32936,7 +32732,6 @@ ColumnStatisticsData.thrift_spec = (
     (5, TType.STRUCT, 'binaryStats', [BinaryColumnStatsData, None], None, ),  # 5
     (6, TType.STRUCT, 'decimalStats', [DecimalColumnStatsData, None], None, ),  # 6
     (7, TType.STRUCT, 'dateStats', [DateColumnStatsData, None], None, ),  # 7
-    (8, TType.STRUCT, 'timestampStats', [TimestampColumnStatsData, None], None, ),  # 8
 )
 all_structs.append(ColumnStatisticsObj)
 ColumnStatisticsObj.thrift_spec = (

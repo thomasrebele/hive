@@ -548,10 +548,6 @@ class Date;
 
 class DateColumnStatsData;
 
-class Timestamp;
-
-class TimestampColumnStatsData;
-
 class ColumnStatisticsData;
 
 class ColumnStatisticsObj;
@@ -4797,127 +4793,8 @@ void swap(DateColumnStatsData &a, DateColumnStatsData &b);
 
 std::ostream& operator<<(std::ostream& out, const DateColumnStatsData& obj);
 
-
-class Timestamp : public virtual ::apache::thrift::TBase {
- public:
-
-  Timestamp(const Timestamp&) noexcept;
-  Timestamp& operator=(const Timestamp&) noexcept;
-  Timestamp() noexcept
-            : secondsSinceEpoch(0) {
-  }
-
-  virtual ~Timestamp() noexcept;
-  int64_t secondsSinceEpoch;
-
-  void __set_secondsSinceEpoch(const int64_t val);
-
-  bool operator == (const Timestamp & rhs) const
-  {
-    if (!(secondsSinceEpoch == rhs.secondsSinceEpoch))
-      return false;
-    return true;
-  }
-  bool operator != (const Timestamp &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const Timestamp & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot) override;
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const override;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(Timestamp &a, Timestamp &b);
-
-std::ostream& operator<<(std::ostream& out, const Timestamp& obj);
-
-typedef struct _TimestampColumnStatsData__isset {
-  _TimestampColumnStatsData__isset() : lowValue(false), highValue(false), bitVectors(false), histogram(false) {}
-  bool lowValue :1;
-  bool highValue :1;
-  bool bitVectors :1;
-  bool histogram :1;
-} _TimestampColumnStatsData__isset;
-
-class TimestampColumnStatsData : public virtual ::apache::thrift::TBase {
- public:
-
-  TimestampColumnStatsData(const TimestampColumnStatsData&);
-  TimestampColumnStatsData& operator=(const TimestampColumnStatsData&);
-  TimestampColumnStatsData() noexcept
-                           : numNulls(0),
-                             numDVs(0),
-                             bitVectors(),
-                             histogram() {
-  }
-
-  virtual ~TimestampColumnStatsData() noexcept;
-  Timestamp lowValue;
-  Timestamp highValue;
-  int64_t numNulls;
-  int64_t numDVs;
-  std::string bitVectors;
-  std::string histogram;
-
-  _TimestampColumnStatsData__isset __isset;
-
-  void __set_lowValue(const Timestamp& val);
-
-  void __set_highValue(const Timestamp& val);
-
-  void __set_numNulls(const int64_t val);
-
-  void __set_numDVs(const int64_t val);
-
-  void __set_bitVectors(const std::string& val);
-
-  void __set_histogram(const std::string& val);
-
-  bool operator == (const TimestampColumnStatsData & rhs) const
-  {
-    if (__isset.lowValue != rhs.__isset.lowValue)
-      return false;
-    else if (__isset.lowValue && !(lowValue == rhs.lowValue))
-      return false;
-    if (__isset.highValue != rhs.__isset.highValue)
-      return false;
-    else if (__isset.highValue && !(highValue == rhs.highValue))
-      return false;
-    if (!(numNulls == rhs.numNulls))
-      return false;
-    if (!(numDVs == rhs.numDVs))
-      return false;
-    if (__isset.bitVectors != rhs.__isset.bitVectors)
-      return false;
-    else if (__isset.bitVectors && !(bitVectors == rhs.bitVectors))
-      return false;
-    if (__isset.histogram != rhs.__isset.histogram)
-      return false;
-    else if (__isset.histogram && !(histogram == rhs.histogram))
-      return false;
-    return true;
-  }
-  bool operator != (const TimestampColumnStatsData &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const TimestampColumnStatsData & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot) override;
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const override;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(TimestampColumnStatsData &a, TimestampColumnStatsData &b);
-
-std::ostream& operator<<(std::ostream& out, const TimestampColumnStatsData& obj);
-
 typedef struct _ColumnStatisticsData__isset {
-  _ColumnStatisticsData__isset() : booleanStats(false), longStats(false), doubleStats(false), stringStats(false), binaryStats(false), decimalStats(false), dateStats(false), timestampStats(false) {}
+  _ColumnStatisticsData__isset() : booleanStats(false), longStats(false), doubleStats(false), stringStats(false), binaryStats(false), decimalStats(false), dateStats(false) {}
   bool booleanStats :1;
   bool longStats :1;
   bool doubleStats :1;
@@ -4925,7 +4802,6 @@ typedef struct _ColumnStatisticsData__isset {
   bool binaryStats :1;
   bool decimalStats :1;
   bool dateStats :1;
-  bool timestampStats :1;
 } _ColumnStatisticsData__isset;
 
 class ColumnStatisticsData : public virtual ::apache::thrift::TBase {
@@ -4944,7 +4820,6 @@ class ColumnStatisticsData : public virtual ::apache::thrift::TBase {
   BinaryColumnStatsData binaryStats;
   DecimalColumnStatsData decimalStats;
   DateColumnStatsData dateStats;
-  TimestampColumnStatsData timestampStats;
 
   _ColumnStatisticsData__isset __isset;
 
@@ -4961,8 +4836,6 @@ class ColumnStatisticsData : public virtual ::apache::thrift::TBase {
   void __set_decimalStats(const DecimalColumnStatsData& val);
 
   void __set_dateStats(const DateColumnStatsData& val);
-
-  void __set_timestampStats(const TimestampColumnStatsData& val);
 
   bool operator == (const ColumnStatisticsData & rhs) const
   {
@@ -4993,10 +4866,6 @@ class ColumnStatisticsData : public virtual ::apache::thrift::TBase {
     if (__isset.dateStats != rhs.__isset.dateStats)
       return false;
     else if (__isset.dateStats && !(dateStats == rhs.dateStats))
-      return false;
-    if (__isset.timestampStats != rhs.__isset.timestampStats)
-      return false;
-    else if (__isset.timestampStats && !(timestampStats == rhs.timestampStats))
       return false;
     return true;
   }

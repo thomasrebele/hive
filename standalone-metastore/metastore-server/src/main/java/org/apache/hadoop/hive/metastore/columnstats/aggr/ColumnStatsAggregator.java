@@ -34,7 +34,6 @@ import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.dat
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.decimalInspectorFromStats;
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.doubleInspectorFromStats;
 import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.longInspectorFromStats;
-import static org.apache.hadoop.hive.metastore.columnstats.ColumnsStatsUtils.timestampInspectorFromStats;
 
 public abstract class ColumnStatsAggregator {
   public boolean useDensityFunctionForNDVEstimation;
@@ -127,9 +126,6 @@ public abstract class ColumnStatsAggregator {
     }
     if (columnStatisticsData.isSetLongStats()) {
       return longInspectorFromStats(currColStatsObj).getHistogramEstimator();
-    }
-    if (columnStatisticsData.isSetTimestampStats()) {
-      return timestampInspectorFromStats(currColStatsObj).getHistogramEstimator();
     }
 
     throw new IllegalArgumentException(currColStatsObj.getColType() + " is not supported for merging column stats histograms");
