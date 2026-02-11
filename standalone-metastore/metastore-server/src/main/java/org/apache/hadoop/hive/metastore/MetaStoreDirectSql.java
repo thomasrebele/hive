@@ -2015,8 +2015,7 @@ class MetaStoreDirectSql {
         List<ColumnStatisticsObj> colStats =
             new ArrayList<ColumnStatisticsObj>(list.size());
         for (Object[] row : list) {
-          colStats.add(prepareCSObjWithAdjustedNDV(row, 0,
-              useDensityFunctionForNDVEstimation, ndvTuner));
+          colStats.add(prepareCSObjWithAdjustedNDV(row, 0, useDensityFunctionForNDVEstimation, ndvTuner));
           Deadline.checkTimeout();
         }
         return colStats;
@@ -2084,8 +2083,7 @@ class MetaStoreDirectSql {
           }
           list = MetastoreDirectSqlUtils.ensureList(qResult);
           for (Object[] row : list) {
-            colStats.add(prepareCSObjWithAdjustedNDV(row, 0,
-                useDensityFunctionForNDVEstimation, ndvTuner));
+            colStats.add(prepareCSObjWithAdjustedNDV(row, 0, useDensityFunctionForNDVEstimation, ndvTuner));
             Deadline.checkTimeout();
           }
           end = doTrace ? System.nanoTime() : 0;
@@ -2263,8 +2261,8 @@ class MetaStoreDirectSql {
     Object llow = row[i++], lhigh = row[i++], dlow = row[i++], dhigh = row[i++],
         declow = row[i++], dechigh = row[i++], nulls = row[i++], dist = row[i++], bitVector = row[i++],
         histogram = row[i++], avglen = row[i++], maxlen = row[i++], trues = row[i++], falses = row[i];
-    StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data,
-        llow, lhigh, dlow, dhigh, declow, dechigh, nulls, dist, bitVector, histogram, avglen, maxlen, trues, falses);
+    StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data, llow, lhigh, dlow, dhigh, declow, dechigh,
+        nulls, dist, bitVector, histogram, avglen, maxlen, trues, falses);
     return cso;
   }
 
@@ -2276,9 +2274,9 @@ class MetaStoreDirectSql {
         dechigh = row[i++], nulls = row[i++], dist = row[i++], avglen = row[i++], maxlen = row[i++],
         trues = row[i++], falses = row[i++], avgLong = row[i++], avgDouble = row[i++],
         avgDecimal = row[i++], sumDist = row[i++];
-    StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data, llow, lhigh, dlow, dhigh,
-        declow, dechigh, nulls, dist, avglen, maxlen, trues, falses, avgLong, avgDouble,
-        avgDecimal, sumDist, useDensityFunctionForNDVEstimation, ndvTuner);
+    StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data, llow, lhigh, dlow, dhigh, declow, dechigh,
+        nulls, dist, avglen, maxlen, trues, falses, avgLong, avgDouble, avgDecimal, sumDist,
+        useDensityFunctionForNDVEstimation, ndvTuner);
     return cso;
   }
 

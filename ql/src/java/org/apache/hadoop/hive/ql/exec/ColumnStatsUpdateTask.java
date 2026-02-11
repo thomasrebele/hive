@@ -47,6 +47,7 @@ import org.apache.hadoop.hive.metastore.columnstats.cache.DoubleColumnStatsDataI
 import org.apache.hadoop.hive.metastore.columnstats.cache.LongColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.StringColumnStatsDataInspector;
 import org.apache.hadoop.hive.metastore.columnstats.cache.TimestampColumnStatsDataInspector;
+import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
 import org.apache.hadoop.hive.ql.exec.repl.util.ReplUtils;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.ql.metadata.Hive;
@@ -104,8 +105,8 @@ public class ColumnStatsUpdateTask extends Task<ColumnStatsUpdateWork> {
 
     if (columnType.equalsIgnoreCase(serdeConstants.TINYINT_TYPE_NAME)
         || columnType.equalsIgnoreCase(serdeConstants.SMALLINT_TYPE_NAME)
-        || columnType.equalsIgnoreCase(serdeConstants.INT_TYPE_NAME)
-        || columnType.equalsIgnoreCase(serdeConstants.BIGINT_TYPE_NAME)) {
+        || columnType.equalsIgnoreCase(serdeConstants.INT_TYPE_NAME) || columnType.equalsIgnoreCase(
+        serdeConstants.BIGINT_TYPE_NAME) || columnType.equalsIgnoreCase(serdeConstants.TIMESTAMP_TYPE_NAME)) {
       LongColumnStatsDataInspector longStats = new LongColumnStatsDataInspector();
       longStats.setNumNullsIsSet(false);
       longStats.setNumDVsIsSet(false);
@@ -271,26 +272,6 @@ public class ColumnStatsUpdateTask extends Task<ColumnStatsUpdateWork> {
         }
       }
       statsData.setDateStats(dateStats);
-      statsObj.setStatsData(statsData);
-    } else if (columnType.equalsIgnoreCase(serdeConstants.TIMESTAMP_TYPE_NAME)) {
-      TimestampColumnStatsDataInspector timestampStats = new TimestampColumnStatsDataInspector();
-      Map<String, String> mapProp = work.getMapProp();
-      for (Entry<String, String> entry : mapProp.entrySet()) {
-        String fName = entry.getKey();
-        String value = entry.getValue();
-        if (fName.equals("numNulls")) {
-          timestampStats.setNumNulls(Long.parseLong(value));
-        } else if (fName.equals("numDVs")) {
-          timestampStats.setNumDVs(Long.parseLong(value));
-        } else if (fName.equals("lowValue")) {
-          timestampStats.setLowValue(readTimestampValue(value));
-        } else if (fName.equals("highValue")) {
-          timestampStats.setHighValue(readTimestampValue(value));
-        } else {
-          throw new SemanticException("Unknown stat");
-        }
-      }
-      statsData.setTimestampStats(timestampStats);
       statsObj.setStatsData(statsData);
     } else {
       throw new SemanticException("Unsupported type");
