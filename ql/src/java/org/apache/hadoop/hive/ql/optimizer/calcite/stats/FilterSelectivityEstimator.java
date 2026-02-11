@@ -566,15 +566,19 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
       // interpolate with sanity checks
       double interp = new SplineInterpolator().interpolate(x, y).value(val);
-      interp = Math.clamp(interp, cumulativeWeights[indexLower], cumulativeWeights[indexUpper]);
-      return interp / sv.getN();
+      double weightLower = cumulativeWeights[indexLower];
+      double weightUpper = cumulativeWeights[indexUpper];
+      double quantileLower = quantiles[indexLower];
+      double quantileUpper = quantiles[indexUpper];
+      double clamped = Math.clamp(interp, weightLower, weightUpper);
+      //return clamped / sv.getN();
 
       // TODO tr fallback if less than three points
       //      // we need to stay within the boundaries, so do a simple linear interpolation
-      //      double factor = (val - quantiles[indexLower]) / (quantiles[indexUpper] - quantiles[indexLower]);
-      //      double weightDelta = factor * (cumulativeWeights[indexUpper] - cumulativeWeights[indexLower]);
-      //      double interpolatedWeight = cumulativeWeights[indexLower] + weightDelta;
-      //      return interpolatedWeight / sv.getN();
+      double factor = (val - quantileLower) / (quantileUpper - quantileLower);
+      double weightDelta = factor * (weightUpper - weightLower);
+      double interpolatedWeight = weightLower + weightDelta;
+      return interpolatedWeight / sv.getN();
     }
 
     return -1; //kll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);
