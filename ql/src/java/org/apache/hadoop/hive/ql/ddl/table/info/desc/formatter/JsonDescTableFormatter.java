@@ -121,8 +121,6 @@ public class JsonDescTableFormatter extends DescTableFormatter {
         }
       } else if (statistics.isSetDateStats()) {
         addDateStats(statistics, result);
-      } else if (statistics.isSetTimestampStats()) {
-        addTimeStampStats(statistics, result);
       }
     }
 
@@ -225,21 +223,6 @@ public class JsonDescTableFormatter extends DescTableFormatter {
     }
     if (statistics.getDateStats().isSetNumDVs()) {
       result.put(COLUMN_DISTINCT_COUNT, statistics.getDateStats().getNumDVs());
-    }
-  }
-
-  private static void addTimeStampStats(ColumnStatisticsData statistics, Map<String, Object> result) {
-    if (statistics.getTimestampStats().isSetLowValue()) {
-      result.put(COLUMN_MIN, ShowUtils.convertToString(statistics.getTimestampStats().getLowValue()));
-    }
-    if (statistics.getTimestampStats().isSetHighValue()) {
-      result.put(COLUMN_MAX, ShowUtils.convertToString(statistics.getTimestampStats().getHighValue()));
-    }
-    if (statistics.getTimestampStats().isSetNumNulls()) {
-      result.put(COLUMN_NUM_NULLS, statistics.getTimestampStats().getNumNulls());
-    }
-    if (statistics.getTimestampStats().isSetNumDVs()) {
-      result.put(COLUMN_DISTINCT_COUNT, statistics.getTimestampStats().getNumDVs());
     }
   }
 

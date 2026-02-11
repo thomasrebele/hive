@@ -443,8 +443,6 @@ public class DDLPlanUtils {
       buffer = cd.getDecimalStats().getHistogram();
     } else if (cd.isSetLongStats() && cd.getLongStats().isSetHistogram()) {
       buffer = cd.getLongStats().getHistogram();
-    } else if (cd.isSetTimestampStats() && cd.getTimestampStats().isSetHistogram()) {
-      buffer = cd.getTimestampStats().getHistogram();
     }
 
     return encodeBytes(buffer);

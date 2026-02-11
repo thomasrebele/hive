@@ -345,8 +345,6 @@ public class ColumnStatisticsObjTranslator {
         unpackDecimalStats(oi, o, csf, statsObj);
       } else if (statsObj.getStatsData().isSetDateStats()) {
         unpackDateStats(oi, o, csf, statsObj);
-      } else if (statsObj.getStatsData().isSetTimestampStats()) {
-        unpackTimestampStats(oi, o, csf, statsObj);
       }
     }
   }

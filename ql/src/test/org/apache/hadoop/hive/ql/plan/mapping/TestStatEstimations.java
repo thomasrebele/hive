@@ -154,7 +154,6 @@ public class TestStatEstimations {
       ColumnStatisticsObj columnStatisticsObj = tableColumnStatistics.getFirst();
       ColumnStatisticsData statsData = columnStatisticsObj.getStatsData();
       assertEquals(true, statsData.isSetLongStats());
-      assertEquals(false, statsData.isSetTimestampStats());
     }
   }
 

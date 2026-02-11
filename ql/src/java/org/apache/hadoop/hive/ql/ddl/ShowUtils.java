@@ -206,7 +206,6 @@ public final class ShowUtils {
             // if the long stats represent a timestamp, format it as a timestamp
             lowVal = longStats.isSetLowValue() ? convertTimestampToString(longStats.getLowValue()) : "";
             highVal = longStats.isSetHighValue() ? convertTimestampToString(longStats.getHighValue()) : "";
-            field = ColumnStatisticsData._Fields.TIMESTAMP_STATS;
           } else {
             lowVal = longStats.isSetLowValue() ? "" + longStats.getLowValue() : "";
             highVal = longStats.isSetHighValue() ? "" + longStats.getHighValue() : "";
@@ -215,7 +214,11 @@ public final class ShowUtils {
               "" + longStats.getNumNulls(), "" + longStats.getNumDVs(), "", "", "", "",
               convertToString(longStats.getBitVectors())));
           if (histogramEnabled) {
-            values.add(convertHistogram(statsData.getLongStats().getHistogram(), field));
+            if (serdeConstants.TIMESTAMP_TYPE_NAME.equals(column.getType())) {
+              values.add(convertTimestampHistogram(statsData.getLongStats().getHistogram()));
+            } else {
+              values.add(convertHistogram(statsData.getLongStats().getHistogram(), field));
+            }
           }
         } else if (statsData.isSetDateStats()) {
           DateColumnStatsData dateStats = statsData.getDateStats();
@@ -224,14 +227,6 @@ public final class ShowUtils {
               "", "", "", "", convertToString(dateStats.getBitVectors())));
           if (histogramEnabled) {
             values.add(convertHistogram(statsData.getDateStats().getHistogram(), statsData.getSetField()));
-          }
-        } else if (statsData.isSetTimestampStats()) {
-          TimestampColumnStatsData timestampStats = statsData.getTimestampStats();
-          values.addAll(Lists.newArrayList(convertToString(timestampStats.getLowValue()),
-              convertToString(timestampStats.getHighValue()), "" + timestampStats.getNumNulls(),
-              "" + timestampStats.getNumDVs(), "", "", "", "", convertToString(timestampStats.getBitVectors())));
-          if (histogramEnabled) {
-            values.add(convertHistogram(statsData.getTimestampStats().getHistogram(), statsData.getSetField()));
           }
         }
       } else {
@@ -267,26 +262,42 @@ public final class ShowUtils {
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(buffer));
     // to keep the visualization compact, we print only the quartiles (Q1, Q2 and Q3),
     // as min and max are displayed as separate statistics already
-    final float[] quantiles = kll.getQuantiles(new double[]{ 0.25, 0.5, 0.75 },  QuantileSearchCriteria.EXCLUSIVE);
+    final float[] quantiles = kll.getQuantiles(new double[] { 0.25, 0.5, 0.75 }, QuantileSearchCriteria.EXCLUSIVE);
 
     Function<Float, Object> converter;
 
-    switch(field) {
-      case DATE_STATS:
-        converter = f -> Date.valueOf(Timestamp.ofEpochSecond(f.longValue(), 0, getZoneIdFromConf()).toString());
-        break;
-      case DECIMAL_STATS:
-        converter = HiveDecimal::create;
-        break;
-      case DOUBLE_STATS:
-        converter = f -> f;
-        break;
-      case LONG_STATS:
-        converter = Float::longValue;
-        break;
-      default:
-        return "";
+    switch (field) {
+    case DATE_STATS:
+      converter = f -> Date.valueOf(Timestamp.ofEpochSecond(f.longValue(), 0, getZoneIdFromConf()).toString());
+      break;
+    case DECIMAL_STATS:
+      converter = HiveDecimal::create;
+      break;
+    case DOUBLE_STATS:
+      converter = f -> f;
+      break;
+    case LONG_STATS:
+      converter = Float::longValue;
+      break;
+    default:
+      return "";
     }
+
+    return kll.isEmpty() ? "" : "Q1: " + converter.apply(quantiles[0]) + ", Q2: " + converter.apply(
+        quantiles[1]) + ", Q3: " + converter.apply(quantiles[2]);
+  }
+
+  // converts the histogram from its serialization to a string representing its quantiles
+  private static String convertTimestampHistogram(byte[] buffer) {
+    if (buffer == null || buffer.length == 0) {
+      return "";
+    }
+    final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(buffer));
+    // to keep the visualization compact, we print only the quartiles (Q1, Q2 and Q3),
+    // as min and max are displayed as separate statistics already
+    final float[] quantiles = kll.getQuantiles(new double[]{ 0.25, 0.5, 0.75 },  QuantileSearchCriteria.EXCLUSIVE);
+
+    Function<Float, Object> converter = f -> Timestamp.ofEpochSecond(f.longValue(), 0, getZoneIdFromConf());
 
     return kll.isEmpty() ? "" : "Q1: " + converter.apply(quantiles[0]) + ", Q2: "
         + converter.apply(quantiles[1]) + ", Q3: " + converter.apply(quantiles[2]);

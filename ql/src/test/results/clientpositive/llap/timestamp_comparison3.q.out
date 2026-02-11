@@ -39,15 +39,15 @@ POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: timestamp_test_n123@onecolumntable
 col_name            	ts                  
 data_type           	timestamp           
-min                 	2015-01-01 00:00:00 
-max                 	2015-01-05 00:00:00 
-num_nulls           	0                   
-distinct_count      	5                   
+min                 	                    
+max                 	                    
+num_nulls           	                    
+distinct_count      	                    
 avg_col_len         	                    
 max_col_len         	                    
 num_trues           	                    
 num_falses          	                    
-bit_vector          	HL                  
+bit_vector          	                    
 comment             	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"ts\":\"true\"}}
 PREHOOK: query: explain
@@ -78,17 +78,17 @@ STAGE PLANS:
                 TableScan
                   alias: onecolumntable
                   filterExpr: ts BETWEEN TIMESTAMP'2015-01-02 00:00:00' AND TIMESTAMP'2015-01-04 00:00:00' (type: boolean)
-                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
                     predicate: ts BETWEEN TIMESTAMP'2015-01-02 00:00:00' AND TIMESTAMP'2015-01-04 00:00:00' (type: boolean)
-                    Statistics: Num rows: 3 Data size: 120 Basic stats: COMPLETE Column stats: COMPLETE
+                    Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: ts (type: timestamp)
                       outputColumnNames: _col0
-                      Statistics: Num rows: 3 Data size: 120 Basic stats: COMPLETE Column stats: COMPLETE
+                      Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                       File Output Operator
                         compressed: false
-                        Statistics: Num rows: 3 Data size: 120 Basic stats: COMPLETE Column stats: COMPLETE
+                        Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                         table:
                             input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                             output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
@@ -130,17 +130,17 @@ STAGE PLANS:
                 TableScan
                   alias: onecolumntable
                   filterExpr: ts BETWEEN TIMESTAMP'2015-01-02 00:00:00' AND TIMESTAMP'2015-01-03 00:00:00' (type: boolean)
-                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
                     predicate: ts BETWEEN TIMESTAMP'2015-01-02 00:00:00' AND TIMESTAMP'2015-01-03 00:00:00' (type: boolean)
-                    Statistics: Num rows: 2 Data size: 80 Basic stats: COMPLETE Column stats: COMPLETE
+                    Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: ts (type: timestamp)
                       outputColumnNames: _col0
-                      Statistics: Num rows: 2 Data size: 80 Basic stats: COMPLETE Column stats: COMPLETE
+                      Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                       File Output Operator
                         compressed: false
-                        Statistics: Num rows: 2 Data size: 80 Basic stats: COMPLETE Column stats: COMPLETE
+                        Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                         table:
                             input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                             output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
@@ -182,17 +182,17 @@ STAGE PLANS:
                 TableScan
                   alias: onecolumntable
                   filterExpr: ts BETWEEN TIMESTAMP'2015-01-01 00:00:00' AND TIMESTAMP'2015-01-08 00:00:00' (type: boolean)
-                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                  Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
                     predicate: ts BETWEEN TIMESTAMP'2015-01-01 00:00:00' AND TIMESTAMP'2015-01-08 00:00:00' (type: boolean)
-                    Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                    Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: ts (type: timestamp)
                       outputColumnNames: _col0
-                      Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                      Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                       File Output Operator
                         compressed: false
-                        Statistics: Num rows: 5 Data size: 200 Basic stats: COMPLETE Column stats: COMPLETE
+                        Statistics: Num rows: 1 Data size: 40 Basic stats: COMPLETE Column stats: NONE
                         table:
                             input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                             output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
