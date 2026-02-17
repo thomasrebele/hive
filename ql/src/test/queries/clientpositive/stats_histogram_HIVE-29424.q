@@ -190,6 +190,80 @@ select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) NOT BETWEEN 100.0 
 
 select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 100.0;
 
+select '\nVALUES3\n';
+
+CREATE TABLE tabVALUES3 (e integer) stored as orc;
+
+insert into tabVALUES3 (e) values
+(-101),
+(-100),
+(-99),
+(0),
+(1),
+(10),
+(99),
+(100),
+(101),
+(1000),
+(10000),
+(100000)
+;
+
+select * from tabVALUES3;
+select CAST(e as DECIMAL(3,1)) from tabVALUES3;
+select CAST(e as DECIMAL(3,1)) from tabVALUES3;
+
+
+select '\ndecimal(2,1)';
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 100.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 100.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 99.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 99.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 101.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 101.0;
+
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -100.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -100.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -99.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -99.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -101.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -101.0;
+
+
+
+select '\ndecimal(3,1)';
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 100.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 100.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 99.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 99.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 101.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 101.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -100.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -100.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -99.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -99.0;
+
+select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
+select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
+
+
+
+
+
+
+
+
 select '\nrounding mode\n';
 
 CREATE TABLE rounding_mode (a decimal(38,24)) stored as orc;
