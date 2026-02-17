@@ -693,7 +693,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    * @param val2 upper bound (exclusive)
    * @return the selectivity of "val1 &lt;= column &lt; val2"
    */
-  public static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
+  static double rangedSelectivity(KllFloatsSketch kll, float val1, float val2) {
     if (val1 >= val2) {
       return 0;
     }

@@ -63,6 +63,11 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Objects;
 
+import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
+import static org.apache.calcite.sql.type.SqlTypeName.FLOAT;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.greaterThanOrEqualSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.greaterThanSelectivity;
@@ -117,16 +122,6 @@ public class TestFilterSelectivityEstimator {
   private static final RexBuilder REX_BUILDER = new RexBuilder(new JavaTypeFactoryImpl(new HiveTypeSystemImpl()));
   private static final RelDataTypeFactory TYPE_FACTORY = REX_BUILDER.getTypeFactory();
 
-  public static final RelDataType TINYINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.TINYINT);
-  public static final RelDataType INTEGER = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
-  public static final RelDataType BIGINT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.BIGINT);
-  public static final RelDataType DECIMAL_2_1 = createDecimalType(2, 1);
-  public static final RelDataType DECIMAL_3_1 = createDecimalType(3, 1);
-  public static final RelDataType DECIMAL_4_1 = createDecimalType(4, 1);
-  public static final RelDataType DECIMAL_7_1 = createDecimalType(7, 1);
-  public static final RelDataType DECIMAL_38_25 = createDecimalType(38, 25);
-  public static final RelDataType FLOAT = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.FLOAT);
-  public static final RelDataType DOUBLE = REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DOUBLE);
   private static RelOptCluster relOptCluster;
   private static RexNode intMinus1;
   private static RexNode int0;
@@ -158,7 +153,7 @@ public class TestFilterSelectivityEstimator {
 
   @BeforeClass
   public static void beforeClass() {
-    RelDataType integerType = TYPE_FACTORY.createSqlType(SqlTypeName.INTEGER);
+    RelDataType integerType = TYPE_FACTORY.createSqlType(INTEGER);
     intMinus1 = REX_BUILDER.makeLiteral(-1, integerType, true);
     int0 = REX_BUILDER.makeLiteral(0, integerType, true);
     int1 = REX_BUILDER.makeLiteral(1, integerType, true);
@@ -173,7 +168,7 @@ public class TestFilterSelectivityEstimator {
     boolFalse = REX_BUILDER.makeLiteral(false, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
     boolTrue = REX_BUILDER.makeLiteral(true, TYPE_FACTORY.createSqlType(SqlTypeName.BOOLEAN), true);
     RelDataTypeFactory.Builder b = new RelDataTypeFactory.Builder(TYPE_FACTORY);
-    b.add("f_numeric", DECIMAL_38_25);
+    b.add("f_numeric", decimalType(38, 25));
     b.add("f_timestamp", SqlTypeName.TIMESTAMP);
     b.add("f_date", SqlTypeName.DATE).build();
     tableType = b.build();
@@ -607,66 +602,70 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityWithCast() {
     useFieldWithValues("f_numeric", VALUES, KLL);
-    checkSelectivity(3 / 13.f, castAndCompare(TINYINT, GE, int5));
-    checkSelectivity(10 / 13.f, castAndCompare(TINYINT, LT, int5));
-    checkSelectivity(2 / 13.f, castAndCompare(TINYINT, GT, int5));
-    checkSelectivity(11 / 13.f, castAndCompare(TINYINT, LE, int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", TINYINT), int5));
+    checkSelectivity(10 / 13.f, lt(cast("f_numeric", TINYINT), int5));
+    checkSelectivity(2 / 13.f, gt(cast("f_numeric", TINYINT), int5));
+    checkSelectivity(11 / 13.f, le(cast("f_numeric", TINYINT), int5));
 
-    checkSelectivity(12 / 13f, castAndCompare(TINYINT, GE, int2));
-    checkSelectivity(1 / 13f, castAndCompare(TINYINT, LT, int2));
-    checkSelectivity(5 / 13f, castAndCompare(TINYINT, GT, int2));
-    checkSelectivity(8 / 13f, castAndCompare(TINYINT, LE, int2));
+    checkSelectivity(12 / 13f, ge(cast("f_numeric", TINYINT), int2));
+    checkSelectivity(1 / 13f, lt(cast("f_numeric", TINYINT), int2));
+    checkSelectivity(5 / 13f, gt(cast("f_numeric", TINYINT), int2));
+    checkSelectivity(8 / 13f, le(cast("f_numeric", TINYINT), int2));
 
     // check some types
-    checkSelectivity(3 / 13.f, castAndCompare(INTEGER, GE, int5));
-    checkSelectivity(3 / 13.f, castAndCompare(BIGINT, GE, int5));
-    checkSelectivity(3 / 13.f, castAndCompare(FLOAT, GE, int5));
-    checkSelectivity(3 / 13.f, castAndCompare(DOUBLE, GE, int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", INTEGER), int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", BIGINT), int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", FLOAT), int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", DOUBLE), int5));
   }
 
   @Test
   public void testComputeRangePredicateSelectivityWithCast2() {
     useFieldWithValues("f_numeric", VALUES2, KLL2);
-    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
+    RelDataType decimal3s1 = decimalType(3, 1);
+    checkSelectivity(4 / 28.f, ge(cast("f_numeric", decimal3s1), literalFloat(1)));
 
     // values from -99.94999 to 99.94999 (both inclusive)
-    checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(100)));
-    checkSelectivity(7 / 28.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(100)));
-    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(100)));
-    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(100)));
+    checkSelectivity(7 / 28.f, lt(cast("f_numeric", decimal3s1), literalFloat(100)));
+    checkSelectivity(7 / 28.f, le(cast("f_numeric", decimal3s1), literalFloat(100)));
+    checkSelectivity(0 / 28.f, gt(cast("f_numeric", decimal3s1), literalFloat(100)));
+    checkSelectivity(0 / 28.f, ge(cast("f_numeric", decimal3s1), literalFloat(100)));
 
-    checkSelectivity(10 / 28.f, castAndCompare(DECIMAL_4_1, LT, literalFloat(100)));
-    checkSelectivity(20 / 28.f, castAndCompare(DECIMAL_4_1, LE, literalFloat(100)));
-    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_4_1, GT, literalFloat(100)));
-    checkSelectivity(13 / 28.f, castAndCompare(DECIMAL_4_1, GE, literalFloat(100)));
+    RelDataType decimal4s1 = decimalType(4, 1);
+    checkSelectivity(10 / 28.f, lt(cast("f_numeric", decimal4s1), literalFloat(100)));
+    checkSelectivity(20 / 28.f, le(cast("f_numeric", decimal4s1), literalFloat(100)));
+    checkSelectivity(3 / 28.f, gt(cast("f_numeric", decimal4s1), literalFloat(100)));
+    checkSelectivity(13 / 28.f, ge(cast("f_numeric", decimal4s1), literalFloat(100)));
 
-    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_2_1, LT, literalFloat(100)));
-    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_2_1, LE, literalFloat(100)));
-    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GT, literalFloat(100)));
-    checkSelectivity(0 / 28.f, castAndCompare(DECIMAL_2_1, GE, literalFloat(100)));
+    RelDataType decimal2s1 = decimalType(2, 1);
+    checkSelectivity(2 / 28.f, lt(cast("f_numeric", decimal2s1), literalFloat(100)));
+    checkSelectivity(2 / 28.f, le(cast("f_numeric", decimal2s1), literalFloat(100)));
+    checkSelectivity(0 / 28.f, gt(cast("f_numeric", decimal2s1), literalFloat(100)));
+    checkSelectivity(0 / 28.f, ge(cast("f_numeric", decimal2s1), literalFloat(100)));
 
     // expected: 100_000f
-    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
+    RelDataType decimal7s1 = decimalType(7, 1);
+    checkSelectivity(1 / 28.f, gt(cast("f_numeric", decimal7s1), literalFloat(10000)));
 
     // expected: 10_000f, 100_000f, because CAST(1_000_000 AS DECIMAL(7,1)) = NULL, and similar for even larger values
-    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(9999)));
-    checkSelectivity(2 / 28.f, castAndCompare(DECIMAL_7_1, GE, literalFloat(10000)));
+    checkSelectivity(2 / 28.f, ge(cast("f_numeric", decimal7s1), literalFloat(9999)));
+    checkSelectivity(2 / 28.f, ge(cast("f_numeric", decimal7s1), literalFloat(10000)));
 
     // expected: 100_000f
-    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10000)));
-    checkSelectivity(1 / 28.f, castAndCompare(DECIMAL_7_1, GT, literalFloat(10001)));
+    checkSelectivity(1 / 28.f, gt(cast("f_numeric", decimal7s1), literalFloat(10000)));
+    checkSelectivity(1 / 28.f, gt(cast("f_numeric", decimal7s1), literalFloat(10001)));
 
     // expected 1f, 10f, 99.94998f, 99.94999f
-    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, GE, literalFloat(1)));
-    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_3_1, GT, literalFloat(1)));
+    checkSelectivity(4 / 28.f, ge(cast("f_numeric", decimal3s1), literalFloat(1)));
+    checkSelectivity(3 / 28.f, gt(cast("f_numeric", decimal3s1), literalFloat(1)));
     // expected -99.94999f, -99.94998f, 0f, 1f
-    checkSelectivity(4 / 28.f, castAndCompare(DECIMAL_3_1, LE, literalFloat(1)));
-    checkSelectivity(3 / 28.f, castAndCompare(DECIMAL_3_1, LT, literalFloat(1)));
+    checkSelectivity(4 / 28.f, le(cast("f_numeric", decimal3s1), literalFloat(1)));
+    checkSelectivity(3 / 28.f, lt(cast("f_numeric", decimal3s1), literalFloat(1)));
 
     // the cast would apply a modulo operation to the values outside the range of the cast
     // so instead a default selectivity should be returned
-    checkSelectivity(1 / 3.f, castAndCompare(TINYINT, LT, literalFloat(100)));
-    checkSelectivity(1 / 3.f, castAndCompare(TINYINT, LT, literalFloat(100)));
+    checkSelectivity(1 / 3.f, lt(cast("f_numeric", TINYINT), literalFloat(100)));
+    checkSelectivity(1 / 3.f, lt(cast("f_numeric", TINYINT), literalFloat(100)));
   }
 
   @Test
@@ -696,7 +695,7 @@ public class TestFilterSelectivityEstimator {
 
     {
       float universe = 2; // the number of values that "survive" the cast
-      RexNode cast = REX_BUILDER.makeCast(DECIMAL_2_1, inputRef0);
+      RexNode cast = REX_BUILDER.makeCast(decimalType(2, 1), inputRef0);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
       checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
@@ -704,7 +703,7 @@ public class TestFilterSelectivityEstimator {
 
     {
       float universe = 7;
-      RexNode cast = REX_BUILDER.makeCast(DECIMAL_3_1, inputRef0);
+      RexNode cast = REX_BUILDER.makeCast(decimalType(3, 1), inputRef0);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
       checkBetweenSelectivity(4, universe, total, cast, 1f, 100f);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
@@ -712,7 +711,7 @@ public class TestFilterSelectivityEstimator {
 
     {
       float universe = 23;
-      RexNode cast = REX_BUILDER.makeCast(DECIMAL_4_1, inputRef0);
+      RexNode cast = REX_BUILDER.makeCast(decimalType(4, 1), inputRef0);
       // the values between -999.94999... and 999.94999... (both inclusive) pass through the cast
       // the values between 99.95 and 100 are rounded up to 100, so they fulfill the BETWEEN
       checkBetweenSelectivity(13, universe, total, cast, 100, 1000);
@@ -722,7 +721,7 @@ public class TestFilterSelectivityEstimator {
 
     {
       float universe = 26;
-      RexNode cast = REX_BUILDER.makeCast(DECIMAL_7_1, inputRef0);
+      RexNode cast = REX_BUILDER.makeCast(decimalType(7, 1), inputRef0);
       checkBetweenSelectivity(14, universe, total, cast, 100, 1000);
       checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
       checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
@@ -773,12 +772,37 @@ public class TestFilterSelectivityEstimator {
     Assert.assertEquals(invMessage, invExpectedSelectivity, estimator.estimateSelectivity(invBetween), DELTA);
   }
 
-  private static RexNode castAndCompare(RelDataType type, SqlBinaryOperator op, RexNode value) {
-    RexNode cast = REX_BUILDER.makeCast(type, inputRef0);
-    return REX_BUILDER.makeCall(op, cast, value);
+  private RexNode cast(String fieldname, SqlTypeName typeName) {
+    return cast(fieldname, type(typeName));
   }
 
-  private static RelDataType createDecimalType(int precision, int scale) {
+  private RexNode cast(String fieldname, RelDataType type) {
+    int fieldIndex = scan.getRowType().getFieldNames().indexOf(fieldname);
+    RexNode column = REX_BUILDER.makeInputRef(scan, fieldIndex);
+    return REX_BUILDER.makeCast(type, column);
+  }
+
+  private RexNode ge(RexNode expr, RexNode value) {
+    return REX_BUILDER.makeCall(GE, expr, value);
+  }
+
+  private RexNode gt(RexNode expr, RexNode value) {
+    return REX_BUILDER.makeCall(GT, expr, value);
+  }
+
+  private RexNode le(RexNode expr, RexNode value) {
+    return REX_BUILDER.makeCall(LE, expr, value);
+  }
+
+  private RexNode lt(RexNode expr, RexNode value) {
+    return REX_BUILDER.makeCall(LT, expr, value);
+  }
+
+  private static RelDataType type(SqlTypeName typeName) {
+    return REX_BUILDER.getTypeFactory().createSqlType(typeName);
+  }
+
+  private static RelDataType decimalType(int precision, int scale) {
     return REX_BUILDER.getTypeFactory().createSqlType(SqlTypeName.DECIMAL, precision, scale);
   }
 
@@ -792,7 +816,7 @@ public class TestFilterSelectivityEstimator {
   }
 
   private RexNode literalFloat(float f) {
-    return REX_BUILDER.makeLiteral(f, FLOAT);
+    return REX_BUILDER.makeLiteral(f, type(SqlTypeName.FLOAT));
   }
 
   private static long timestampMillis(String timestamp) {
