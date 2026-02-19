@@ -55,13 +55,24 @@ import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveIn;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan;
 import org.apache.hadoop.hive.ql.plan.ColStatistics;
 import org.apache.hadoop.hive.ql.session.SessionState;
-import org.apache.hadoop.hive.serde.serdeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
   protected static final Logger LOG = LoggerFactory.getLogger(FilterSelectivityEstimator.class);
+
+  private static class Boundaries {
+    float lower = Float.NEGATIVE_INFINITY, upper = Float.POSITIVE_INFINITY;
+    boolean lowerInclusive = true, upperInclusive = true;
+
+    public void makeUpperOpen() {
+      if (upperInclusive) {
+        upperInclusive = false;
+        upper = Math.nextUp(upper);
+      }
+    }
+  }
 
   private final RelNode childRel;
   private final double  childCardinality;
@@ -205,12 +216,12 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    *
    * @param cast a RexCall of type {@link SqlKind#CAST}
    * @param tableScan the table that provides the statistics
-   * @param boundaries indexes 0 and 1 are the boundaries of the range predicate;
-   *                   indexes 2 and 3, if they exist, will be set to the boundaries of the type range
-   * @param inclusive whether the respective boundary is inclusive or exclusive.
+   * @param rangeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}
+   * @param typeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}
    * @return the operand if the cast can be removed, otherwise the cast itself
    */
-  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, float[] boundaries, boolean[] inclusive) {
+  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, Boundaries rangeBoundaries,
+      Boundaries typeBoundaries) {
     RexNode op0 = cast.getOperands().getFirst();
     if (!(op0 instanceof RexInputRef)) {
       return cast;
@@ -225,46 +236,31 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     // otherwise the CAST introduces some modulo-like behavior (*)
     ColStatistics colStat = colStats.getFirst();
     ColStatistics.Range range = colStat.getRange();
-    if (range == null)
+    if (range == null || range.minValue == null || Double.isNaN(
+        range.minValue.doubleValue()) || range.maxValue == null || Double.isNaN(range.maxValue.doubleValue())) {
       return cast;
-    if (range.minValue == null || Double.isNaN(range.minValue.doubleValue()))
-      return cast;
-    if (range.maxValue == null || Double.isNaN(range.maxValue.doubleValue()))
-      return cast;
+    }
 
-    String type = cast.getType().getSqlTypeName().getName();
+    SqlTypeName type = cast.getType().getSqlTypeName();
 
     double min;
     double max;
-    switch (type.toLowerCase()) {
-    case serdeConstants.TINYINT_TYPE_NAME:
-      min = Byte.MIN_VALUE;
-      max = Byte.MAX_VALUE;
+    switch (type) {
+    case TINYINT, SMALLINT, INTEGER, BIGINT:
+      min = ((Number) type.getLimit(false, SqlTypeName.Limit.OVERFLOW, false, -1, -1)).doubleValue();
+      max = ((Number) type.getLimit(true, SqlTypeName.Limit.OVERFLOW, false, -1, -1)).doubleValue();
       break;
-    case serdeConstants.SMALLINT_TYPE_NAME:
-      min = Short.MIN_VALUE;
-      max = Short.MAX_VALUE;
-      break;
-    case serdeConstants.INT_TYPE_NAME, "integer":
-      min = Integer.MIN_VALUE;
-      max = Integer.MAX_VALUE;
-      break;
-    case serdeConstants.BIGINT_TYPE_NAME, serdeConstants.TIMESTAMP_TYPE_NAME:
+    case TIMESTAMP, DATE:
       min = Long.MIN_VALUE;
       max = Long.MAX_VALUE;
       break;
-    case serdeConstants.FLOAT_TYPE_NAME:
+    case FLOAT:
       min = -Float.MAX_VALUE;
       max = Float.MAX_VALUE;
       break;
-    case serdeConstants.DOUBLE_TYPE_NAME:
+    case DOUBLE, DECIMAL:
       min = -Double.MAX_VALUE;
       max = Double.MAX_VALUE;
-      break;
-    case serdeConstants.DECIMAL_TYPE_NAME:
-      min = -Double.MAX_VALUE;
-      max = Double.MAX_VALUE;
-      adjustBoundariesForDecimal(cast, boundaries, inclusive);
       break;
     default:
       // unknown type, do not remove the cast
@@ -272,21 +268,24 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     }
 
     // see (*)
-    if (range.minValue.doubleValue() < min)
+    if (range.minValue.doubleValue() < min || range.maxValue.doubleValue() > max) {
       return cast;
-    if (range.maxValue.doubleValue() > max)
-      return cast;
+    }
+
+    if (type == SqlTypeName.DECIMAL) {
+      adjustBoundariesForDecimal(cast, rangeBoundaries, typeBoundaries);
+    }
 
     return op0;
   }
 
   /**
    * Adjust the boundaries for a DECIMAL cast.
-   * <p>
-   * See {@link #removeCastIfPossible(RexCall, HiveTableScan, float[], boolean[])}
-   * for an explanation of the parameters.
+   *
+   * @param rangeBoundaries boundaries of the range predicate
+   * @param typeBoundaries if not null, will be set to the boundaries of the type range
    */
-  private static void adjustBoundariesForDecimal(RexCall cast, float[] boundaries, boolean[] inclusive) {
+  private static void adjustBoundariesForDecimal(RexCall cast, Boundaries rangeBoundaries, Boundaries typeBoundaries) {
     // values outside the representable range are cast to NULL, so adapt the boundaries
     int precision = cast.getType().getPrecision();
     int scale = cast.getType().getScale();
@@ -299,16 +298,18 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     float typeRangeExtent = Math.nextDown((float) (Math.pow(10, digits) - adjust));
 
     // the resulting value of +- adjust would be rounded up, so in some cases we need to use Math.nextDown
-    float adjusted1 = inclusive[0] ? boundaries[0] - adjust : Math.nextDown(boundaries[0] + adjust);
-    float adjusted2 = inclusive[1] ? Math.nextDown(boundaries[1] + adjust) : boundaries[1] - adjust;
+    float adjusted1 =
+        rangeBoundaries.lowerInclusive ? rangeBoundaries.lower - adjust : Math.nextDown(rangeBoundaries.lower + adjust);
+    float adjusted2 =
+        rangeBoundaries.upperInclusive ? Math.nextDown(rangeBoundaries.upper + adjust) : rangeBoundaries.upper - adjust;
 
-    float lowerUniverse = inclusive[0] ? -typeRangeExtent : Math.nextDown(-typeRangeExtent);
-    float upperUniverse = inclusive[1] ? typeRangeExtent : Math.nextUp(typeRangeExtent);
-    boundaries[0] = Math.max(adjusted1, lowerUniverse);
-    boundaries[1] = Math.min(adjusted2, upperUniverse);
-    if (boundaries.length >= 4) {
-      boundaries[2] = lowerUniverse;
-      boundaries[3] = upperUniverse;
+    float lowerUniverse = rangeBoundaries.lowerInclusive ? -typeRangeExtent : Math.nextDown(-typeRangeExtent);
+    float upperUniverse = rangeBoundaries.upperInclusive ? typeRangeExtent : Math.nextUp(typeRangeExtent);
+    rangeBoundaries.lower = Math.max(adjusted1, lowerUniverse);
+    rangeBoundaries.upper = Math.min(adjusted2, upperUniverse);
+    if (typeBoundaries != null) {
+      typeBoundaries.lower = lowerUniverse;
+      typeBoundaries.upper = upperUniverse;
     }
   }
 
@@ -341,17 +342,21 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     default:
       return defaultSelectivity;
     }
-    float[] boundaries = new float[] { Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
-    boolean[] inclusive = new boolean[] { true, true };
-    inclusive[boundaryIdx] = !openBound;
-    boundaries[boundaryIdx] = value;
+    Boundaries boundaries = new Boundaries();
+    if (boundaryIdx == 0) {
+      boundaries.lower = value;
+      boundaries.lowerInclusive = !openBound;
+    } else {
+      boundaries.upper = value;
+      boundaries.upperInclusive = !openBound;
+    }
 
     // extract the column index from the other operator
     final HiveTableScan scan = (HiveTableScan) childRel;
     int inputRefOpIndex = 1 - literalOpIdx;
     RexNode node = operands.get(inputRefOpIndex);
     if (node.getKind().equals(SqlKind.CAST)) {
-      node = removeCastIfPossible((RexCall) node, scan, boundaries, inclusive);
+      node = removeCastIfPossible((RexCall) node, scan, boundaries, null);
     }
 
     int inputRefIndex = -1;
@@ -369,8 +374,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     }
 
     // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
-    float left = inclusive[0] ? boundaries[0] : Math.nextUp(boundaries[0]);
-    float right = inclusive[1] ? Math.nextUp(boundaries[1]) : boundaries[1];
+    float left = boundaries.lowerInclusive ? boundaries.lower : Math.nextUp(boundaries.lower);
+    float right = boundaries.upperInclusive ? Math.nextUp(boundaries.upper) : boundaries.upper;
 
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
     double rawSelectivity = rangedSelectivity(kll, left, right);
@@ -415,12 +420,14 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         return inverseBool ? computeNotEqualitySelectivity(call) : computeFunctionSelectivity(call);
       }
 
-      float[] boundaries = new float[] { leftValue, rightValue, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY };
-      boolean[] inclusive = new boolean[] { true, true };
+      Boundaries rangeBoundaries = new Boundaries();
+      rangeBoundaries.lower = leftValue;
+      rangeBoundaries.upper = rightValue;
+      Boundaries typeBoundaries = new Boundaries();
 
       RexNode expr = operands.get(1); // expr to be checked by the BETWEEN
       if (expr.getKind().equals(SqlKind.CAST)) {
-        expr = removeCastIfPossible((RexCall) expr, scan, boundaries, inclusive);
+        expr = removeCastIfPossible((RexCall) expr, scan, rangeBoundaries, typeBoundaries);
       }
 
       int inputRefIndex = -1;
@@ -435,15 +442,15 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       final List<ColStatistics> colStats = scan.getColStat(Collections.singletonList(inputRefIndex));
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
         // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
-        boundaries[1] = Math.nextUp(boundaries[1]);
-        boundaries[3] = Math.nextUp(boundaries[3]);
+        rangeBoundaries.makeUpperOpen();
+        typeBoundaries.makeUpperOpen();
 
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        double rawSelectivity = rangedSelectivity(kll, boundaries[0], boundaries[1]);
+        double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.lower, rangeBoundaries.upper);
         if (inverseBool) {
           // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
           // if there's a cast, the inversion is with respect to its codomain (range of the values of the cast)
-          double typeRangeSelectivity = rangedSelectivity(kll, boundaries[2], boundaries[3]);
+          double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.lower, typeBoundaries.upper);
           rawSelectivity = typeRangeSelectivity - rawSelectivity;
         }
         // rawSelectivity does not account for null values, so adjust them
@@ -687,7 +694,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   }
 
   /**
-   * Returns the selectivity of a predicate "val1 &lt;= column &lt; val2"
+   * Returns the selectivity of a predicate "val1 &lt;= column &lt; val2".
    * @param kll the sketch
    * @param val1 lower bound (inclusive)
    * @param val2 upper bound (exclusive)

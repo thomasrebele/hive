@@ -67,6 +67,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.FLOAT;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.betweenSelectivity;
 import static org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator.greaterThanOrEqualSelectivity;
@@ -111,9 +112,9 @@ public class TestFilterSelectivityEstimator {
    * <p>
    * See {@link org.apache.hadoop.hive.ql.udf.generic.GenericUDFToUnixTimeStamp#evaluate(GenericUDF.DeferredObject[])}.
    */
-  private static final float[] VALUES_TIME =
-      { timestamp("2020-11-01"), timestamp("2020-11-02"), timestamp("2020-11-03"), timestamp("2020-11-04"),
-          timestamp("2020-11-05T11:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
+  private static final float[] VALUES_TIME = { //
+      timestamp("2020-11-01"), timestamp("2020-11-02"), timestamp("2020-11-03"), timestamp("2020-11-04"),
+      timestamp("2020-11-05T11:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
 
   private static final KllFloatsSketch KLL = StatisticsTestUtils.createKll(VALUES);
   private static final KllFloatsSketch KLL2 = StatisticsTestUtils.createKll(VALUES2);
@@ -614,6 +615,7 @@ public class TestFilterSelectivityEstimator {
 
     // check some types
     checkSelectivity(3 / 13.f, ge(cast("f_numeric", INTEGER), int5));
+    checkSelectivity(3 / 13.f, ge(cast("f_numeric", SMALLINT), int5));
     checkSelectivity(3 / 13.f, ge(cast("f_numeric", BIGINT), int5));
     checkSelectivity(3 / 13.f, ge(cast("f_numeric", FLOAT), int5));
     checkSelectivity(3 / 13.f, ge(cast("f_numeric", DOUBLE), int5));
@@ -668,64 +670,118 @@ public class TestFilterSelectivityEstimator {
     checkSelectivity(1 / 3.f, lt(cast("f_numeric", TINYINT), literalFloat(100)));
   }
 
+  private void checkTimeFieldOnMidnightTimestamps(RexNode field) {
+    // note: use only values from VALUES_TIME that specify a date without hh:mm:ss!
+    checkSelectivity(7 / 7.f, ge(field, literalTimestamp("2020-11-01")));
+    checkSelectivity(5 / 7.f, ge(field, literalTimestamp("2020-11-03")));
+    checkSelectivity(1 / 7.f, ge(field, literalTimestamp("2020-11-07")));
+
+    checkSelectivity(6 / 7.f, gt(field, literalTimestamp("2020-11-01")));
+    checkSelectivity(4 / 7.f, gt(field, literalTimestamp("2020-11-03")));
+    checkSelectivity(0 / 7.f, gt(field, literalTimestamp("2020-11-07")));
+
+    checkSelectivity(1 / 7.f, le(field, literalTimestamp("2020-11-01")));
+    checkSelectivity(3 / 7.f, le(field, literalTimestamp("2020-11-03")));
+    checkSelectivity(7 / 7.f, le(field, literalTimestamp("2020-11-07")));
+
+    checkSelectivity(0 / 7.f, lt(field, literalTimestamp("2020-11-01")));
+    checkSelectivity(2 / 7.f, lt(field, literalTimestamp("2020-11-03")));
+    checkSelectivity(6 / 7.f, lt(field, literalTimestamp("2020-11-07")));
+  }
+
+  private void checkTimeFieldOnIntraDayTimestamps(RexNode field) {
+    checkSelectivity(3 / 7.f, ge(field, literalTimestamp("2020-11-05T11:23:45Z")));
+    checkSelectivity(2 / 7.f, gt(field, literalTimestamp("2020-11-05T11:23:45Z")));
+    checkSelectivity(5 / 7.f, le(field, literalTimestamp("2020-11-05T11:23:45Z")));
+    checkSelectivity(4 / 7.f, lt(field, literalTimestamp("2020-11-05T11:23:45Z")));
+  }
+
   @Test
   public void testComputeRangePredicateSelectivityTimestamp() {
     useFieldWithValues("f_timestamp", VALUES_TIME, KLL_TIME);
-
-    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, currentInputRef, literalTimestamp("2020-11-03")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(GT, currentInputRef, literalTimestamp("2020-11-03")));
-    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(LE, currentInputRef, literalTimestamp("2020-11-05T11:23:45Z")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, currentInputRef, literalTimestamp("2020-11-05T11:23:45Z")));
+    RexNode field = currentInputRef;
+    checkTimeFieldOnMidnightTimestamps(field);
+    checkTimeFieldOnIntraDayTimestamps(field);
   }
 
   @Test
   public void testComputeRangePredicateSelectivityDate() {
     useFieldWithValues("f_date", VALUES_TIME, KLL_TIME);
+    RexNode field = currentInputRef;
+    checkTimeFieldOnMidnightTimestamps(field);
 
-    checkSelectivity(5 / 7.f, REX_BUILDER.makeCall(GE, currentInputRef, literalDate("2020-11-03")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(GT, currentInputRef, literalDate("2020-11-03")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LE, currentInputRef, literalDate("2020-11-05")));
-    checkSelectivity(4 / 7.f, REX_BUILDER.makeCall(LT, currentInputRef, literalDate("2020-11-05")));
+    // it does not make sense to compare with "2020-11-05T11:23:45Z",
+    // as that value would not be stored as-is in a date value, but as "2020-11-05" instead
   }
 
   @Test
-  public void testComputeRangePredicateSelectivityBetweenWithCast() {
+  public void testComputeRangePredicateSelectivityDateWithCast() {
+    useFieldWithValues("f_date", VALUES_TIME, KLL_TIME);
+    RexNode field1 = cast("f_date", SqlTypeName.DATE);
+    checkTimeFieldOnMidnightTimestamps(field1);
+    checkTimeFieldOnIntraDayTimestamps(field1);
+
+    RexNode field2 = cast("f_date", SqlTypeName.TIMESTAMP);
+    checkTimeFieldOnMidnightTimestamps(field2);
+    checkTimeFieldOnIntraDayTimestamps(field2);
+  }
+
+  @Test
+  public void testComputeRangePredicateSelectivityTimestampWithCast() {
+    useFieldWithValues("f_timestamp", VALUES_TIME, KLL_TIME);
+    RexNode field1 = cast("f_timestamp", SqlTypeName.DATE);
+    checkTimeFieldOnMidnightTimestamps(field1);
+
+    RexNode field2 = cast("f_timestamp", SqlTypeName.TIMESTAMP);
+    checkTimeFieldOnMidnightTimestamps(field2);
+  }
+
+  // TODO tr test CAST(xxx as DATE), CAST(xxx as TIMESTAMP) !!!
+
+  @Test
+  public void testComputeRangePredicateSelectivityBetweenWithCastDecimal2_1() {
     useFieldWithValues("f_numeric", VALUES2, KLL2);
     float total = VALUES2.length;
+    float universe = 2; // the number of values that "survive" the cast
+    RexNode cast = REX_BUILDER.makeCast(decimalType(2, 1), inputRef0);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
+    checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
+  }
 
-    {
-      float universe = 2; // the number of values that "survive" the cast
-      RexNode cast = REX_BUILDER.makeCast(decimalType(2, 1), inputRef0);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
-      checkBetweenSelectivity(1, universe, total, cast, 1f, 100f);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
-    }
+  @Test
+  public void testComputeRangePredicateSelectivityBetweenWithCastDecimal3_1() {
+    useFieldWithValues("f_numeric", VALUES2, KLL2);
+    float total = VALUES2.length;
+    float universe = 7;
+    RexNode cast = REX_BUILDER.makeCast(decimalType(3, 1), inputRef0);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
+    checkBetweenSelectivity(4, universe, total, cast, 1f, 100f);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
+  }
 
-    {
-      float universe = 7;
-      RexNode cast = REX_BUILDER.makeCast(decimalType(3, 1), inputRef0);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 1000f);
-      checkBetweenSelectivity(4, universe, total, cast, 1f, 100f);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
-    }
+  @Test
+  public void testComputeRangePredicateSelectivityBetweenWithCastDecimal4_1() {
+    useFieldWithValues("f_numeric", VALUES2, KLL2);
+    float total = VALUES2.length;
+    float universe = 23;
+    RexNode cast = REX_BUILDER.makeCast(decimalType(4, 1), inputRef0);
+    // the values between -999.94999... and 999.94999... (both inclusive) pass through the cast
+    // the values between 99.95 and 100 are rounded up to 100, so they fulfill the BETWEEN
+    checkBetweenSelectivity(13, universe, total, cast, 100, 1000);
+    checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
+  }
 
-    {
-      float universe = 23;
-      RexNode cast = REX_BUILDER.makeCast(decimalType(4, 1), inputRef0);
-      // the values between -999.94999... and 999.94999... (both inclusive) pass through the cast
-      // the values between 99.95 and 100 are rounded up to 100, so they fulfill the BETWEEN
-      checkBetweenSelectivity(13, universe, total, cast, 100, 1000);
-      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
-    }
-
-    {
-      float universe = 26;
-      RexNode cast = REX_BUILDER.makeCast(decimalType(7, 1), inputRef0);
-      checkBetweenSelectivity(14, universe, total, cast, 100, 1000);
-      checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
-      checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
-    }
+  @Test
+  public void testComputeRangePredicateSelectivityBetweenWithCastDecimal7_1() {
+    useFieldWithValues("f_numeric", VALUES2, KLL2);
+    float total = VALUES2.length;
+    float universe = 26;
+    RexNode cast = REX_BUILDER.makeCast(decimalType(7, 1), inputRef0);
+    checkBetweenSelectivity(14, universe, total, cast, 100, 1000);
+    checkBetweenSelectivity(14, universe, total, cast, 1f, 100f);
+    checkBetweenSelectivity(0, universe, total, cast, 100f, 0f);
   }
 
   private void checkSelectivity(float expectedSelectivity, RexNode filter) {
