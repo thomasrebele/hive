@@ -216,8 +216,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    *
    * @param cast a RexCall of type {@link SqlKind#CAST}
    * @param tableScan the table that provides the statistics
-   * @param rangeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}
-   * @param typeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}
+   * @param rangeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}; might get modified
+   * @param typeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, Boundaries, Boundaries)}; might get modified
    * @return the operand if the cast can be removed, otherwise the cast itself
    */
   private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, Boundaries rangeBoundaries,
@@ -282,8 +282,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   /**
    * Adjust the boundaries for a DECIMAL cast.
    *
-   * @param rangeBoundaries boundaries of the range predicate
-   * @param typeBoundaries if not null, will be set to the boundaries of the type range
+   * @param rangeBoundaries boundaries of the range predicate; might get modified
+   * @param typeBoundaries if not null, will be set to the boundaries of the type range; might get modified
    */
   private static void adjustBoundariesForDecimal(RexCall cast, Boundaries rangeBoundaries, Boundaries typeBoundaries) {
     // values outside the representable range are cast to NULL, so adapt the boundaries
@@ -379,22 +379,35 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
     double rawSelectivity = rangedSelectivity(kll, left, right);
+    return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);
+  }
 
-    // rawSelectivity does not account for null values, we multiply for the number of non-null values (getN)
-    // and we divide by the total (non-null + null values) to get the overall rawSelectivity.
-    //
-    // Example: consider a filter "col < 3", and the following table rows:
-    //  _____
-    // | col |
-    // |_____|
-    // |1    |
-    // |null |
-    // |null |
-    // |3    |
-    // |4    |
-    // -------
-    // kll.getN() would be 3, rawSelectivity 1/3, scan.getTable().getRowCount() 5
-    // so the final result would be 3 * 1/3 / 5 = 1/5, as expected.
+  /**
+   * Adjust the selectivity estimate to take NULL values into account.
+   * <p>
+   * The rawSelectivity does not account for null values. We multiply with the number of non-null values (getN)
+   * and we divide by the total number (non-null + null values) to get the overall selectivity.
+   * <p>
+   * Example: consider a filter "col < 3", and the following table rows:
+   * <pre>
+   *  _____
+   * | col |
+   * |_____|
+   * |1    |
+   * |null |
+   * |null |
+   * |3    |
+   * |4    |
+   * -------
+   * </pre>
+   * kll.getN() would be 3, rawSelectivity 1/3, scan.getTable().getRowCount() 5
+   * so the final result would be 3 * 1/3 / 5 = 1/5, as expected.
+   */
+  private static double scaleSelectivityToNullableValues(KllFloatsSketch kll, double rawSelectivity,
+      HiveTableScan scan) {
+    if (scan.getTable() == null) {
+      return rawSelectivity;
+    }
     return kll.getN() * rawSelectivity / scan.getTable().getRowCount();
   }
 
@@ -423,7 +436,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       Boundaries rangeBoundaries = new Boundaries();
       rangeBoundaries.lower = leftValue;
       rangeBoundaries.upper = rightValue;
-      Boundaries typeBoundaries = new Boundaries();
+      Boundaries typeBoundaries = inverseBool ? new Boundaries() : null;
 
       RexNode expr = operands.get(1); // expr to be checked by the BETWEEN
       if (expr.getKind().equals(SqlKind.CAST)) {
@@ -442,20 +455,17 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       final List<ColStatistics> colStats = scan.getColStat(Collections.singletonList(inputRefIndex));
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
         // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
-        rangeBoundaries.makeUpperOpen();
-        typeBoundaries.makeUpperOpen();
-
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
+        rangeBoundaries.makeUpperOpen();
         double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.lower, rangeBoundaries.upper);
         if (inverseBool) {
           // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
           // if there's a cast, the inversion is with respect to its codomain (range of the values of the cast)
+          typeBoundaries.makeUpperOpen();
           double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.lower, typeBoundaries.upper);
           rawSelectivity = typeRangeSelectivity - rawSelectivity;
         }
-        // rawSelectivity does not account for null values, so adjust them
-        // for a detailed explanation, see comment at computeRangePredicateSelectivity
-        return kll.getN() * rawSelectivity / scan.getTable().getRowCount();
+        return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);
       }
     }
     return computeFunctionSelectivity(call);
