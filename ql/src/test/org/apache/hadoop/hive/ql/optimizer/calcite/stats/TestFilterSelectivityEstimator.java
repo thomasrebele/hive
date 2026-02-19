@@ -112,7 +112,7 @@ public class TestFilterSelectivityEstimator {
    * <p>
    * See {@link org.apache.hadoop.hive.ql.udf.generic.GenericUDFToUnixTimeStamp#evaluate(GenericUDF.DeferredObject[])}.
    */
-  private static final float[] VALUES_TIME = { //
+  private static final float[] VALUES_TIME = {
       timestamp("2020-11-01"), timestamp("2020-11-02"), timestamp("2020-11-03"), timestamp("2020-11-04"),
       timestamp("2020-11-05T11:23:45Z"), timestamp("2020-11-06"), timestamp("2020-11-07") };
 
