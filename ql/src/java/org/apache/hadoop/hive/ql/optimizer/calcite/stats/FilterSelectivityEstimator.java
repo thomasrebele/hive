@@ -63,18 +63,18 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
   protected static final Logger LOG = LoggerFactory.getLogger(FilterSelectivityEstimator.class);
 
-  private record Boundaries(float lower, boolean lowerInclusive, float upper, boolean upperInclusive) {
-    public Boundaries getClosedOpen() {
+  private record FloatInterval(float lower, boolean lowerInclusive, float upper, boolean upperInclusive) {
+    public FloatInterval getRightHalfOpenInterval() {
       if (lowerInclusive && !upperInclusive) {
         return this;
       }
       float newLower = lowerInclusive ? lower : Math.nextUp(lower);
       float newUpper = !upperInclusive ? upper : Math.nextUp(upper);
-      return new Boundaries(newLower, true, newUpper, false);
+      return new FloatInterval(newLower, true, newUpper, false);
     }
 
-    public Boundaries withValues(float lower, float upper) {
-      return new Boundaries(lower, lowerInclusive, upper, upperInclusive);
+    public FloatInterval withValues(float lower, float upper) {
+      return new FloatInterval(lower, lowerInclusive, upper, upperInclusive);
     }
   }
 
@@ -224,8 +224,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    * @param typeBoundaries see {@link #adjustBoundariesForDecimal(RexCall, MutableObject, MutableObject)}; might get modified
    * @return the operand if the cast can be removed, otherwise the cast itself
    */
-  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan, MutableObject<Boundaries> rangeBoundaries,
-      MutableObject<Boundaries> typeBoundaries) {
+  private RexNode removeCastIfPossible(RexCall cast, HiveTableScan tableScan,
+      MutableObject<FloatInterval> rangeBoundaries, MutableObject<FloatInterval> typeBoundaries) {
     RexNode op0 = cast.getOperands().getFirst();
     if (!(op0 instanceof RexInputRef)) {
       return cast;
@@ -289,8 +289,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    * @param rangeBoundaries boundaries of the range predicate; might get modified
    * @param typeBoundaries if not null, will be set to the boundaries of the type range; might get modified
    */
-  private static void adjustBoundariesForDecimal(RexCall cast, MutableObject<Boundaries> rangeBoundaries,
-      MutableObject<Boundaries> typeBoundaries) {
+  private static void adjustBoundariesForDecimal(RexCall cast, MutableObject<FloatInterval> rangeBoundaries,
+      MutableObject<FloatInterval> typeBoundaries) {
     // values outside the representable range are cast to NULL, so adapt the boundaries
     int precision = cast.getType().getPrecision();
     int scale = cast.getType().getScale();
@@ -302,7 +302,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     // e.g., the typeRangeExt is 99.94999 for DECIMAL(3,1)
     float typeRangeExtent = Math.nextDown((float) (Math.pow(10, digits) - adjust));
 
-    Boundaries range = rangeBoundaries.getValue();
+    FloatInterval range = rangeBoundaries.getValue();
     // the resulting value of +- adjust would be rounded up, so in some cases we need to use Math.nextDown
     float adjusted1 = range.lowerInclusive ? range.lower - adjust : Math.nextDown(range.lower + adjust);
     float adjusted2 = range.upperInclusive ? Math.nextDown(range.upper + adjust) : range.upper - adjust;
@@ -313,7 +313,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     float upper = Math.min(adjusted2, upperUniverse);
     rangeBoundaries.setValue(range.withValues(lower, upper));
     if (typeBoundaries != null) {
-      typeBoundaries.setValue(new Boundaries(lowerUniverse, range.lowerInclusive, upperUniverse, range.upperInclusive));
+      typeBoundaries.setValue(
+          new FloatInterval(lowerUniverse, range.lowerInclusive, upperUniverse, range.upperInclusive));
     }
   }
 
@@ -350,8 +351,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
     boolean[] inclusive = new boolean[] { true, true };
     boundaryValues[boundaryIdx] = value;
     inclusive[boundaryIdx] = !openBound;
-    MutableObject<Boundaries> boundaries =
-        new MutableObject<>(new Boundaries(boundaryValues[0], inclusive[0], boundaryValues[1], inclusive[1]));
+    MutableObject<FloatInterval> boundaries =
+        new MutableObject<>(new FloatInterval(boundaryValues[0], inclusive[0], boundaryValues[1], inclusive[1]));
 
     // extract the column index from the other operator
     final HiveTableScan scan = (HiveTableScan) childRel;
@@ -377,8 +378,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
     // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
-    Boundaries range = boundaries.getValue().getClosedOpen();
-    double rawSelectivity = rangedSelectivity(kll, range.lower, range.upper);
+    double rawSelectivity = rangedSelectivity(kll, boundaries.getValue().getRightHalfOpenInterval());
     return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);
   }
 
@@ -433,10 +433,10 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
         return inverseBool ? computeNotEqualitySelectivity(call) : computeFunctionSelectivity(call);
       }
 
-      MutableObject<Boundaries> rangeBoundaries =
-          new MutableObject<>(new Boundaries(leftValue, true, rightValue, true));
-      MutableObject<Boundaries> typeBoundaries = inverseBool ? new MutableObject<>(
-          new Boundaries(Float.NEGATIVE_INFINITY, true, Float.POSITIVE_INFINITY, true)) : null;
+      MutableObject<FloatInterval> rangeBoundaries =
+          new MutableObject<>(new FloatInterval(leftValue, true, rightValue, true));
+      MutableObject<FloatInterval> typeBoundaries = inverseBool ? new MutableObject<>(
+          new FloatInterval(Float.NEGATIVE_INFINITY, true, Float.POSITIVE_INFINITY, true)) : null;
 
       RexNode expr = operands.get(1); // expr to be checked by the BETWEEN
       if (expr.getKind().equals(SqlKind.CAST)) {
@@ -456,11 +456,11 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
         // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.getValue().getClosedOpen());
+        double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.getValue().getRightHalfOpenInterval());
         if (inverseBool) {
           // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
           // if there's a cast, the inversion is with respect to its codomain (range of the values of the cast)
-          double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.getValue().getClosedOpen());
+          double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.getValue().getRightHalfOpenInterval());
           rawSelectivity = typeRangeSelectivity - rawSelectivity;
         }
         return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);
@@ -707,8 +707,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
    * @param boundaries the boundaries
    * @return the selectivity of "val1 &lt;= column &lt; val2"
    */
-  private static double rangedSelectivity(KllFloatsSketch kll, Boundaries boundaries) {
-    Boundaries closedOpen = boundaries.getClosedOpen();
+  private static double rangedSelectivity(KllFloatsSketch kll, FloatInterval boundaries) {
+    FloatInterval closedOpen = boundaries.getRightHalfOpenInterval();
     return rangedSelectivity(kll, closedOpen.lower, closedOpen.upper);
   }
 
