@@ -286,8 +286,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   /**
    * Adjust the boundaries for a DECIMAL cast.
    *
-   * @param rangeBoundaries boundaries of the range predicate; might get modified
-   * @param typeBoundaries if not null, will be set to the boundaries of the type range; might get modified
+   * @param rangeBoundaries boundaries of the range predicate
+   * @param typeBoundaries if not null, will be set to the boundaries of the type range
    */
   private static void adjustBoundariesForDecimal(RexCall cast, MutableObject<FloatInterval> rangeBoundaries,
       MutableObject<FloatInterval> typeBoundaries) {
@@ -378,7 +378,7 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
     final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
     // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
-    double rawSelectivity = rangedSelectivity(kll, boundaries.getValue().getRightHalfOpenInterval());
+    double rawSelectivity = rangedSelectivity(kll, boundaries.getValue());
     return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);
   }
 
@@ -456,11 +456,11 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
       if (!colStats.isEmpty() && isHistogramAvailable(colStats.get(0))) {
         // convert the condition to a range val1 <= x < val2 for rangedSelectivity(...)
         final KllFloatsSketch kll = KllFloatsSketch.heapify(Memory.wrap(colStats.get(0).getHistogram()));
-        double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.getValue().getRightHalfOpenInterval());
+        double rawSelectivity = rangedSelectivity(kll, rangeBoundaries.getValue());
         if (inverseBool) {
           // when inverseBool == true, this is a NOT_BETWEEN and selectivity must be inverted
           // if there's a cast, the inversion is with respect to its codomain (range of the values of the cast)
-          double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.getValue().getRightHalfOpenInterval());
+          double typeRangeSelectivity = rangedSelectivity(kll, typeBoundaries.getValue());
           rawSelectivity = typeRangeSelectivity - rawSelectivity;
         }
         return scaleSelectivityToNullableValues(kll, rawSelectivity, scan);

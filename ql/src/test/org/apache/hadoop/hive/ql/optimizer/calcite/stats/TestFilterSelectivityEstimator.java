@@ -699,19 +699,17 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityTimestamp() {
     useFieldWithValues("f_timestamp", VALUES_TIME, KLL_TIME);
-    RexNode field = currentInputRef;
-    checkTimeFieldOnMidnightTimestamps(field);
-    checkTimeFieldOnIntraDayTimestamps(field);
+    checkTimeFieldOnMidnightTimestamps(currentInputRef);
+    checkTimeFieldOnIntraDayTimestamps(currentInputRef);
   }
 
   @Test
   public void testComputeRangePredicateSelectivityDate() {
     useFieldWithValues("f_date", VALUES_TIME, KLL_TIME);
-    RexNode field = currentInputRef;
-    checkTimeFieldOnMidnightTimestamps(field);
+    checkTimeFieldOnMidnightTimestamps(currentInputRef);
 
     // it does not make sense to compare with "2020-11-05T11:23:45Z",
-    // as that value would not be stored as-is in a date value, but as "2020-11-05" instead
+    // as that value would not be stored as-is in a date column, but as "2020-11-05" instead
   }
 
   @Test
@@ -729,14 +727,9 @@ public class TestFilterSelectivityEstimator {
   @Test
   public void testComputeRangePredicateSelectivityTimestampWithCast() {
     useFieldWithValues("f_timestamp", VALUES_TIME, KLL_TIME);
-    RexNode field1 = cast("f_timestamp", SqlTypeName.DATE);
-    checkTimeFieldOnMidnightTimestamps(field1);
-
-    RexNode field2 = cast("f_timestamp", SqlTypeName.TIMESTAMP);
-    checkTimeFieldOnMidnightTimestamps(field2);
+    checkTimeFieldOnMidnightTimestamps(cast("f_timestamp", SqlTypeName.DATE));
+    checkTimeFieldOnMidnightTimestamps(cast("f_timestamp", SqlTypeName.TIMESTAMP));
   }
-
-  // TODO tr test CAST(xxx as DATE), CAST(xxx as TIMESTAMP) !!!
 
   @Test
   public void testComputeRangePredicateSelectivityBetweenWithCastDecimal2_1() {
