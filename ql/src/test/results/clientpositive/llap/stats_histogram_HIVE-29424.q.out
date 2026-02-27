@@ -1681,6 +1681,1216 @@ POSTHOOK: Input: default@tabvalues3
 1
 10
 99
+PREHOOK: query: select '\nVALUES_TIME\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nVALUES_TIME\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+VALUES_TIME
+
+PREHOOK: query: CREATE TABLE tabVALUES_TIME (ts timestamp, d date) stored as orc
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@tabVALUES_TIME
+POSTHOOK: query: CREATE TABLE tabVALUES_TIME (ts timestamp, d date) stored as orc
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@tabVALUES_TIME
+PREHOOK: query: insert into tabVALUES_TIME (ts, d) values
+("2020-11-01", "2020-11-01"),
+("2020-11-02", "2020-11-02"),
+("2020-11-03", "2020-11-03"),
+("2020-11-04", "2020-11-04"),
+("2020-11-05T11:23:45", "2020-11-05T11:23:45"),
+("2020-11-06", "2020-11-06"),
+("2020-11-07", "2020-11-07")
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Output: default@tabvalues_time
+POSTHOOK: query: insert into tabVALUES_TIME (ts, d) values
+("2020-11-01", "2020-11-01"),
+("2020-11-02", "2020-11-02"),
+("2020-11-03", "2020-11-03"),
+("2020-11-04", "2020-11-04"),
+("2020-11-05T11:23:45", "2020-11-05T11:23:45"),
+("2020-11-06", "2020-11-06"),
+("2020-11-07", "2020-11-07")
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Output: default@tabvalues_time
+POSTHOOK: Lineage: tabvalues_time.d SCRIPT []
+POSTHOOK: Lineage: tabvalues_time.ts SCRIPT []
+PREHOOK: query: select '\nwithout cast\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nwithout cast\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+without cast
+
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+PREHOOK: query: select '\nwith cast(... AS TIMESTAMP)\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nwith cast(... AS TIMESTAMP)\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+with cast(... AS TIMESTAMP)
+
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+PREHOOK: query: select '\nwith cast(... AS DATE)\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\nwith cast(... AS DATE)\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+with cast(... AS DATE)
+
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+1
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+7
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+0
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+6
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+PREHOOK: query: select '\ncompare with non-midnight timestamp\n'
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: select '\ncompare with non-midnight timestamp\n'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+
+compare with non-midnight timestamp
+
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+PREHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where ts < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where ts < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+3
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-05 11:23:45	2020-11-05
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-06 00:00:00	2020-11-06
+2020-11-07 00:00:00	2020-11-07
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+5
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+2020-11-05 11:23:45	2020-11-05
+PREHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+4
+PREHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+POSTHOOK: query: select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_time
+#### A masked pattern was here ####
+2020-11-01 00:00:00	2020-11-01
+2020-11-02 00:00:00	2020-11-02
+2020-11-03 00:00:00	2020-11-03
+2020-11-04 00:00:00	2020-11-04
+PREHOOK: query: CREATE TABLE tabVALUES_DATE_TEST (a date) stored as orc
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@tabVALUES_DATE_TEST
+POSTHOOK: query: CREATE TABLE tabVALUES_DATE_TEST (a date) stored as orc
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@tabVALUES_DATE_TEST
+PREHOOK: query: insert into tabVALUES_DATE_TEST (a) values
+("2020-11-01"),
+("2020-11-02"),
+("2020-11-03"),
+("2020-11-04"),
+("2020-11-05T11:23:45"),
+("2020-11-06"),
+("2020-11-07")
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+PREHOOK: Output: default@tabvalues_date_test
+POSTHOOK: query: insert into tabVALUES_DATE_TEST (a) values
+("2020-11-01"),
+("2020-11-02"),
+("2020-11-03"),
+("2020-11-04"),
+("2020-11-05T11:23:45"),
+("2020-11-06"),
+("2020-11-07")
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+POSTHOOK: Output: default@tabvalues_date_test
+POSTHOOK: Lineage: tabvalues_date_test.a SCRIPT []
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where a >= "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where a >= "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+3
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) >= "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) >= "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+3
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) >= "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) >= "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+3
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where a > "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where a > "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) > "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) > "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) > "2020-11-05"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) > "2020-11-05"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where a >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where a >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+3
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) >= "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) >= "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+3
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where a > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where a > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS TIMESTAMP) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
+PREHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) > "2020-11-05T11:23:45"
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+POSTHOOK: query: select count(*) from tabVALUES_DATE_TEST where CAST(a AS DATE) > "2020-11-05T11:23:45"
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues_date_test
+#### A masked pattern was here ####
+2
 PREHOOK: query: select '\nrounding mode\n'
 PREHOOK: type: QUERY
 PREHOOK: Input: _dummy_database@_dummy_table

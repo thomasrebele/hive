@@ -257,6 +257,189 @@ select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -99.0;
 select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
 select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
 
+select '\nVALUES_TIME\n';
+
+CREATE TABLE tabVALUES_TIME (ts timestamp, d date) stored as orc;
+
+insert into tabVALUES_TIME (ts, d) values
+("2020-11-01", "2020-11-01"),
+("2020-11-02", "2020-11-02"),
+("2020-11-03", "2020-11-03"),
+("2020-11-04", "2020-11-04"),
+("2020-11-05T11:23:45", "2020-11-05T11:23:45"),
+("2020-11-06", "2020-11-06"),
+("2020-11-07", "2020-11-07");
+
+select '\nwithout cast\n';
+
+select count(*) from tabVALUES_TIME where ts >= "2020-11-01";
+select * from tabVALUES_TIME where ts >= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where ts >= "2020-11-03";
+select * from tabVALUES_TIME where ts >= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where ts >= "2020-11-07";
+select * from tabVALUES_TIME where ts >= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where ts > "2020-11-01";
+select * from tabVALUES_TIME where ts > "2020-11-01";
+
+select count(*) from tabVALUES_TIME where ts > "2020-11-03";
+select * from tabVALUES_TIME where ts > "2020-11-03";
+
+select count(*) from tabVALUES_TIME where ts > "2020-11-07";
+select * from tabVALUES_TIME where ts > "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where ts <= "2020-11-01";
+select * from tabVALUES_TIME where ts <= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where ts <= "2020-11-03";
+select * from tabVALUES_TIME where ts <= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where ts <= "2020-11-07";
+select * from tabVALUES_TIME where ts <= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where ts < "2020-11-01";
+select * from tabVALUES_TIME where ts < "2020-11-01";
+
+select count(*) from tabVALUES_TIME where ts < "2020-11-03";
+select * from tabVALUES_TIME where ts < "2020-11-03";
+
+select count(*) from tabVALUES_TIME where ts < "2020-11-07";
+select * from tabVALUES_TIME where ts < "2020-11-07";
+
+
+select '\nwith cast(... AS TIMESTAMP)\n';
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-07";
+
+
+select '\nwith cast(... AS DATE)\n';
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-07";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01";
+select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-01";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03";
+select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-03";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07";
+select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-07";
+
+select '\ncompare with non-midnight timestamp\n';
+
+
+select count(*) from tabVALUES_TIME where ts >= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where ts >= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where ts > "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where ts > "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where ts <= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where ts <= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where ts < "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where ts < "2020-11-05T11:23:45";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) >= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) > "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) <= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS TIMESTAMP) < "2020-11-05T11:23:45";
+
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS DATE) >= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS DATE) > "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS DATE) <= "2020-11-05T11:23:45";
+
+select count(*) from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45";
+select * from tabVALUES_TIME where CAST(ts AS DATE) < "2020-11-05T11:23:45";
+
+
+
+
+
 
 
 
