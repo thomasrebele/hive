@@ -231,10 +231,15 @@ insert into tabVALUES3 (e) values
 (10),
 (10.0001),
 (10.9999),
-(11)
+(11),
 
+(-10),
+(-10.0001),
+(-10.9999),
+(-11)
 ;
 
+SELECT e, CAST(e as TINYINT) from tabVALUES3 where -200 < e AND e < 200;
 
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) IS NOT NULL;
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 10;
@@ -243,6 +248,14 @@ SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 11;
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 10 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 10.9999 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 11 AND 20;
+
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10.9999;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -11;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10.9999 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -11 AND 0;
+
 
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 1E20;
 SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -1E20 AND 0;
@@ -254,6 +267,14 @@ SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 0 AND 11;
 SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 10 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 10.9999 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 11 AND 20;
+
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10.9999;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -11;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10.9999 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -11 AND 0;
+
 
 SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) IS NOT NULL;
 SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 0 AND 1E20;
@@ -267,6 +288,14 @@ SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 10 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 10.9999 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 11 AND 20;
 
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10.9999;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -11;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10.9999 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -11 AND 0;
+
+
 SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) IS NOT NULL;
 SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 0 AND 1E20;
 SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -1E20 AND 0;
@@ -278,6 +307,14 @@ SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 0 AND 11;
 SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 10 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 10.9999 AND 20;
 SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 11 AND 20;
+
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10.9999;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -11;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10.9999 AND 0;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -11 AND 0;
+
 
 SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) IS NOT NULL;
 SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 0 AND 1E20;

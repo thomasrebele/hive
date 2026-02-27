@@ -1472,7 +1472,12 @@ PREHOOK: query: insert into tabVALUES3 (e) values
 (10),
 (10.0001),
 (10.9999),
-(11)
+(11),
+
+(-10),
+(-10.0001),
+(-10.9999),
+(-11)
 PREHOOK: type: QUERY
 PREHOOK: Input: _dummy_database@_dummy_table
 PREHOOK: Output: default@tabvalues3
@@ -1500,11 +1505,36 @@ POSTHOOK: query: insert into tabVALUES3 (e) values
 (10),
 (10.0001),
 (10.9999),
-(11)
+(11),
+
+(-10),
+(-10.0001),
+(-10.9999),
+(-11)
 POSTHOOK: type: QUERY
 POSTHOOK: Input: _dummy_database@_dummy_table
 POSTHOOK: Output: default@tabvalues3
 POSTHOOK: Lineage: tabvalues3.e SCRIPT []
+PREHOOK: query: SELECT e, CAST(e as TINYINT) from tabVALUES3 where -200 < e AND e < 200
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT e, CAST(e as TINYINT) from tabVALUES3 where -200 < e AND e < 200
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+-129.0000000000	NULL
+-128.9999800000	-128
+127.9999900000	127
+128.0000000000	NULL
+10.0000000000	10
+10.0001000000	10
+10.9999000000	10
+11.0000000000	11
+-10.0000000000	-10
+-10.0001000000	-10
+-10.9999000000	-10
+-11.0000000000	-11
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) IS NOT NULL
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1513,7 +1543,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) IS NOT
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-6
+10
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 10
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1568,6 +1598,60 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
 1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10.9999
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -10.9999
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -11
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -20 AND -11
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10.9999 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -10.9999 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -11 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -11 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 1E20
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1585,7 +1669,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEE
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-1
+5
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 0 AND 10
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1640,6 +1724,60 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
 1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10.9999
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -10.9999
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -11
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -20 AND -11
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10.9999 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -10.9999 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -11 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -11 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) IS NOT NULL
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1648,7 +1786,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) IS NO
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-10
+14
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 0 AND 1E20
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1666,7 +1804,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWE
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-3
+7
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 0 AND 10
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1721,6 +1859,60 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
 1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10.9999
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -10.9999
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -11
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -20 AND -11
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10.9999 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -10.9999 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -11 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -11 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) IS NOT NULL
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1729,7 +1921,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) IS NOT
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-14
+18
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 0 AND 1E20
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1747,7 +1939,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEE
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-5
+9
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 0 AND 10
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1802,6 +1994,60 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
 1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10.9999
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -10.9999
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -11
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -20 AND -11
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+1
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10.9999 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -10.9999 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+3
+PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -11 AND 0
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -11 AND 0
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tabvalues3
+#### A masked pattern was here ####
+4
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) IS NOT NULL
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1810,7 +2056,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) IS NOT 
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-18
+22
 PREHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 0 AND 1E20
 PREHOOK: type: QUERY
 PREHOOK: Input: default@tabvalues3
@@ -1828,7 +2074,7 @@ POSTHOOK: query: SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@tabvalues3
 #### A masked pattern was here ####
-7
+11
 PREHOOK: query: select '\nVALUES_tmp1\n'
 PREHOOK: type: QUERY
 PREHOOK: Input: _dummy_database@_dummy_table
