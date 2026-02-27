@@ -130,6 +130,19 @@ select count(*) from tabVALUES2 where CAST(e as DECIMAL(3,1)) IS NOT NULL;
 select count(*) from tabVALUES2 where CAST(e as DECIMAL(4,1)) IS NOT NULL;
 select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) IS NOT NULL;
 
+
+select '\ntinyint between';
+select count(*) from tabVALUES2 where CAST(e as TINYINT) BETWEEN 100.0 AND 1000.0;
+select * from tabVALUES2 where CAST(e as TINYINT) BETWEEN 100.0 AND 1000.0;
+select count(*) from tabVALUES2 where CAST(e as TINYINT) NOT BETWEEN 100.0 AND 1000.0;
+select * from tabVALUES2 where CAST(e as TINYINT) NOT BETWEEN 100.0 AND 1000.0;
+
+select count(*) from tabVALUES2 where CAST(e as TINYINT) BETWEEN 1.0 AND 100.0;
+select * from tabVALUES2 where CAST(e as TINYINT) BETWEEN 1.0 AND 100.0;
+select count(*) from tabVALUES2 where CAST(e as TINYINT) NOT BETWEEN 1.0 AND 100.0;
+select * from tabVALUES2 where CAST(e as TINYINT) NOT BETWEEN 1.0 AND 100.0;
+
+
 select '\ndecimal(2,1) between';
 select count(*) from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0;
 select * from tabVALUES2 where CAST(e as DECIMAL(2,1)) BETWEEN 100.0 AND 1000.0;
@@ -192,9 +205,58 @@ select count(*) from tabVALUES2 where CAST(e as DECIMAL(7,1)) BETWEEN 100.0 AND 
 
 select '\nVALUES3\n';
 
-CREATE TABLE tabVALUES3 (e integer) stored as orc;
+CREATE TABLE tabVALUES3 (e decimal(38,10)) stored as orc;
 
 insert into tabVALUES3 (e) values
+(-9.223373E18),
+(-9.223372E18),
+(9.223372E18),
+(9.223373E18),
+
+(-2.147484E9),
+(-2.1474836E9),
+(2.1474836E9),
+(2.147484E9),
+
+(-32769.0),
+(-32768.996),
+(32767.998),
+(32768.0),
+
+(-129),
+(-128.99998),
+(127.99999),
+(128.0)
+
+;
+
+
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) IS NOT NULL;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN 0 AND 1E20;
+SELECT count(*) from tabVALUES3 where CAST(e as TINYINT) BETWEEN -1E20 AND 0;
+
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) IS NOT NULL;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN 0 AND 1E20;
+SELECT count(*) from tabVALUES3 where CAST(e as SMALLINT) BETWEEN -1E20 AND 0;
+
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) IS NOT NULL;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN 0 AND 1E20;
+SELECT count(*) from tabVALUES3 where CAST(e as INTEGER) BETWEEN -1E20 AND 0;
+
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) IS NOT NULL;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN 0 AND 1E20;
+SELECT count(*) from tabVALUES3 where CAST(e as BIGINT) BETWEEN -1E20 AND 0;
+
+
+
+
+
+
+select '\nVALUES_tmp1\n';
+
+CREATE TABLE tabVALUES_tmp1 (e integer) stored as orc;
+
+insert into tabVALUES_tmp1 (e) values
 (-101),
 (-100),
 (-99),
@@ -209,53 +271,82 @@ insert into tabVALUES3 (e) values
 (100000)
 ;
 
-select * from tabVALUES3;
-select CAST(e as DECIMAL(3,1)) from tabVALUES3;
-select CAST(e as DECIMAL(3,1)) from tabVALUES3;
+select * from tabVALUES_tmp1;
+select CAST(e as DECIMAL(3,1)) from tabVALUES_tmp1;
+select CAST(e as DECIMAL(3,1)) from tabVALUES_tmp1;
 
 
 select '\ndecimal(2,1)';
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 100.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 100.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 100.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 100.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 99.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 99.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 99.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 99.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 101.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) < 101.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 101.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) < 101.0;
 
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -100.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -100.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -100.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -100.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -99.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -99.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -99.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -99.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -101.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(2,1)) > -101.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -101.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(2,1)) > -101.0;
 
 
 
 select '\ndecimal(3,1)';
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 100.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 100.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 100.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 100.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 99.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 99.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 99.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 99.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 101.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) < 101.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 101.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) < 101.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -100.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -100.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -100.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -100.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -99.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -99.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -99.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -99.0;
 
-select count(*) from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
-select * from tabVALUES3 where CAST(e as DECIMAL(3,1)) > -101.0;
+select count(*) from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -101.0;
+select * from tabVALUES_tmp1 where CAST(e as DECIMAL(3,1)) > -101.0;
+
+
+
+
+
+
+
+
+
+select '\nVALUES_tmp2\n';
+
+
+
+CREATE TABLE tabVALUES_tmp2 (e decimal(38,10), inc boolean) stored as orc;
+
+insert into tabVALUES_tmp2 (e, inc) values
+(-129, true),
+(-128.99999, true),
+(-128.95, true),
+(-128.9499, true),
+(127.94998, true),
+(127.94999, true),
+(127.95, true),
+(127.99999, true),
+(128, true);
+
+select CAST(e as TINYINT) from tabVALUES_tmp2;
+
+
 
 select '\nVALUES_TIME\n';
 
