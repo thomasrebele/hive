@@ -49,7 +49,6 @@ import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsField;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsType;
 import org.apache.hadoop.hive.ql.stats.StatsUtils;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
@@ -77,6 +76,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
   private boolean isRewritten;
 
   private boolean isTableLevel;
+  // TODO: refactor assignments to colNames
   private List<String> colNames;
   private List<String> colType;
   private Table tbl;
@@ -212,7 +212,8 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
         if (colName.equalsIgnoreCase(col.getName())) {
           String type = col.getType();
           TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(type);
-          if (typeInfo.getCategory() != ObjectInspector.Category.PRIMITIVE) {
+          boolean isSupported = ColumnStatsAutoGatherContext.isColumnSupported(typeInfo.getCategory(), () -> typeInfo);
+          if (!isSupported) {
             logTypeWarning(colName, type);
             colNames.remove(colName);
           } else {
@@ -247,9 +248,9 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
         tbl, colNames, colTypes, conf, partTransformSpec, -1, partSpec, isPartitionStats, true);
   }
 
-  private static String genRewrittenQuery(Table tbl, List<String> colNames, List<String> colTypes,
-      HiveConf conf, List<TransformSpec> partTransformSpec, int specId, Map<String, String> partSpec, 
-      boolean isPartitionStats, boolean useTableValues) {
+  private static String genRewrittenQuery(Table tbl, List<String> colNames, List<String> colTypes, HiveConf conf,
+      List<TransformSpec> partTransformSpec, int specId, Map<String, String> partSpec, boolean isPartitionStats,
+      boolean useTableValues) { // TODO tr debug how the rewritten query looks like
     StringBuilder rewrittenQueryBuilder = new StringBuilder("select ");
 
     StringBuilder columnNamesBuilder = new StringBuilder();

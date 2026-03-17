@@ -8263,17 +8263,21 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         && !destTableIsTemporary && !destTableIsMaterialization
         && ColumnStatsAutoGatherContext.canRunAutogatherStats(fso)) {
       if (destType == QBMetaData.DEST_TABLE) {
-        genAutoColumnStatsGatheringPipeline(destinationTable, partSpec, input,
-            qb.getParseInfo().isInsertIntoTable(destinationTable.getDbName(), destinationTable.getTableName(),
-                destinationTable.getSnapshotRef()), false);
+        boolean isInsertInto = qb.getParseInfo()
+            .isInsertIntoTable(destinationTable.getDbName(), destinationTable.getTableName(),
+                destinationTable.getSnapshotRef());
+        genAutoColumnStatsGatheringPipeline(destinationTable, partSpec, input, isInsertInto, false);
       } else if (destType == QBMetaData.DEST_PARTITION) {
-        genAutoColumnStatsGatheringPipeline(destinationTable, destinationPartition.getSpec(), input,
-            qb.getParseInfo().isInsertIntoTable(destinationTable.getDbName(), destinationTable.getTableName(),
-                destinationTable.getSnapshotRef()), false);
+        boolean isInsertInto = qb.getParseInfo()
+            .isInsertIntoTable(destinationTable.getDbName(), destinationTable.getTableName(),
+                destinationTable.getSnapshotRef());
+        partSpec = destinationPartition.getSpec();
+        genAutoColumnStatsGatheringPipeline(destinationTable, partSpec, input, isInsertInto, false);
       } else if (destType == QBMetaData.DEST_LOCAL_FILE || destType == QBMetaData.DEST_DFS_FILE) {
+        partSpec = null;
+        boolean isInsertInto = false;
         // CTAS or CMV statement
-        genAutoColumnStatsGatheringPipeline(destinationTable, null, input,
-            false, true);
+        genAutoColumnStatsGatheringPipeline(destinationTable, partSpec, input, isInsertInto, true);
       }
     }
     return output;
