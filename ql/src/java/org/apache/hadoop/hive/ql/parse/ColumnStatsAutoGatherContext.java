@@ -231,14 +231,7 @@ public class ColumnStatsAutoGatherContext {
         operator = operator.getChildOperators().get(0);
       }
     }
-
-    extracted(operator);
     return operator;
-  }
-
-  private static void extracted(Operator<?> operator) {
-    String opTree = TRUtil.getOperatorTreeString(operator);
-    System.out.println(opTree);
   }
 
   /**
@@ -356,10 +349,8 @@ public class ColumnStatsAutoGatherContext {
   public static boolean canRunAutogatherStats(Operator curr) {
     // check the ObjectInspector
     for (ColumnInfo cinfo : curr.getSchema().getSignature()) {
-      if (!cinfo.getIsVirtualCol()) {
-        if (isColumnSupported(cinfo.getObjectInspector().getCategory(), cinfo::getType)) {
-          return true;
-        }
+      if (!cinfo.getIsVirtualCol() && isColumnSupported(cinfo.getObjectInspector().getCategory(), cinfo::getType)) {
+        return true;
       }
     }
     return false;

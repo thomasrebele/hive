@@ -76,7 +76,6 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
   private boolean isRewritten;
 
   private boolean isTableLevel;
-  // TODO: refactor assignments to colNames
   private List<String> colNames;
   private List<String> colType;
   private Table tbl;
@@ -261,9 +260,9 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
         tbl, colNames, colTypes, conf, partTransformSpec, -1, partSpec, isPartitionStats, true);
   }
 
-  private static String genRewrittenQuery(Table tbl, List<String> colNames, List<String> colTypes, HiveConf conf,
-      List<TransformSpec> partTransformSpec, int specId, Map<String, String> partSpec, boolean isPartitionStats,
-      boolean useTableValues) { // TODO tr debug how the rewritten query looks like
+  private static String genRewrittenQuery(Table tbl, List<String> colNames, List<String> colTypes,
+      HiveConf conf, List<TransformSpec> partTransformSpec, int specId, Map<String, String> partSpec, 
+      boolean isPartitionStats, boolean useTableValues) {
     StringBuilder rewrittenQueryBuilder = new StringBuilder("select ");
 
     StringBuilder columnNamesBuilder = new StringBuilder();
