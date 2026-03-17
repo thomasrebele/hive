@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -319,36 +320,39 @@ public class ColumnStatsAutoGatherContext {
     return isInsertInto;
   }
 
+  public static boolean isColumnSupported(ObjectInspector.Category category, Supplier<TypeInfo> typeInfoSupplier) {
+    if (category != ObjectInspector.Category.PRIMITIVE) {
+      return false;
+    }
+    TypeInfo t = typeInfoSupplier.get();
+    switch (((PrimitiveTypeInfo) t).getPrimitiveCategory()) {
+    case BOOLEAN:
+    case BYTE:
+    case SHORT:
+    case INT:
+    case LONG:
+    case TIMESTAMP:
+    case FLOAT:
+    case DOUBLE:
+    case STRING:
+    case CHAR:
+    case VARCHAR:
+    case BINARY:
+    case DECIMAL:
+    case DATE:
+      return true;
+    }
+    return false;
+  }
+
   public static boolean canRunAutogatherStats(Operator curr) {
     // check the ObjectInspector
     for (ColumnInfo cinfo : curr.getSchema().getSignature()) {
-      if (cinfo.getIsVirtualCol()) {
-        return false;
-      } else if (cinfo.getObjectInspector().getCategory() != ObjectInspector.Category.PRIMITIVE) {
-        return false;
-      } else {
-        switch (((PrimitiveTypeInfo) cinfo.getType()).getPrimitiveCategory()) {
-        case BOOLEAN:
-        case BYTE:
-        case SHORT:
-        case INT:
-        case LONG:
-        case TIMESTAMP:
-        case FLOAT:
-        case DOUBLE:
-        case STRING:
-        case CHAR:
-        case VARCHAR:
-        case BINARY:
-        case DECIMAL:
-        case DATE:
-          break;
-        default:
-          return false;
-        }
+      if (!cinfo.getIsVirtualCol() && isColumnSupported(cinfo.getObjectInspector().getCategory(), cinfo::getType)) {
+        return true;
       }
     }
-    return true;
+    return false;
   }
 
 }

@@ -49,7 +49,6 @@ import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsField;
 import org.apache.hadoop.hive.ql.stats.ColStatsProcessor.ColumnStatsType;
 import org.apache.hadoop.hive.ql.stats.StatsUtils;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
@@ -107,7 +106,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
 
     switch (tree.getChildCount()) {
     case 2:
-      return Utilities.getColumnNamesFromFieldSchema(tbl.getCols());
+      return getColumnNames(tbl);
     case 3:
       int numCols = tree.getChild(2).getChildCount();
       List<String> colName = new ArrayList<>(numCols);
@@ -119,6 +118,19 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
       throw new SemanticException("Internal error. Expected number of children of ASTNode to be"
           + " either 2 or 3. Found : " + tree.getChildCount());
     }
+  }
+
+  private static List<String> getColumnNames(Table tbl) {
+    List<String> colNames = new ArrayList<>();
+    for (FieldSchema col : tbl.getCols()) {
+      String type = col.getType();
+      TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(type);
+      boolean isSupported = ColumnStatsAutoGatherContext.isColumnSupported(typeInfo.getCategory(), () -> typeInfo);
+      if (isSupported) {
+        colNames.add(col.getName());
+      }
+    }
+    return colNames;
   }
 
   private void handlePartialPartitionSpec(Map<String, String> partSpec, ColumnStatsAutoGatherContext context) throws
@@ -212,7 +224,8 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
         if (colName.equalsIgnoreCase(col.getName())) {
           String type = col.getType();
           TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(type);
-          if (typeInfo.getCategory() != ObjectInspector.Category.PRIMITIVE) {
+          boolean isSupported = ColumnStatsAutoGatherContext.isColumnSupported(typeInfo.getCategory(), () -> typeInfo);
+          if (!isSupported) {
             logTypeWarning(colName, type);
             colNames.remove(colName);
           } else {
@@ -241,7 +254,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
   protected static String genRewrittenQuery(Table tbl,
       HiveConf conf, List<TransformSpec> partTransformSpec, Map<String, String> partSpec, 
       boolean isPartitionStats) {
-    List<String> colNames = Utilities.getColumnNamesFromFieldSchema(tbl.getCols());
+    List<String> colNames = getColumnNames(tbl);
     List<String> colTypes = ColumnStatsSemanticAnalyzer.getColumnTypes(tbl, colNames);
     return ColumnStatsSemanticAnalyzer.genRewrittenQuery(
         tbl, colNames, colTypes, conf, partTransformSpec, -1, partSpec, isPartitionStats, true);
@@ -733,7 +746,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
     AnalyzeRewriteContext analyzeRewrite = new AnalyzeRewriteContext();
     analyzeRewrite.setTableName(tbl.getFullyQualifiedName());
     analyzeRewrite.setTblLvl(!(conf.getBoolVar(ConfVars.HIVE_STATS_COLLECT_PART_LEVEL_STATS) && tbl.isPartitioned()));
-    List<String> colNames = Utilities.getColumnNamesFromFieldSchema(tbl.getCols());
+    List<String> colNames = getColumnNames(tbl);
     List<String> colTypes = getColumnTypes(tbl, colNames);
     analyzeRewrite.setColName(colNames);
     analyzeRewrite.setColType(colTypes);
