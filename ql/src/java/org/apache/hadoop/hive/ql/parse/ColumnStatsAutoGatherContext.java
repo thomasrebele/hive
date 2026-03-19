@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -257,14 +256,32 @@ public class ColumnStatsAutoGatherContext {
     //                                |
 
     // 1. deal with non-partition columns
+    Map<String, Integer> map = new HashMap<>();
+    List<ColumnInfo> selRSSig = selRS.getSignature();
+    for (int i = 0; i < selRSSig.size(); i++) {
+      map.putIfAbsent(selRSSig.get(i).getAlias(), i);
+    }
     for (int i = 0; i < this.columns.size(); i++) {
       ColumnInfo col = columns.get(i);
+      ObjectInspector objectInspector = col.getObjectInspector();
+      if (objectInspector == null) {
+        continue;
+      }
+      boolean columnSupported = isColumnSupported(objectInspector.getCategory(), col::getType);
+      if (!columnSupported) {
+        continue;
+      }
+
+      Integer selRSIdx = map.get(this.columns.get(i).getName());
+      if (selRSIdx == null) {
+        continue;
+      }
       ExprNodeDesc exprNodeDesc = new ExprNodeColumnDesc(col);
       colList.add(exprNodeDesc);
-      String internalName = selRS.getColumnNames().get(i);
+      String internalName = selRS.getColumnNames().get(selRSIdx);
       columnNames.add(internalName);
       columnExprMap.put(internalName, exprNodeDesc);
-      signature.add(selRS.getSignature().get(i));
+      signature.add(selRSSig.get(selRSIdx));
     }
     // if there is any partition column (in static partition or dynamic
     // partition or mixed case)
@@ -281,7 +298,7 @@ public class ColumnStatsAutoGatherContext {
         }
         exprNodeDesc = new ExprNodeConstantDesc(partSpec.get(partColName));
         TypeInfo srcType = exprNodeDesc.getTypeInfo();
-        TypeInfo destType = selRS.getSignature().get(this.columns.size() + i).getType();
+        TypeInfo destType = selRSSig.get(this.columns.size() + i).getType();
         if (!srcType.equals(destType)) {
           // This may be possible when srcType is string but destType is integer
           exprNodeDesc = ExprNodeTypeCheck.getExprNodeDefaultExprProcessor()
@@ -293,7 +310,7 @@ public class ColumnStatsAutoGatherContext {
         dynamicPartBegin++;
         ColumnInfo col = columns.get(this.columns.size() + dynamicPartBegin);
         TypeInfo srcType = col.getType();
-        TypeInfo destType = selRS.getSignature().get(this.columns.size() + i).getType();
+        TypeInfo destType = selRSSig.get(this.columns.size() + i).getType();
         exprNodeDesc = new ExprNodeColumnDesc(col);
         if (!srcType.equals(destType)) {
           exprNodeDesc = ExprNodeTypeCheck.getExprNodeDefaultExprProcessor()
@@ -304,7 +321,7 @@ public class ColumnStatsAutoGatherContext {
       String internalName = selRS.getColumnNames().get(this.columns.size() + i);
       columnNames.add(internalName);
       columnExprMap.put(internalName, exprNodeDesc);
-      signature.add(selRS.getSignature().get(this.columns.size() + i));
+      signature.add(selRSSig.get(this.columns.size() + i));
     }
     operator.setConf(new SelectDesc(colList, columnNames));
     operator.setColumnExprMap(columnExprMap);
@@ -341,8 +358,9 @@ public class ColumnStatsAutoGatherContext {
     case DECIMAL:
     case DATE:
       return true;
+    default:
+      return false;
     }
-    return false;
   }
 
   public static boolean canRunAutogatherStats(Operator curr) {
