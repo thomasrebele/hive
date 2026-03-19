@@ -738,7 +738,24 @@ public class QTestUtil {
     QTestSyntaxUtil qtsu = new QTestSyntaxUtil(this, conf, pd);
     qtsu.checkQFileSyntax(cmds);
 
+    int line = 1;
+    int lastOtherNewlines = 0;
     for (String oneCmd : cmds) {
+      int prefixNewlines = 0;
+      int otherNewlines = 0;
+      for (int i = 0; i < oneCmd.length(); i++) {
+        if (oneCmd.charAt(i) == '\n') {
+          if (i == prefixNewlines) {
+            prefixNewlines++;
+          } else {
+            otherNewlines++;
+          }
+        }
+      }
+      line += lastOtherNewlines;
+      line += prefixNewlines;
+      lastOtherNewlines = otherNewlines;
+
       if (StringUtils.endsWith(oneCmd, "\\")) {
         command.append(StringUtils.chop(oneCmd) + "\\;");
         continue;
@@ -761,8 +778,10 @@ public class QTestUtil {
         }
       } catch (CommandProcessorException e) {
         if (!ignoreErrors()) {
-          throw e;
+          throw new CommandProcessorException(new RuntimeException("Error at line " + line, e));
         }
+      } catch (Throwable t) {
+        throw new RuntimeException("Error at line " + line, t);
       }
       command.setLength(0);
     }
