@@ -363,7 +363,28 @@ public class ColumnStatsAutoGatherContext {
     }
   }
 
-  public static boolean canRunAutogatherStats(Operator curr) {
+  public static boolean canRunAutogatherStats(Table destinationTable, Operator curr) {
+    if (destinationTable.isNonNative() && destinationTable.getStorageHandler().supportsPartitioning()) {
+      // On partitioned tables, the partition key is needed to store the stats.
+      // However, external tables (e.g. stored by iceberg) may not define partition keys,
+      // i.e., org.apache.hadoop.hive.ql.metadata.Table.getPartitionKeys() returns null.
+      // So keep the same behavior as before HIVE-29432, and only run stats autogather if all columns are supported.
+      return areAllColumnsSupported(curr);
+    }
+    return isAnyColumnSupported(curr);
+  }
+
+  private static boolean areAllColumnsSupported(Operator curr) {
+    // check the ObjectInspector
+    for (ColumnInfo cinfo : curr.getSchema().getSignature()) {
+      if (cinfo.getIsVirtualCol() || !isColumnSupported(cinfo.getObjectInspector().getCategory(), cinfo::getType)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isAnyColumnSupported(Operator curr) {
     // check the ObjectInspector
     for (ColumnInfo cinfo : curr.getSchema().getSignature()) {
       if (!cinfo.getIsVirtualCol() && isColumnSupported(cinfo.getObjectInspector().getCategory(), cinfo::getType)) {
