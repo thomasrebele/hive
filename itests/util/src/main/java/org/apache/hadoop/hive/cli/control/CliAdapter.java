@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.apache.hadoop.hive.ql.QTestMetaStoreHandler;
 import org.apache.hadoop.hive.ql.QTestUtil;
+import org.apache.hadoop.hive.ql.optimizer.calcite.stats.FilterSelectivityEstimator;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -136,7 +137,12 @@ public abstract class CliAdapter {
 
   // HIVE-14444: pending refactor to push File forward
   public final void runTest(String name, File qfile) throws Exception {
-    runTest(name, qfile.getName(), qfile.getAbsolutePath());
+    try {
+      FilterSelectivityEstimator.CURRENT_FILE = qfile.getName();
+      runTest(name, qfile.getName(), qfile.getAbsolutePath());
+    } finally {
+      FilterSelectivityEstimator.CURRENT_FILE = null;
+    }
   }
 
 }

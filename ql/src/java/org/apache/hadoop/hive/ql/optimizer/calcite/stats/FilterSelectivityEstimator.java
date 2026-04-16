@@ -17,8 +17,13 @@
  */
 package org.apache.hadoop.hive.ql.optimizer.calcite.stats;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -35,6 +40,7 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -62,6 +68,50 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
+
+  public static String CURRENT_FILE = null;
+  public static String LAST_FILE = null;
+
+  class Visit extends RexVisitorImpl {
+
+    List<String> info = new ArrayList<>();
+
+    protected Visit() {
+      super(true);
+    }
+
+    @Override
+    public Void visitInputRef(RexInputRef ir) {
+      RelDataTypeField field = childRel.getRowType().getFieldList().get(ir.getIndex());
+      info.add(Objects.toString(field.getName()));
+      return null;
+    }
+
+  }
+
+  private void log(RexCall c) {
+    synchronized (FilterSelectivityEstimator.class) {
+      Path path = Path.of("/tmp/filters.txt");
+      try {
+        var lines = new ArrayList<String>();
+        if (!Objects.equals(LAST_FILE, CURRENT_FILE)) {
+          lines.add("");
+          lines.add(CURRENT_FILE);
+          lines.add("");
+          LAST_FILE = CURRENT_FILE;
+        }
+
+        var v = new Visit();
+        c.accept(v);
+        lines.add(v.info.toString() + "    " + Objects.toString(c));
+
+        Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
 
   protected static final Logger LOG = LoggerFactory.getLogger(FilterSelectivityEstimator.class);
 
@@ -406,6 +456,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   }
 
   private double computeRangePredicateSelectivity(RexCall call, SqlKind op) {
+    log(call);
+
     double defaultSelectivity = ((double) 1 / (double) 3);
     if (!(childRel instanceof HiveTableScan)) {
       return defaultSelectivity;
@@ -501,6 +553,8 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
   }
 
   private Double computeBetweenPredicateSelectivity(RexCall call) {
+    log(call);
+
     if (!(childRel instanceof HiveTableScan)) {
       return computeFunctionSelectivity(call);
     }
