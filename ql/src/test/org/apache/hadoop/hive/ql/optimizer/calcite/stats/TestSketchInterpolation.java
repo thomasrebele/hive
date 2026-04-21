@@ -27,45 +27,6 @@ public class TestSketchInterpolation {
     return String.format("%.8f", val);
   }
 
-  private FloatsSketchSortedView deduplicate(FloatsSketchSortedView sortedView, float[] vals) {
-    long[] orig = sortedView.getCumulativeWeights();
-    float[] origQuantiles = sortedView.getQuantiles();
-    int len = 0;
-
-    long lastWeight = -1;
-    for(long l : orig) {
-      if(lastWeight != l) {
-        len += 1;
-        lastWeight = l;
-      }
-    }
-
-    float[] quantiles = new float[len];
-    long[] cumWeights = new long[len];
-
-    lastWeight = -1;
-    int idx = 0;
-    for(int i=0; i<orig.length; i++) {
-      if(lastWeight != orig[i]) {
-        quantiles[idx] = origQuantiles[i];
-
-        if(vals != null) {
-          int valIdx = Arrays.binarySearch(vals, quantiles[idx]);
-          if (valIdx < 0)
-            valIdx = -(valIdx + 1);
-          cumWeights[idx] = valIdx;
-        }
-        else {
-          cumWeights[idx] = orig[i];
-        }
-
-        idx++;
-        lastWeight = orig[i];
-      }
-    }
-    return createMockSketch(quantiles, cumWeights).getSortedView();
-  }
-
   @Test
   public void test() {
     long seed = 2729069727529L; //System.nanoTime();
@@ -86,34 +47,43 @@ public class TestSketchInterpolation {
     }
 
     Arrays.sort(vals);
-    FloatsSketchSortedView sortedView = deduplicate(sketch.getSortedView(), null /*vals*/);
-    sortedView = sketch.getSortedView();
+    FloatsSketchSortedView sortedView = sketch.getSortedView();
     //sketch = TestFilterSelectivityEstimator.createMockSketch(vals, 200);
 
     System.out.println("kll size: " + sketch.toByteArray().length);
     System.out.println("tdigest size: " + tdigest.toByteArray().length);
 
     // for diagram
+    //{
+    //  long[] cumulativeWeights = sortedView.getCumulativeWeights();
+    //  float[] quantiles = sortedView.getQuantiles();
+    //  for (int i = 0; i < quantiles.length; i++) {
+    //    System.out.println(
+    //        "kll\t" + quantiles[i] + "\t" + (float) cumulativeWeights[i] / cumulativeWeights[cumulativeWeights.length - 1]);
+    //  }
+
     {
       long[] cumulativeWeights = sortedView.getCumulativeWeights();
       float[] quantiles = sortedView.getQuantiles();
       for (int i = 0; i < quantiles.length; i++) {
         System.out.println(
-            "kll\t" + quantiles[i] + "\t" + (float) cumulativeWeights[i] / cumulativeWeights[cumulativeWeights.length - 1]);
-      }
-
-      for (int i = 0; i < quantiles.length; i++) {
-        float val = quantiles[i];
-        int valIdx = Arrays.binarySearch(vals, val);
-        System.out.println("exp\t" + quantiles[i] + "\t" + ((float) valIdx) / (vals.length - 1));
-      }
-
-      for (int i = 0; i < quantiles.length; i++) {
-        float val = quantiles[i];
-        double tdigestRank = tdigest.getRank(val);
-        System.out.println("tdigest\t" + quantiles[i] + "\t" + tdigestRank);
+            "kll-interp\t" + quantiles[i] + "\t" + (float) FilterSelectivityEstimator.getInterpolatedRank(sketch,
+                quantiles[i]));
       }
     }
+
+    //  for (int i = 0; i < quantiles.length; i++) {
+    //    float val = quantiles[i];
+    //    int valIdx = Arrays.binarySearch(vals, val);
+    //    System.out.println("exp\t" + quantiles[i] + "\t" + ((float) valIdx) / (vals.length - 1));
+    //  }
+
+    //  for (int i = 0; i < quantiles.length; i++) {
+    //    float val = quantiles[i];
+    //    double tdigestRank = tdigest.getRank(val);
+    //    System.out.println("tdigest\t" + quantiles[i] + "\t" + tdigestRank);
+    //  }
+    //}
 
     if(sketch.toByteArray() != null)
     System.out.println("kll size: " + sketch.toByteArray().length);
@@ -221,15 +191,15 @@ public class TestSketchInterpolation {
     double interpRelErrorProd = 1;
     double tdigestRelErrorProd = 1;
 
-    int pairs = 1;
+    int pairs = 20;
 
     DoubleUnaryOperator clamp = v -> Math.max(v, 1. / vals.length);
     DoubleBinaryOperator fn =
         (a, b) -> Math.max(clamp.applyAsDouble(a), clamp.applyAsDouble(b)) / Math.min(clamp.applyAsDouble(a),
             clamp.applyAsDouble(b));
     for(int i=0; i<pairs; i++) {
-      float valA = (float) rng.nextGaussian(1000, .01);
-      float valB = (float) rng.nextGaussian(1000, .01);
+      float valA = (float) rng.nextGaussian(1000, 100);
+      float valB = (float) rng.nextGaussian(1000, 100);
 
       float val1 = Math.min(valA, valB);
       float val2 = Math.max(valA, valB);
@@ -257,8 +227,8 @@ public class TestSketchInterpolation {
       if (originalRank == 0)
         originalRank = sketch.getNormalizedRankError(false);
       double interpolatedRank = interpolatedRank2-interpolatedRank1;
-      if (interpolatedRank == 0)
-        interpolatedRank = 1.0 / vals.length;
+      //if (interpolatedRank == 0)
+      //  interpolatedRank = 1.0 / vals.length;
       double tdigestRank = tdigestRank2-tdigestRank1;
 
       double origError = Math.abs(originalRank - exp);

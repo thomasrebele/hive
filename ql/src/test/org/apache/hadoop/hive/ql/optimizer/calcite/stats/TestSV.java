@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Random;
 
+/** Debugs a KLL sketch, i.e., prints the data points in its CDF */
 public class TestSV {
 
   public static String fmt(double val) {
@@ -19,7 +20,7 @@ public class TestSV {
     long seed = 2729069727529L;
     System.out.println("seed: " + seed);
     Random rng = new Random(seed);
-    float[] vals = new float[1];
+    float[] vals = new float[1000];
     for (int i = 0; i < vals.length; i++) {
       vals[i] = (float) rng.nextGaussian(1000, 100);
     }

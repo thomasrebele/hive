@@ -23,7 +23,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelOptUtil.InputReferencedVisitor;
@@ -43,12 +45,16 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunctionLagrangeForm;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
 import org.apache.datasketches.kll.KllFloatsSketch;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.quantilescommon.FloatsSketchSortedView;
 import org.apache.datasketches.quantilescommon.InequalitySearch;
+import org.apache.datasketches.quantilescommon.QuantileSearchCriteria;
 import org.apache.hadoop.hive.ql.optimizer.calcite.HiveCalciteUtil;
 import org.apache.hadoop.hive.ql.optimizer.calcite.HiveConfPlannerContext;
 import org.apache.hadoop.hive.ql.optimizer.calcite.RelOptHiveTable;
@@ -496,92 +502,50 @@ public class FilterSelectivityEstimator extends RexVisitorImpl<Double> {
 
   public static double getInterpolatedRank(FloatsSketchSortedView sv, float val) {
     if (true) {
-      if (sv.isEmpty())
-        return 0;
-      float[] quantiles = sv.getQuantiles();
-      long[] cumulativeWeights = sv.getCumulativeWeights();
-      int len = quantiles.length;
-      int indexLower = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.LT);
-      int indexUpper = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.GE);
-      // TODO tr how to treat boundaries?
-      if (indexLower == -1)
-        return 0;
-      if (indexUpper == -1)
-        return 1;
-      if (quantiles[indexUpper] == val) {
-        return (double) cumulativeWeights[indexUpper] / sv.getN();
-      }
-
-      // TODO tr there might be duplicates, but the interpolation method does not support duplicates!
-      // TODO tr also for safety: skip duplicate cumWeights as well
-
-      int[] points = new int[6];
-      int pointsIdx = 2;
-      int lastI = indexLower;
-      for (int i = indexLower + 1; i-- > 0; ) {
-        boolean usePoint = i == indexLower;
-        usePoint |= quantiles[i] < quantiles[lastI] && cumulativeWeights[i] < cumulativeWeights[lastI];
-        if (usePoint) {
-          points[pointsIdx] = i;
-          lastI = i;
-          pointsIdx -= 1;
-          if (pointsIdx < 0)
-            break;
-        }
-      }
-      int pointsLower = pointsIdx + 1;
-      pointsIdx = 3;
-
-      for (int i = indexUpper; i < quantiles.length; i++) {
-        boolean usePoint = i == indexUpper;
-        usePoint |= quantiles[lastI] < quantiles[i] && cumulativeWeights[lastI] < cumulativeWeights[i];
-        if (usePoint) {
-          points[pointsIdx] = i;
-          lastI = i;
-          pointsIdx += 1;
-          if (pointsIdx == points.length)
-            break;
-        }
-      }
-      int pointsUpper = pointsIdx;
-
-      // setup interpolation
-      int interpLen = pointsUpper - pointsLower;
-      double[] x = new double[interpLen];
-      double[] y = new double[interpLen];
-      for (int i = 0; i < interpLen; i++) {
-        x[i] = quantiles[points[pointsLower + i]];
-        y[i] = cumulativeWeights[points[pointsLower + i]];
-      }
-      //System.out.println("len " + interpLen + " points " + Arrays.toString(points) + " x " + Arrays.toString(
-      //    x) + " y " + Arrays.toString(y) + " val " + val);
-
-      x = new double[quantiles.length];
-      y = new double[quantiles.length];
-      for (int i = 0; i < quantiles.length; i++) {
-        x[i] = quantiles[i];
-        y[i] = cumulativeWeights[i];
-      }
-
-
-      // interpolate with sanity checks
-      double interp = new SplineInterpolator().interpolate(x, y).value(val);
-      double weightLower = cumulativeWeights[indexLower];
-      double weightUpper = cumulativeWeights[indexUpper];
-      double quantileLower = quantiles[indexLower];
-      double quantileUpper = quantiles[indexUpper];
-      double clamped = Math.clamp(interp, weightLower, weightUpper);
-      //return clamped / sv.getN();
-
-      // TODO tr fallback if less than three points
-      //      // we need to stay within the boundaries, so do a simple linear interpolation
-      double factor = (val - quantileLower) / (quantileUpper - quantileLower);
-      double weightDelta = factor * (weightUpper - weightLower);
-      double interpolatedWeight = weightLower + weightDelta;
-      return interpolatedWeight / sv.getN();
+      //return sv.getRank(val, QuantileSearchCriteria.EXCLUSIVE);
     }
 
-    return -1; //kll.getSortedView().getRank(val, QuantileSearchCriteria.EXCLUSIVE);
+    if (sv.isEmpty())
+      return 0;
+    float[] quantiles = sv.getQuantiles();
+    long[] cumulativeWeights = sv.getCumulativeWeights();
+    int len = quantiles.length;
+    int indexLower = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.LT);
+    int indexUpper = InequalitySearch.find(quantiles, 0, len - 1, val, InequalitySearch.GE);
+    // TODO tr how to treat boundaries?
+    if (indexLower == -1)
+      return 0;
+    if (indexUpper == -1)
+      return 1;
+
+    final PolynomialCurveFitter fitter = PolynomialCurveFitter.create(5);
+    final WeightedObservedPoints obs = new WeightedObservedPoints();
+    obs.add(100, Math.nextDown(sv.getMinItem()), 0);
+    obs.add(100, Math.nextUp(sv.getMaxItem()), sv.getN());
+
+    for (int i = 0; i < len; i++) {
+      double y = (double) cumulativeWeights[i];
+      double x = quantiles[i];
+      obs.add(1, x, y);
+    }
+
+    //System.out.println(obs.toList().stream().map(o -> o.getX() + " " + o.getY()).collect(Collectors.joining("\n")));
+
+    fitter.withMaxIterations(1000000000);
+    double[] fit = fitter.fit(obs.toList());
+    double interp = new PolynomialFunction.Parametric().value(val, fit);
+    double normalized = interp / sv.getN();
+
+    // interpolate with sanity checks
+    double clamped = Math.clamp(normalized, 0, 1);
+    return clamped;
+
+    //// TODO tr fallback if less than three points
+    ////      // we need to stay within the boundaries, so do a simple linear interpolation
+    //double factor = (val - quantileLower) / (quantileUpper - quantileLower);
+    //double weightDelta = factor * (weightUpper - weightLower);
+    //double interpolatedWeight = weightLower + weightDelta;
+    //return interpolatedWeight / sv.getN();
   }
 
   public static double getInterpolatedRank(KllFloatsSketch kll, float val) {
