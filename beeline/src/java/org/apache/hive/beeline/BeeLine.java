@@ -121,7 +121,7 @@ import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
-import static org.jline.builtins.Completers.FileNameCompleter;
+//import static org.jline.builtins.Completers.FileNameCompleter;
 
 
 /**
@@ -251,7 +251,7 @@ public class BeeLine implements Closeable {
       new ReflectiveCommandHandler(this, new String[] {"verbose"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"run"},
-          new Completer[] {new FileNameCompleter()}),
+              new Completer[]{/*new FileNameCompleter()*/}),
       new ReflectiveCommandHandler(this, new String[] {"batch"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"list"},
@@ -261,9 +261,9 @@ public class BeeLine implements Closeable {
       new ReflectiveCommandHandler(this, new String[] {"go", "#"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"script"},
-          new Completer[] {new FileNameCompleter()}),
+              new Completer[]{/*new FileNameCompleter()*/}),
       new ReflectiveCommandHandler(this, new String[] {"record"},
-          new Completer[] {new FileNameCompleter()}),
+              new Completer[]{/*new FileNameCompleter()*/}),
       new ReflectiveCommandHandler(this, new String[] {"brief"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"close"},
@@ -280,7 +280,7 @@ public class BeeLine implements Closeable {
       new ReflectiveCommandHandler(this, new String[] {"commit"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"properties"},
-          new Completer[] {new FileNameCompleter()}),
+              new Completer[]{/*new FileNameCompleter()*/}),
       new ReflectiveCommandHandler(this, new String[] {"rollback"},
           null),
       new ReflectiveCommandHandler(this, new String[] {"help", "?"},
@@ -563,7 +563,7 @@ public class BeeLine implements Closeable {
           ExitUtil.terminate(status);
       }
     } finally {
-      beeLine.close();
+      //beeLine.close();
     }
   }
 
@@ -579,9 +579,9 @@ public class BeeLine implements Closeable {
         if (history != null) {
           history.save();
         }
-      } catch (IOException e) {
+      } /*catch (IOException e) {
         error(e);
-      } finally {
+      }*/ finally {
         close();
       }
     };
@@ -1107,7 +1107,7 @@ public class BeeLine implements Closeable {
     }
 
     if (keepHistory) {
-      setupHistory();
+      //setupHistory();
     }
 
     //add shutdown hook to cleanup the beeline for smooth exit
@@ -1413,11 +1413,11 @@ public class BeeLine implements Closeable {
    * behavior.
    */
   private String readLine(LineReader reader, String prompt, Character mask) {
-    try {
+    //try {
       return reader.readLine(prompt, mask);
-    } catch (EndOfFileException eof) {
-      return eof.getPartialLine();
-    }
+    //} catch (EndOfFileException eof) {
+    //  return eof.getPartialLine();
+    //}
   }
 
   @Override
@@ -1478,7 +1478,7 @@ public class BeeLine implements Closeable {
 
     builder.completer(new BeeLineCompleter(this));
     lineReader = builder.build();
-    lineReader.unsetOpt(LineReader.Option.HISTORY_TIMESTAMPED);
+    //lineReader.unsetOpt(LineReader.Option.HISTORY_TIMESTAMPED);
     // need to disable expansion, otherwise commands (starting with "!") will activate history items
     lineReader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION);
 
@@ -1544,7 +1544,7 @@ public class BeeLine implements Closeable {
     if (inputStream != null) { // typically when there is a file script to read from
       terminal = TerminalBuilder.builder().streams(inputStream, getErrorStream()).build();
     } else { // no input stream, normal operation: proper behavior needs a system terminal (which needs system streams)
-      terminal = TerminalBuilder.builder().system(true).dumb(false).streams(System.in, System.err).build();
+      terminal = TerminalBuilder.builder().system(true)/*.dumb(false)*/.streams(System.in, System.err).build();
     }
     this.terminalsToClose.add(terminal);
     return terminal;

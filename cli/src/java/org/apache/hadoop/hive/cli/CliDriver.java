@@ -896,11 +896,11 @@ public class CliDriver {
     // add shutdown hook to flush the history to history file
     ShutdownHookManager.addShutdownHook(() -> {
       History h = reader.getHistory();
-      try {
+      //try {
         h.save();
-      } catch (IOException e) {
-        System.err.println("WARNING: Failed to write command history file: " + e.getMessage());
-      }
+      //} catch (IOException e) {
+      //  System.err.println("WARNING: Failed to write command history file: " + e.getMessage());
+      //}
     });
     return null;
   }
