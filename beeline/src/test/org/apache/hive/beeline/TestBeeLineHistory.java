@@ -56,11 +56,13 @@ public class TestBeeLineHistory {
   public void testNumHistories() throws Exception {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     PrintStream ops = new PrintStream(os);
-    BeeLine beeline = new BeeLineDummyTerminal();
+    BeeLine beeline = new BeeLine();
     beeline.getOpts().setHistoryFile(fileName);
     beeline.setOutputStream(ops);
-    beeline.setupHistory();
-    beeline.initializeLineReader(null);
+    Method method = beeline.getClass().getDeclaredMethod("setupHistory");
+    method.setAccessible(true);
+    method.invoke(beeline);
+    beeline.initializeConsoleReader(null);
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     int numHistories = output.split("\n").length;
@@ -72,11 +74,13 @@ public class TestBeeLineHistory {
   public void testHistory() throws Exception {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     PrintStream ops = new PrintStream(os);
-    BeeLine beeline = new BeeLineDummyTerminal();
+    BeeLine beeline = new BeeLine();
     beeline.getOpts().setHistoryFile(fileName);
     beeline.setOutputStream(ops);
-    beeline.setupHistory();
-    beeline.initializeLineReader(null);
+    Method method = beeline.getClass().getDeclaredMethod("setupHistory");
+    method.setAccessible(true);
+    method.invoke(beeline);
+    beeline.initializeConsoleReader(null);
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     String[] tmp = output.split("\n");

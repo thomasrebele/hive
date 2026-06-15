@@ -22,7 +22,7 @@
  */
 package org.apache.hive.beeline;
 
-import org.jline.reader.Completer;
+import jline.console.completer.Completer;
 
 /**
  * A generic command to be executed. Execution of the command
@@ -71,7 +71,7 @@ interface CommandHandler {
 
 
   /**
-   * Returns the completers that can handle parameters.
+   * Returns the completors that can handle parameters.
    */
   public Completer[] getParameterCompleters();
 

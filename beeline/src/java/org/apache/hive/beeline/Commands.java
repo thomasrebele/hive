@@ -68,8 +68,6 @@ import org.apache.hive.jdbc.HiveStatement;
 import org.apache.hive.jdbc.Utils;
 import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
 import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
-import org.jline.reader.History;
-import org.jline.reader.impl.LineReaderImpl;
 
 public class Commands {
 
@@ -189,9 +187,13 @@ public class Commands {
   }
 
   public boolean history(String line) {
-    for (History.Entry entry : beeLine.getLineReader().getHistory()) {
-      beeLine.output(beeLine.getColorBuffer().pad(Integer.toString(entry.index() + 1), 6)
-          .append(": " + entry.line()));
+    Iterator hist = beeLine.getConsoleReader().getHistory().entries();
+    String[] tmp;
+    while(hist.hasNext()){
+      tmp = hist.next().toString().split(":", 2);
+      tmp[0] = Integer.toString(Integer.parseInt(tmp[0]) + 1);
+      beeLine.output(beeLine.getColorBuffer().pad(tmp[0], 6)
+          .append(":" + tmp[1]));
     }
     return true;
   }
@@ -290,7 +292,7 @@ public class Commands {
       return beeLine.error(beeLine.loc("no-current-connection"));
     }
     try {
-      if (!(beeLine.getLineReader().readLine(beeLine.loc("really-drop-all")).equals("y"))) {
+      if (!(beeLine.getConsoleReader().readLine(beeLine.loc("really-drop-all")).equals("y"))) {
         return beeLine.error("abort-drop-all");
       }
 
@@ -1086,10 +1088,10 @@ public class Commands {
   /*
    * Check if the input line is a multi-line command which needs to read further
    */
-  public String handleMultiLineCmd(String line) {
+  public String handleMultiLineCmd(String line) throws IOException {
     line = HiveStringUtils.removeComments(line);
     Character mask = (System.getProperty("jline.terminal", "").equals("jline.UnsupportedTerminal")) ? null
-                       : LineReaderImpl.NULL_MASK;
+                       : jline.console.ConsoleReader.NULL_MASK;
 
     while (isMultiLine(line) && beeLine.getOpts().isAllowMultiLineCommand()) {
       StringBuilder prompt = new StringBuilder(beeLine.getPrompt());
@@ -1100,15 +1102,17 @@ public class Commands {
           }
         }
       }
-
+      String extra;
       //avoid NPE below if for some reason -e argument has multi-line command
-      if (beeLine.getLineReader() == null) {
+      if (beeLine.getConsoleReader() == null) {
         throw new RuntimeException("Console reader not initialized. This could happen when there "
             + "is a multi-line command using -e option and which requires further reading from console");
       }
-
-      String extra = (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) ?
-          beeLine.readLine(null, mask) : beeLine.readLine(prompt.toString(), null);
+      if (beeLine.getOpts().isSilent() && beeLine.getOpts().getScriptFile() != null) {
+        extra = beeLine.getConsoleReader().readLine(null, mask);
+      } else {
+        extra = beeLine.getConsoleReader().readLine(prompt.toString());
+      }
 
       if (extra == null) { //it happens when using -f and the line of cmds does not end with ;
         break;
@@ -1660,11 +1664,12 @@ public class Commands {
         && !JdbcConnectionParams.AUTH_SSO_BROWSER_MODE.equals(auth)) {
       String urlForPrompt = url.substring(0, url.contains(";") ? url.indexOf(';') : url.length());
       if (username == null) {
-        username = beeLine.readLine("Enter username for " + urlForPrompt + ": ", null);
+        username = beeLine.getConsoleReader().readLine("Enter username for " + urlForPrompt + ": ");
       }
       props.setProperty(JdbcConnectionParams.AUTH_USER, username);
       if (password == null) {
-        password = beeLine.readLine("Enter password for " + urlForPrompt + ": ", '*');
+        password = beeLine.getConsoleReader().readLine("Enter password for " + urlForPrompt + ": ",
+          new Character('*'));
       }
       props.setProperty(JdbcConnectionParams.AUTH_PASSWD, password);
     }
@@ -1959,7 +1964,7 @@ public class Commands {
 
       // silly little pager
       if (index % (beeLine.getOpts().getMaxHeight() - 1) == 0) {
-        String ret = beeLine.getLineReader().readLine(beeLine.loc("enter-for-more"));
+        String ret = beeLine.getConsoleReader().readLine(beeLine.loc("enter-for-more"));
         if (ret != null && ret.startsWith("q")) {
           break;
         }

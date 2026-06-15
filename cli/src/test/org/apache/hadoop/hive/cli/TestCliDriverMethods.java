@@ -27,7 +27,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -39,6 +38,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import jline.console.ConsoleReader;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.Completer;
+
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -53,11 +57,7 @@ import org.apache.hadoop.hive.ql.QueryState;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorException;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.util.ExitUtil;
-import org.jline.reader.Candidate;
-import org.jline.reader.Completer;
-import org.jline.reader.impl.LineReaderImpl;
-import org.jline.reader.impl.completer.ArgumentCompleter;
-import org.jline.terminal.impl.DumbTerminal;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -148,7 +148,7 @@ public class TestCliDriverMethods {
       CliDriver cliDriver = new CliDriver();
       // issue a command with bad options
       cliDriver.processCmd("!ls --abcdefghijklmnopqrstuvwxyz123456789");
-      fail("Comments with '--; should not have been stripped, so command should fail");
+      assertTrue("Comments with '--; should not have been stripped, so command should fail", false);
     } catch (CommandProcessorException e) {
       // this is expected to happen
     } finally {
@@ -171,6 +171,8 @@ public class TestCliDriverMethods {
    *          Schema to throw against test
    * @return Output that would have been sent to the user
    * @throws CommandProcessorException
+   * @throws CommandNeedRetryException
+   *           won't actually be thrown
    */
   private PrintStream headerPrintingTestDriver(Schema mockSchema) throws CommandProcessorException {
     CliDriver cliDriver = new CliDriver();
@@ -203,25 +205,23 @@ public class TestCliDriverMethods {
 
 
   @Test
-  public void testGetCommandCompleter() {
-    Completer[] completers = CliDriver.getCommandCompleter();
-    assertEquals(2, completers.length);
-    assertTrue(completers[0] instanceof ArgumentCompleter);
-    assertNotNull(completers[1]);
+  public void testGetCommandCompletor() {
+    Completer[] completors = CliDriver.getCommandCompleter();
+    assertEquals(2, completors.length);
+    assertTrue(completors[0] instanceof ArgumentCompleter);
+    assertTrue(completors[1] instanceof Completer);
 
-    final List<Candidate> candidates1 = new ArrayList<>();
-    candidates1.add(new Candidate(")"));
-    completers[1].complete(null, CliDriver.getDefaultParser().parse("fdsdfsdf", 0), candidates1);
-    assertEquals(")", candidates1.getFirst().value());
+    List<CharSequence> testList = Arrays.asList(")");
+    completors[1].complete("fdsdfsdf", 0, testList);
+    assertEquals(")", testList.get(0));
+    testList=new ArrayList<CharSequence>();
+    completors[1].complete("len", 0, testList);
+    assertTrue(testList.get(0).toString().endsWith("length("));
 
-    final List<Candidate> candidates2 = new ArrayList<>();
-    completers[1].complete(null,  CliDriver.getDefaultParser().parse("length", 0), candidates2);
-    System.out.printf("--- --> %s%n", candidates2.getFirst().value());
-    assertTrue(candidates2.getFirst().value().endsWith("length("));
+    testList=new ArrayList<CharSequence>();
+    completors[0].complete("set f", 0, testList);
+    assertEquals("set", testList.get(0));
 
-    final List<Candidate> candidates3 = new ArrayList<>();
-    completers[0].complete(null, CliDriver.getDefaultParser().parse("set f", 0), candidates3);
-    assertEquals("set", candidates3.getFirst().value());
   }
 
   @Test
@@ -257,6 +257,7 @@ public class TestCliDriverMethods {
       System.setErr(oldErr);
 
     }
+
   }
 
   /**
@@ -385,21 +386,21 @@ public class TestCliDriverMethods {
   public void testCommandSplits() {
     // Test double quote in the string
     String cmd1 = "insert into escape1 partition (ds='1', part='\"') values (\"!\")";
-    assertEquals(cmd1, CliDriver.splitSemiColon(cmd1).getFirst());
-    assertEquals(cmd1, CliDriver.splitSemiColon(cmd1 + ";").getFirst());
+    assertEquals(cmd1, CliDriver.splitSemiColon(cmd1).get(0));
+    assertEquals(cmd1, CliDriver.splitSemiColon(cmd1 + ";").get(0));
 
     // Test escape
     String cmd2 = "insert into escape1 partition (ds='1', part='\"\\'') values (\"!\")";
-    assertEquals(cmd2, CliDriver.splitSemiColon(cmd2).getFirst());
-    assertEquals(cmd2, CliDriver.splitSemiColon(cmd2 + ";").getFirst());
+    assertEquals(cmd2, CliDriver.splitSemiColon(cmd2).get(0));
+    assertEquals(cmd2, CliDriver.splitSemiColon(cmd2 + ";").get(0));
 
     // Test multiple commands
     List<String> results = CliDriver.splitSemiColon(cmd1 + ";" + cmd2);
-    assertEquals(cmd1, results.getFirst());
+    assertEquals(cmd1, results.get(0));
     assertEquals(cmd2, results.get(1));
 
     results = CliDriver.splitSemiColon(cmd1 + ";" + cmd2 + ";");
-    assertEquals(cmd1, results.getFirst());
+    assertEquals(cmd1, results.get(0));
     assertEquals(cmd2, results.get(1));
   }
 
@@ -422,72 +423,67 @@ public class TestCliDriverMethods {
   }
 
   private static class FakeCliDriver extends CliDriver {
-    private final HiveConf conf;
 
-    public FakeCliDriver(HiveConf conf) throws IOException {
-      this.conf = conf;
+    private HiveConf conf;
 
-      reader = new LineReaderImpl(new DumbTerminal(new ByteArrayInputStream(new byte[0]), System.err)) {
+    public FakeCliDriver(HiveConf configuration) {
+      this.conf = configuration;
+    }
 
-        File temp = null;
-        private int counter = 0;
-
-        @Override
-        public String readLine(String prompt) {
-          FileWriter writer;
-          try {
-            switch (counter++) {
-              case 0:
-                return "!echo test message;";
-              case 1:
-                temp = File.createTempFile("hive", "test");
-                temp.deleteOnExit();
-                return "source  " + temp.getAbsolutePath() + ";";
-              case 2:
-                temp = File.createTempFile("hive", "test");
-                temp.deleteOnExit();
-                writer = new FileWriter(temp);
-                writer.write("bla bla bla");
-                writer.close();
-                return "list file file://" + temp.getAbsolutePath() + ";";
-              case 3:
-                return "!echo ";
-              case 4:
-                return "test message;";
-              case 5:
-                return "source  fakeFile;";
-              case 6:
-                temp = File.createTempFile("hive", "test");
-                temp.deleteOnExit();
-                writer = new FileWriter(temp);
-                writer.write("source  fakeFile;");
-                writer.close();
-                return "list file file://" + temp.getAbsolutePath() + ";";
-              default:
-                return null;
-            }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      };
+    @Override
+    protected void setupConsoleReader() throws IOException {
+      reader = new FakeConsoleReader();
     }
 
     protected HiveConf getConf() {
       return conf;
     }
+  }
 
-    @Override
-    protected void setupLineReader() {
-      // NO-OP: let's use the reader created early in the constructor to prevent NPEs
+  private static class FakeConsoleReader extends ConsoleReader {
+    private int counter = 0;
+    File temp = null;
+
+    public FakeConsoleReader() throws IOException {
+      super();
+
     }
 
     @Override
-    protected CliDriver newCliDriver() {
-      try {
-        return new FakeCliDriver(conf);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+    public String readLine(String prompt) throws IOException {
+      FileWriter writer;
+      switch (counter++) {
+      case 0:
+        return "!echo test message;";
+      case 1:
+        temp = File.createTempFile("hive", "test");
+        temp.deleteOnExit();
+        return "source  " + temp.getAbsolutePath() + ";";
+      case 2:
+        temp = File.createTempFile("hive", "test");
+        temp.deleteOnExit();
+        writer = new FileWriter(temp);
+        writer.write("bla bla bla");
+        writer.close();
+        return "list file file://" + temp.getAbsolutePath() + ";";
+      case 3:
+        return "!echo ";
+      case 4:
+        return "test message;";
+      case 5:
+        return "source  fakeFile;";
+      case 6:
+        temp = File.createTempFile("hive", "test");
+        temp.deleteOnExit();
+        writer = new FileWriter(temp);
+        writer.write("source  fakeFile;");
+        writer.close();
+        return "list file file://" + temp.getAbsolutePath() + ";";
+
+
+        // drop table over10k;
+      default:
+        return null;
       }
     }
   }

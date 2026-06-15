@@ -32,15 +32,11 @@ public class HiveCli {
   }
 
   public int runWithArgs(String[] cmd, InputStream inputStream) throws IOException {
-    beeLine = createBeeline();
+    beeLine = new BeeLine(false);
     try {
       return beeLine.begin(cmd, inputStream);
     } finally {
       beeLine.close();
     }
-  }
-
-  BeeLine createBeeline() {
-    return new BeeLine(false);
   }
 }

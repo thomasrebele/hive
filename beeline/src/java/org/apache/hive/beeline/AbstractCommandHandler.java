@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jline.reader.Completer;
-import org.jline.reader.impl.completer.NullCompleter;
+import jline.console.completer.Completer;
+import jline.console.completer.NullCompleter;
 
 /**
  * An abstract implementation of CommandHandler.
@@ -43,15 +43,15 @@ public abstract class AbstractCommandHandler implements CommandHandler {
   protected transient Throwable lastException;
 
   public AbstractCommandHandler(BeeLine beeLine, String[] names, String helpText,
-                                Completer[] completers) {
+                                Completer[] completors) {
     this.beeLine = beeLine;
     name = names[0];
     this.names = names;
     this.helpText = helpText;
-    if (completers == null || completers.length == 0) {
+    if (completors == null || completors.length == 0) {
       parameterCompleters = new Completer[] { new NullCompleter() };
     } else {
-      List<Completer> c = new LinkedList<Completer>(Arrays.asList(completers));
+      List<Completer> c = new LinkedList<Completer>(Arrays.asList(completors));
       c.add(new NullCompleter());
       parameterCompleters = c.toArray(new Completer[0]);
     }
@@ -92,6 +92,10 @@ public abstract class AbstractCommandHandler implements CommandHandler {
       }
     }
     return null;
+  }
+
+  public void setParameterCompleters(Completer[] parameterCompleters) {
+    this.parameterCompleters = parameterCompleters;
   }
 
   @Override

@@ -21,6 +21,8 @@ package org.apache.hadoop.hive.llap.cli.service;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
+import jline.TerminalFactory;
+
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Set;
@@ -34,7 +36,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.llap.log.LogHelpers;
-import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -402,7 +403,7 @@ class LlapServiceCommandLine {
     HelpFormatter hf = new HelpFormatter();
     try {
       int width = hf.getWidth();
-      int jlineWidth = TerminalBuilder.terminal().getWidth();
+      int jlineWidth = TerminalFactory.get().getWidth();
       width = Math.min(160, Math.max(jlineWidth, width));
       hf.setWidth(width);
     } catch (Throwable t) { // Ignore

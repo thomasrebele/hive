@@ -17,14 +17,15 @@
  */
 package org.apache.hive.beeline;
 
-import org.apache.hive.common.util.MatchingStringsCompleter;
+import jline.console.completer.StringsCompleter;
 
 /**
- * JLine completer boolean value (true/false)
+ * JLine completor boolean value (true/false)
  */
-class BooleanCompleter extends MatchingStringsCompleter {
+class BooleanCompleter extends StringsCompleter {
 
   public BooleanCompleter(){
-    super("true", "false");
+    super(new String[] {"true", "false"});
   }
+
 }

@@ -25,7 +25,6 @@ import org.apache.hadoop.hive.common.metrics.common.MetricsFactory;
 import org.apache.hadoop.hive.common.metrics.metrics2.CodahaleMetrics;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hive.beeline.BeeLine;
-import org.apache.hive.beeline.BeeLineDummyTerminal;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -79,7 +78,7 @@ public class TestHs2ConnectionMetricsBinary extends Hs2ConnectionMetrics {
   }
 
   private BeeLine openBeeLineConnection(String[] beelineArgs) throws IOException {
-    BeeLine beeLine = new BeeLineDummyTerminal();
+    BeeLine beeLine = new BeeLine();
     beeLine.begin(beelineArgs, null);
     return beeLine;
   }

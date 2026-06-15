@@ -16,32 +16,33 @@
  * limitations under the License.
  */
 
+/*
+ * This source file is based on code taken from SQLLine 1.0.2
+ * See SQLLine notice in LICENSE
+ */
 package org.apache.hive.beeline;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.List;
 
-import org.jline.terminal.Terminal;
-import org.jline.terminal.impl.DumbTerminal;
+import jline.console.completer.Completer;
+import jline.console.completer.StringsCompleter;
 
-/**
- * A Beeline implementation that always creates a DumbTerminal.
- * This class resides in the production source code (not in tests) because Beeline can serve as a
- * dummy terminal tool without real user interaction (e.g., HiveSchemaTool), not just in testing scenarios,
- * although that is its primary use case.
- */
-public class BeeLineDummyTerminal extends BeeLine {
+class TableNameCompletor implements Completer {
+  private final BeeLine beeLine;
 
-  public BeeLineDummyTerminal() {
-    this(true);
-  }
-
-  public BeeLineDummyTerminal(boolean isBeeLine) {
-    super(isBeeLine);
+  /**
+   * @param beeLine
+   */
+  TableNameCompletor(BeeLine beeLine) {
+    this.beeLine = beeLine;
   }
 
   @Override
-  protected Terminal buildTerminal(InputStream inputStream) throws IOException {
-    return new DumbTerminal(inputStream, getErrorStream());
+  public int complete(String buf, int pos, List cand) {
+    if (beeLine.getDatabaseConnection() == null) {
+      return -1;
+    }
+    return new StringsCompleter(beeLine.getDatabaseConnection().getTableNames(true))
+        .complete(buf, pos, cand);
   }
 }

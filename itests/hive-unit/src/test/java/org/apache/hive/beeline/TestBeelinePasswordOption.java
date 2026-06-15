@@ -17,7 +17,6 @@
  */
 package org.apache.hive.beeline;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -114,7 +113,7 @@ public class TestBeelinePasswordOption {
     argList.add("-e");
     argList.add("show tables;");
     String output = connectBeelineWithUserPrompt(argList, "hivepassword");
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -132,7 +131,7 @@ public class TestBeelinePasswordOption {
     argList.add("-e");
     argList.add("show tables;");
     String output = connectBeelineWithUserPrompt(argList, "hivepassword");
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -150,8 +149,8 @@ public class TestBeelinePasswordOption {
     argList.add("--maxColumnWidth=57");
     argList.add("-e");
     argList.add("show tables;");
-    String output = connectWithPromptAndVerify(argList, "hivepassword", 57, null, null);
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    String output = connectWithPromptAndVerify(argList, "hivepassword", true, 57, null, null);
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -170,9 +169,9 @@ public class TestBeelinePasswordOption {
     argList.add("hive.cli.print.header=true");
     argList.add("-e");
     argList.add("show tables;");
-    String output = connectWithPromptAndVerify(argList, "hivepassword",  -1,
+    String output = connectWithPromptAndVerify(argList, "hivepassword", false, null,
         "hive.cli.print.header", "true");
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -189,7 +188,7 @@ public class TestBeelinePasswordOption {
     argList.add("-e");
     argList.add("show tables;");
     String output = connectBeelineWithUserPrompt(argList);
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -204,7 +203,7 @@ public class TestBeelinePasswordOption {
     argList.add("-e");
     argList.add("show tables;");
     String output = connectBeelineWithUserPrompt(argList);
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -222,7 +221,7 @@ public class TestBeelinePasswordOption {
     argList.add("show tables;");
     argList.add("-p");
     String output = connectBeelineWithUserPrompt(argList, "hivepassword");
-    Assert.assertTrue(String.format("Table name %s not found in the output: %s", tableName, output),
+    Assert.assertTrue("Table name " + tableName + " not found in the output",
         output.contains(tableName.toLowerCase()));
   }
 
@@ -235,18 +234,18 @@ public class TestBeelinePasswordOption {
    * @param prompt - String value to be given to beeline prompt during connection
    * @param beelineOptName - Name of BeelineOpt to be verified
    * @param beelineOptValue - Expected value of value of BeeLineOpt
-   * @param expectedMaxColumnWidth - expected max column width to check (if not -1)
    * @param hiveConfKey - hive conf variable name to verify
    * @param expectedHiveConfValue - Expected value of hive conf variable
    * @return output of beeline from outputstream
    * @throws Exception
    */
   private String connectWithPromptAndVerify(List<String> argList, String prompt,
-      int expectedMaxColumnWidth, String hiveConfKey, String expectedHiveConfValue) throws Exception {
+    boolean testMaxColumnWidthOption, Integer expectedMaxColumnWidth, String hiveConfKey,
+    String expectedHiveConfValue) throws Exception {
     BeeLine beeLine = null;
     InputStream inputStream = null;
     try {
-      beeLine = new BeeLineDummyTerminal();
+      beeLine = new BeeLine();
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       PrintStream beelineOutputStream = new PrintStream(os);
       beeLine.setOutputStream(beelineOutputStream);
@@ -255,11 +254,12 @@ public class TestBeelinePasswordOption {
       if (prompt != null) {
         inputStream = new ByteArrayInputStream(prompt.getBytes());
       }
-      int returnCode = beeLine.begin(args, inputStream);
-      assertEquals("Beeline.begin return code is not as expected", 0, returnCode);
-      if (expectedMaxColumnWidth != -1) {
+      Assert.assertTrue(beeLine.begin(args, inputStream) == 0);
+      if (testMaxColumnWidthOption) {
         int maxColumnWidth = beeLine.getOpts().getMaxColumnWidth();
-        assertEquals("Unexpected max column width", expectedMaxColumnWidth, maxColumnWidth);
+        Assert.assertTrue(
+          "Expected max columnWidth to be " + expectedMaxColumnWidth + " found " + maxColumnWidth,
+          maxColumnWidth == expectedMaxColumnWidth);
       }
       if (hiveConfKey != null) {
         String hiveConfValue = beeLine.getOpts().getHiveConfVariables().get(hiveConfKey);
@@ -286,7 +286,7 @@ public class TestBeelinePasswordOption {
 
   private String connectBeelineWithUserPrompt(List<String> argList, String prompt)
       throws Exception {
-    return connectWithPromptAndVerify(argList, prompt, -1, null, null);
+    return connectWithPromptAndVerify(argList, prompt, false, null, null, null);
   }
 
   /**
