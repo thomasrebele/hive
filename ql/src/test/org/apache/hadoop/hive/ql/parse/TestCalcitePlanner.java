@@ -41,8 +41,9 @@ public class TestCalcitePlanner {
   @BeforeClass
   public static void initialize() throws Exception {
     conf = new HiveConfForTest(TestCalcitePlanner.class);
-    conf.set("hive.security.authorization.enabled", "false");
-    conf.set("hive.security.authorization.manager", SQLStdConfOnlyAuthorizerFactory.class.getCanonicalName());
+    conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_ENABLED.varname, "false");
+    conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_MANAGER.varname,
+        SQLStdConfOnlyAuthorizerFactory.class.getCanonicalName());
     conf.set(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT.varname, "true");
     queryState = new QueryState.Builder().withHiveConf(conf).build();
 
