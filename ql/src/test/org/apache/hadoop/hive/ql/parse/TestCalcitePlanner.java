@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class TestCalcitePlanner {
@@ -62,7 +63,7 @@ public class TestCalcitePlanner {
   }
 
   @Test
-  public void testExtractSubQueries() throws Exception {
+  public void testCBOLogging() throws Exception {
     assertTrue(conf.getBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT));
 
     ASTNode ast = parse("select 1 from table(values(1)) as t(a)");
@@ -72,10 +73,13 @@ public class TestCalcitePlanner {
     calcitePlanner.initCtx(ctx);
     SemanticAnalyzer.PlannerContext pctx = new CalcitePlanner.PreCboCtx();
     calcitePlanner.genResolvedParseTree(ast, pctx);
-    Operator operator = calcitePlanner.genOPTree(ast, pctx);
+    Operator<?> operator = calcitePlanner.genOPTree(ast, pctx);
+    assertNotNull(operator);
 
     String calcitePlan = ctx.getCalcitePlan();
-    System.out.println(calcitePlan);
+    assertNotNull(calcitePlan);
+    assertTrue("Expected a RelNode plan containing \"HiveProject\", but was:\n" + calcitePlan,
+        calcitePlan.contains("HiveProject"));
   }
 
 }
