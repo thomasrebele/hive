@@ -30,31 +30,29 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class TestCalcitePlanner {
   static QueryState queryState;
-  static HiveConf conf;
 
   ParseDriver pd;
-  SemanticAnalyzer sA;
+  CalcitePlanner planner;
 
   @BeforeClass
   public static void initialize() throws Exception {
-    conf = new HiveConfForTest(TestCalcitePlanner.class);
+    HiveConf conf = new HiveConfForTest(TestCalcitePlanner.class);
     conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_ENABLED.varname, "false");
     conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_MANAGER.varname,
         SQLStdConfOnlyAuthorizerFactory.class.getCanonicalName());
-    conf.set(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT.varname, "true");
     queryState = new QueryState.Builder().withHiveConf(conf).build();
-
     SessionState.start(conf);
   }
 
   @Before
   public void setup() throws SemanticException {
     pd = new ParseDriver();
-    sA = new CalcitePlanner(queryState);
+    planner = new CalcitePlanner(queryState);
   }
 
   ASTNode parse(String query) throws ParseException {
@@ -64,16 +62,15 @@ public class TestCalcitePlanner {
 
   @Test
   public void testCBOLogging() throws Exception {
-    assertTrue(conf.getBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT));
+    queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, true);
 
     ASTNode ast = parse("select 1 from table(values(1)) as t(a)");
-    CalcitePlanner calcitePlanner = new CalcitePlanner(queryState);
-    Context ctx = new Context(conf);
-    calcitePlanner.init(false);
-    calcitePlanner.initCtx(ctx);
+    Context ctx = new Context(queryState.getConf());
+    planner.init(false);
+    planner.initCtx(ctx);
     SemanticAnalyzer.PlannerContext pctx = new CalcitePlanner.PreCboCtx();
-    calcitePlanner.genResolvedParseTree(ast, pctx);
-    Operator<?> operator = calcitePlanner.genOPTree(ast, pctx);
+    planner.genResolvedParseTree(ast, pctx);
+    Operator<?> operator = planner.genOPTree(ast, pctx);
     assertNotNull(operator);
 
     String calcitePlan = ctx.getCalcitePlan();
@@ -82,4 +79,20 @@ public class TestCalcitePlanner {
         calcitePlan.contains("HiveProject"));
   }
 
+  @Test
+  public void testNoCBOLogging() throws Exception {
+    queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, false);
+
+    ASTNode ast = parse("select 1 from table(values(1)) as t(a)");
+    Context ctx = new Context(queryState.getConf());
+    planner.init(false);
+    planner.initCtx(ctx);
+    SemanticAnalyzer.PlannerContext pctx = new CalcitePlanner.PreCboCtx();
+    planner.genResolvedParseTree(ast, pctx);
+    Operator<?> operator = planner.genOPTree(ast, pctx);
+    assertNotNull(operator);
+
+    String calcitePlan = ctx.getCalcitePlan();
+    assertNull(calcitePlan);
+  }
 }
