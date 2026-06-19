@@ -33,6 +33,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Note: this test is not thread-safe!
+ */
 public class TestCalcitePlanner {
   static QueryState queryState;
 
@@ -60,11 +63,8 @@ public class TestCalcitePlanner {
     return (ASTNode) nd.getChild(0);
   }
 
-  @Test
-  public void testCBOLogging() throws Exception {
-    queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, true);
-
-    ASTNode ast = parse("select 1 from table(values(1)) as t(a)");
+  private Context getContext(String sql) throws ParseException, SemanticException {
+    ASTNode ast = parse(sql);
     Context ctx = new Context(queryState.getConf());
     planner.init(false);
     planner.initCtx(ctx);
@@ -72,26 +72,29 @@ public class TestCalcitePlanner {
     planner.genResolvedParseTree(ast, pctx);
     Operator<?> operator = planner.genOPTree(ast, pctx);
     assertNotNull(operator);
+    return ctx;
+  }
 
+  /**
+   * The planner should store the Calcite plan in the context when HIVE_LOG_EXPLAIN_OUTPUT is enabled.
+   */
+  @Test
+  public void testCBOLogging() throws Exception {
+    queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, true);
+    Context ctx = getContext("select 1");
     String calcitePlan = ctx.getCalcitePlan();
     assertNotNull(calcitePlan);
     assertTrue("Expected a RelNode plan containing \"HiveProject\", but was:\n" + calcitePlan,
         calcitePlan.contains("HiveProject"));
   }
 
+  /**
+   * The planner shall not store the Calcite plan in the context when HIVE_LOG_EXPLAIN_OUTPUT is disabled.
+   */
   @Test
   public void testNoCBOLogging() throws Exception {
     queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, false);
-
-    ASTNode ast = parse("select 1 from table(values(1)) as t(a)");
-    Context ctx = new Context(queryState.getConf());
-    planner.init(false);
-    planner.initCtx(ctx);
-    SemanticAnalyzer.PlannerContext pctx = new CalcitePlanner.PreCboCtx();
-    planner.genResolvedParseTree(ast, pctx);
-    Operator<?> operator = planner.genOPTree(ast, pctx);
-    assertNotNull(operator);
-
+    Context ctx = getContext("select 1");
     String calcitePlan = ctx.getCalcitePlan();
     assertNull(calcitePlan);
   }
