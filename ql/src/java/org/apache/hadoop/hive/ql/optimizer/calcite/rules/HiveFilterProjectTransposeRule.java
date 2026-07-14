@@ -339,20 +339,13 @@ public class HiveFilterProjectTransposeRule extends FilterProjectTransposeRule {
           check((Filter) node);
         } else if (node instanceof Project) {
           Project project = (Project) node;
-          if (RexOver.containsOver(project.getProjects(), null)) {
-            // RelOptUtil.pushPastProjectUnlessBloat may rewrite RexInputRefs inside RexOver
-            // window specs using the Project expression list. Window partition/order
-            // expressions reference the Project input row type, so their indexes may fall
-            // outside project.getProjects(). This visitor is only a conservative redundancy
-            // check for IS NOT NULL predicates; if it cannot safely inspect through a
-            // windowing Project, stop the check instead of failing query planning.
-            return;
-          }
           RexNode condition = HiveRelOptUtil.pushPastProjectUnlessBloat(
               filterCondition, project, bloat);
-          if (condition != null) {
-            filterCondition = condition;
+          if (condition == null) {
+            // the condition could not be pushed, so bail out
+            return;
           }
+          filterCondition = condition;
         } else {
           // we do not support other operators for now
           return;
