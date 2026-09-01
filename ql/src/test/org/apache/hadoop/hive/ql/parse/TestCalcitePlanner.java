@@ -9,11 +9,12 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.hadoop.hive.ql.parse;
@@ -40,7 +41,7 @@ public class TestCalcitePlanner {
   CalcitePlanner planner;
 
   @BeforeClass
-  public static void initialize() throws Exception {
+  public static void initialize() {
     HiveConf conf = new HiveConfForTest(TestCalcitePlanner.class);
     conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_ENABLED.varname, "false");
     conf.set(HiveConf.ConfVars.HIVE_AUTHORIZATION_MANAGER.varname,
@@ -76,7 +77,7 @@ public class TestCalcitePlanner {
    * The planner should store the Calcite plan in the context when HIVE_LOG_EXPLAIN_OUTPUT is enabled.
    */
   @Test
-  public void testCBOLogging() throws Exception {
+  public void testCBOLogExplainEnabled() throws ParseException, SemanticException {
     queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, true);
     Context ctx = getContext("select 1");
     String calcitePlan = ctx.getCalcitePlan();
@@ -89,7 +90,7 @@ public class TestCalcitePlanner {
    * The planner shall not store the Calcite plan in the context when HIVE_LOG_EXPLAIN_OUTPUT is disabled.
    */
   @Test
-  public void testNoCBOLogging() throws Exception {
+  public void testCBOLogExplainDisabled() throws ParseException, SemanticException {
     queryState.getConf().setBoolVar(HiveConf.ConfVars.HIVE_LOG_EXPLAIN_OUTPUT, false);
     Context ctx = getContext("select 1");
     String calcitePlan = ctx.getCalcitePlan();
