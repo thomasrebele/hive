@@ -17,6 +17,6 @@
 
 # Restore may exit with non-blocking errors so we shouldn't stop the script
 # since in many cases the dump will be restored correctly
-pg_restore -d metastore /tmp/metastore.dump.gz || true
+zstdcat /tmp/metastore.dump.zstd | pg_restore -d metastore || true
 # Remove the temporary file
-rm /tmp/metastore.dump.gz
+#rm /tmp/metastore.dump.zstd

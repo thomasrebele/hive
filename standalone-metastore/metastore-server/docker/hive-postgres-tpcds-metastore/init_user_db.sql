@@ -13,5 +13,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+set time zone utc;
 CREATE ROLE hive WITH LOGIN PASSWORD 'hive';
 CREATE DATABASE metastore WITH OWNER = hive TEMPLATE template0;

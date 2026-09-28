@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM postgres:12.3
+FROM postgres:18.0
 
-ADD https://github.com/zabetak/hive-test-datasets/releases/download/1.0/metastore_tpcds30tb_3_1_3000.dump.gz /tmp/metastore.dump.gz
-RUN chown postgres:postgres /tmp/metastore.dump.gz
+COPY metastore.dump.zstd /tmp/metastore.dump.zstd
+RUN chown postgres:postgres /tmp/metastore.dump.zstd
 COPY init_user_db.sql /docker-entrypoint-initdb.d/init_user_db.sql
 COPY restore_metastore.sh /docker-entrypoint-initdb.d/restore_metastore.sh
