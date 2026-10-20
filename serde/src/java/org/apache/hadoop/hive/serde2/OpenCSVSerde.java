@@ -18,15 +18,26 @@
  */
 package org.apache.hadoop.hive.serde2;
 
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.common.type.Date;
+import org.apache.hadoop.hive.common.type.HiveChar;
+import org.apache.hadoop.hive.common.type.HiveDecimal;
+import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
+import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
+import org.apache.hadoop.hive.common.type.HiveVarchar;
+import org.apache.hadoop.hive.common.type.Timestamp;
+import org.apache.hadoop.hive.common.type.TimestampTZ;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.AbstractPrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.AbstractPrimitiveWritableObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -131,6 +142,10 @@ public final class OpenCSVSerde extends AbstractEncodingAwareSerDe {
       } else if (fieldOI instanceof AbstractPrimitiveWritableObjectInspector) {
         Object primitiveJavaObject = ((AbstractPrimitiveWritableObjectInspector) fieldOI).getPrimitiveJavaObject(field);
         outputFields[c] = Objects.toString(primitiveJavaObject, null);
+        // TODO: use lazyprimitive.getWritableObject?
+      } else if (fieldOI instanceof AbstractPrimitiveObjectInspector fieldAPOI) {
+        Object primitiveJavaObject = fieldAPOI.getPrimitiveJavaObject(field);
+        outputFields[c] = convertToString(primitiveJavaObject, fieldAPOI);
       } else {
         throw new UnsupportedOperationException(
             "Column type of " + fieldOI.getTypeName() + " is not supported with OpenCSVSerde");
@@ -148,6 +163,44 @@ public final class OpenCSVSerde extends AbstractEncodingAwareSerDe {
     } catch (final IOException ioe) {
       throw new SerDeException(ioe);
     }
+  }
+
+  private String convertToString(Object obj, AbstractPrimitiveObjectInspector fieldOI) {
+    if (obj == null) {
+      return null;
+    }
+
+    if (ClassUtils.isPrimitiveOrWrapper(obj.getClass())) {
+      return Objects.toString(obj);
+    }
+
+    switch (obj) {
+    case byte[] ba:
+      return new BytesWritable(ba).toString();
+    case Date d:
+      return d.toString();
+    case HiveChar c:
+      return c.toString();
+    case HiveDecimal d:
+      return d.toString();
+    case HiveIntervalDayTime idt:
+      return idt.toString();
+    case HiveIntervalYearMonth iym:
+      return iym.toString();
+    case HiveVarchar v:
+      return v.toString();
+    case TimestampTZ t:
+      return t.toString();
+    case Timestamp t:
+      return t.toString();
+    default:
+      break;
+    }
+    // TODO: code needs to handle hive...Date, byte[], HiveChar, HiveDecimal, HiveIntervalDayTime,
+    //  HiveIntervalYearMonth, HiveVarchar, TimestampTZ, hive...Timestamp,
+
+    throw new UnsupportedOperationException(
+        "Column type of " + fieldOI.getTypeName() + " is not supported with OpenCSVSerde");
   }
 
   @Override
