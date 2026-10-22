@@ -764,16 +764,16 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "OR",
+            "kind": "OR",
             "syntax": "BINARY"
           },
           "operands": [
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
+                "name": "=",
+                "kind": "EQUALS",
+                "syntax": "BINARY"
               },
               "operands": [
                 {
@@ -781,21 +781,7 @@
                   "name": "$6"
                 },
                 {
-                  "literal": 1999,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
                   "literal": 2000,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
-                  "literal": 2001,
                   "type": {
                     "type": "INTEGER",
                     "nullable": false
@@ -805,16 +791,16 @@
             },
             {
               "op": {
-                "name": "OR",
-                "kind": "OR",
-                "syntax": "BINARY"
+                "name": "IN",
+                "kind": "OTHER_FUNCTION",
+                "syntax": "SPECIAL"
               },
               "operands": [
                 {
                   "op": {
-                    "name": "=",
-                    "kind": "EQUALS",
-                    "syntax": "BINARY"
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
@@ -822,7 +808,27 @@
                       "name": "$6"
                     },
                     {
-                      "literal": 2000,
+                      "input": 8,
+                      "name": "$8"
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "literal": 1999,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
+                    },
+                    {
+                      "literal": 12,
                       "type": {
                         "type": "INTEGER",
                         "nullable": false
@@ -832,73 +838,24 @@
                 },
                 {
                   "op": {
-                    "name": "IN",
-                    "kind": "OTHER_FUNCTION",
+                    "name": "ROW",
+                    "kind": "ROW",
                     "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 6,
-                          "name": "$6"
-                        },
-                        {
-                          "input": 8,
-                          "name": "$8"
-                        }
-                      ]
+                      "literal": 2001,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     },
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 1999,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 12,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 2001,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 1,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
+                      "literal": 1,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     }
                   ]
                 }
@@ -906,7 +863,7 @@
             }
           ]
         },
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "5",
@@ -930,7 +887,7 @@
             "name": "$8"
           }
         ],
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "6",
@@ -959,7 +916,7 @@
           "2",
           "5"
         ],
-        "rowCount": 4.5770092383917336E13
+        "rowCount": 1.8308036953566934E14
       },
       {
         "id": "7",
@@ -1413,7 +1370,7 @@
           "6",
           "9"
         ],
-        "rowCount": 9476056846796710
+        "rowCount": 37904227387186840
       },
       {
         "id": "11",
@@ -1796,7 +1753,7 @@
           "10",
           "13"
         ],
-        "rowCount": 5.319194989812397E20
+        "rowCount": 2.1276779959249587E21
       },
       {
         "id": "15",
@@ -1829,7 +1786,7 @@
             "name": null
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "16",
@@ -1873,7 +1830,7 @@
             "name": "$6"
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "17",
@@ -1965,7 +1922,7 @@
             }
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "18",
@@ -1983,7 +1940,7 @@
             }
           ]
         },
-        "rowCount": 4.787275490831158E19
+        "rowCount": 1.914910196332463E20
       },
       {
         "id": "19",
@@ -2042,7 +1999,7 @@
             }
           }
         ],
-        "rowCount": 4.787275490831158E19
+        "rowCount": 1.914910196332463E20
       },
       {
         "id": "20",
@@ -2121,16 +2078,16 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "OR",
+            "kind": "OR",
             "syntax": "BINARY"
           },
           "operands": [
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
+                "name": "=",
+                "kind": "EQUALS",
+                "syntax": "BINARY"
               },
               "operands": [
                 {
@@ -2138,21 +2095,7 @@
                   "name": "$6"
                 },
                 {
-                  "literal": 1999,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
                   "literal": 2000,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
-                  "literal": 2001,
                   "type": {
                     "type": "INTEGER",
                     "nullable": false
@@ -2162,16 +2105,16 @@
             },
             {
               "op": {
-                "name": "OR",
-                "kind": "OR",
-                "syntax": "BINARY"
+                "name": "IN",
+                "kind": "OTHER_FUNCTION",
+                "syntax": "SPECIAL"
               },
               "operands": [
                 {
                   "op": {
-                    "name": "=",
-                    "kind": "EQUALS",
-                    "syntax": "BINARY"
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
@@ -2179,7 +2122,27 @@
                       "name": "$6"
                     },
                     {
-                      "literal": 2000,
+                      "input": 8,
+                      "name": "$8"
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "literal": 1999,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
+                    },
+                    {
+                      "literal": 12,
                       "type": {
                         "type": "INTEGER",
                         "nullable": false
@@ -2189,73 +2152,24 @@
                 },
                 {
                   "op": {
-                    "name": "IN",
-                    "kind": "OTHER_FUNCTION",
+                    "name": "ROW",
+                    "kind": "ROW",
                     "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 6,
-                          "name": "$6"
-                        },
-                        {
-                          "input": 8,
-                          "name": "$8"
-                        }
-                      ]
+                      "literal": 2001,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     },
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 1999,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 12,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 2001,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 1,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
+                      "literal": 1,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     }
                   ]
                 }
@@ -2266,7 +2180,7 @@
         "inputs": [
           "3"
         ],
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "23",
@@ -2290,7 +2204,7 @@
             "name": "$8"
           }
         ],
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "24",
@@ -2319,7 +2233,7 @@
           "21",
           "23"
         ],
-        "rowCount": 4.5770092383917336E13
+        "rowCount": 1.8308036953566934E14
       },
       {
         "id": "25",
@@ -2415,7 +2329,7 @@
           "24",
           "26"
         ],
-        "rowCount": 9476056846796710
+        "rowCount": 37904227387186840
       },
       {
         "id": "28",
@@ -2511,7 +2425,7 @@
           "27",
           "29"
         ],
-        "rowCount": 5.319194989812397E20
+        "rowCount": 2.1276779959249587E21
       },
       {
         "id": "31",
@@ -2544,7 +2458,7 @@
             "name": null
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "32",
@@ -2588,7 +2502,7 @@
             "name": "$6"
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "33",
@@ -2680,7 +2594,7 @@
             }
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "34",
@@ -2698,7 +2612,7 @@
             }
           ]
         },
-        "rowCount": 4.787275490831158E19
+        "rowCount": 1.914910196332463E20
       },
       {
         "id": "35",
@@ -2753,7 +2667,7 @@
             ]
           }
         ],
-        "rowCount": 4.787275490831158E19
+        "rowCount": 1.914910196332463E20
       },
       {
         "id": "36",
@@ -2832,16 +2746,16 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "OR",
+            "kind": "OR",
             "syntax": "BINARY"
           },
           "operands": [
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
+                "name": "=",
+                "kind": "EQUALS",
+                "syntax": "BINARY"
               },
               "operands": [
                 {
@@ -2849,21 +2763,7 @@
                   "name": "$6"
                 },
                 {
-                  "literal": 1999,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
                   "literal": 2000,
-                  "type": {
-                    "type": "INTEGER",
-                    "nullable": false
-                  }
-                },
-                {
-                  "literal": 2001,
                   "type": {
                     "type": "INTEGER",
                     "nullable": false
@@ -2873,16 +2773,16 @@
             },
             {
               "op": {
-                "name": "OR",
-                "kind": "OR",
-                "syntax": "BINARY"
+                "name": "IN",
+                "kind": "OTHER_FUNCTION",
+                "syntax": "SPECIAL"
               },
               "operands": [
                 {
                   "op": {
-                    "name": "=",
-                    "kind": "EQUALS",
-                    "syntax": "BINARY"
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
@@ -2890,7 +2790,27 @@
                       "name": "$6"
                     },
                     {
-                      "literal": 2000,
+                      "input": 8,
+                      "name": "$8"
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "ROW",
+                    "kind": "ROW",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "literal": 1999,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
+                    },
+                    {
+                      "literal": 12,
                       "type": {
                         "type": "INTEGER",
                         "nullable": false
@@ -2900,73 +2820,24 @@
                 },
                 {
                   "op": {
-                    "name": "IN",
-                    "kind": "OTHER_FUNCTION",
+                    "name": "ROW",
+                    "kind": "ROW",
                     "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 6,
-                          "name": "$6"
-                        },
-                        {
-                          "input": 8,
-                          "name": "$8"
-                        }
-                      ]
+                      "literal": 2001,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     },
                     {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 1999,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 12,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "op": {
-                        "name": "ROW",
-                        "kind": "ROW",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "literal": 2001,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        },
-                        {
-                          "literal": 1,
-                          "type": {
-                            "type": "INTEGER",
-                            "nullable": false
-                          }
-                        }
-                      ]
+                      "literal": 1,
+                      "type": {
+                        "type": "INTEGER",
+                        "nullable": false
+                      }
                     }
                   ]
                 }
@@ -2977,7 +2848,7 @@
         "inputs": [
           "3"
         ],
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "39",
@@ -3001,7 +2872,7 @@
             "name": "$8"
           }
         ],
-        "rowCount": 4565.5625
+        "rowCount": 18262.25
       },
       {
         "id": "40",
@@ -3030,7 +2901,7 @@
           "37",
           "39"
         ],
-        "rowCount": 4.5770092383917336E13
+        "rowCount": 1.8308036953566934E14
       },
       {
         "id": "41",
@@ -3126,7 +2997,7 @@
           "40",
           "42"
         ],
-        "rowCount": 9476056846796710
+        "rowCount": 37904227387186840
       },
       {
         "id": "44",
@@ -3222,7 +3093,7 @@
           "43",
           "45"
         ],
-        "rowCount": 5.319194989812397E20
+        "rowCount": 2.1276779959249587E21
       },
       {
         "id": "47",
@@ -3255,7 +3126,7 @@
             "name": null
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "48",
@@ -3299,7 +3170,7 @@
             "name": "$6"
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "49",
@@ -3494,7 +3365,7 @@
             }
           }
         ],
-        "rowCount": 5.319194989812397E19
+        "rowCount": 2.1276779959249587E20
       },
       {
         "id": "50",
@@ -3664,7 +3535,7 @@
             }
           ]
         },
-        "rowCount": 897614154530841984
+        "rowCount": 3590456618123367936
       },
       {
         "id": "51",
@@ -3718,7 +3589,7 @@
             "name": "$8"
           }
         ],
-        "rowCount": 897614154530841984
+        "rowCount": 3590456618123367936
       },
       {
         "id": "52",
@@ -3824,7 +3695,7 @@
           "35",
           "51"
         ],
-        "rowCount": 3.2631302401771794E33
+        "rowCount": 5.221008384283487E34
       },
       {
         "id": "53",
@@ -3930,7 +3801,7 @@
           "19",
           "52"
         ],
-        "rowCount": 1.1862579161225682E49
+        "rowCount": 7.592050663184436E50
       },
       {
         "id": "54",
@@ -3998,7 +3869,7 @@
             }
           }
         ],
-        "rowCount": 1.1862579161225682E49
+        "rowCount": 7.592050663184436E50
       },
       {
         "id": "55",

@@ -912,237 +912,6 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
         "table": [
           "default",
-          "customer_address"
-        ],
-        "table:alias": "customer_address",
-        "inputs": [],
-        "rowCount": 40000000,
-        "avgRowSize": 607,
-        "rowType": {
-          "fields": [
-            {
-              "type": "BIGINT",
-              "nullable": false,
-              "name": "ca_address_sk"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 16,
-              "name": "ca_address_id"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 10,
-              "name": "ca_street_number"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 60,
-              "name": "ca_street_name"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 15,
-              "name": "ca_street_type"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 10,
-              "name": "ca_suite_number"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 60,
-              "name": "ca_city"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 30,
-              "name": "ca_county"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 2,
-              "name": "ca_state"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 10,
-              "name": "ca_zip"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 20,
-              "name": "ca_country"
-            },
-            {
-              "type": "DECIMAL",
-              "nullable": true,
-              "precision": 5,
-              "scale": 2,
-              "name": "ca_gmt_offset"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 20,
-              "name": "ca_location_type"
-            },
-            {
-              "type": "BIGINT",
-              "nullable": true,
-              "name": "BLOCK__OFFSET__INSIDE__FILE"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 2147483647,
-              "name": "INPUT__FILE__NAME"
-            },
-            {
-              "fields": [
-                {
-                  "type": "BIGINT",
-                  "nullable": true,
-                  "name": "writeid"
-                },
-                {
-                  "type": "INTEGER",
-                  "nullable": true,
-                  "name": "bucketid"
-                },
-                {
-                  "type": "BIGINT",
-                  "nullable": true,
-                  "name": "rowid"
-                }
-              ],
-              "nullable": true,
-              "name": "ROW__ID"
-            },
-            {
-              "type": "BOOLEAN",
-              "nullable": true,
-              "name": "ROW__IS__DELETED"
-            }
-          ],
-          "nullable": false
-        },
-        "colStats": [
-          {
-            "name": "ca_address_sk",
-            "ndv": 40618307,
-            "minValue": 1,
-            "maxValue": 40000000
-          },
-          {
-            "name": "ca_gmt_offset",
-            "ndv": 6,
-            "minValue": -10,
-            "maxValue": -5
-          },
-          {
-            "name": "ca_address_id",
-            "ndv": 39667899
-          },
-          {
-            "name": "ca_street_number",
-            "ndv": 1014
-          },
-          {
-            "name": "ca_street_name",
-            "ndv": 8358
-          },
-          {
-            "name": "ca_street_type",
-            "ndv": 21
-          },
-          {
-            "name": "ca_suite_number",
-            "ndv": 76
-          },
-          {
-            "name": "ca_city",
-            "ndv": 985
-          },
-          {
-            "name": "ca_county",
-            "ndv": 1930
-          },
-          {
-            "name": "ca_state",
-            "ndv": 53
-          },
-          {
-            "name": "ca_zip",
-            "ndv": 9538
-          },
-          {
-            "name": "ca_country",
-            "ndv": 2
-          },
-          {
-            "name": "ca_location_type",
-            "ndv": 4
-          }
-        ]
-      },
-      {
-        "id": "8",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
-        "condition": {
-          "op": {
-            "name": "=",
-            "kind": "EQUALS",
-            "syntax": "BINARY"
-          },
-          "operands": [
-            {
-              "input": 11,
-              "name": "$11"
-            },
-            {
-              "literal": -7,
-              "type": {
-                "type": "DECIMAL",
-                "nullable": false,
-                "precision": 1,
-                "scale": 0
-              }
-            }
-          ]
-        },
-        "rowCount": 6000000
-      },
-      {
-        "id": "9",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
-        "fields": [
-          "ca_address_sk"
-        ],
-        "exprs": [
-          {
-            "input": 0,
-            "name": "$0"
-          }
-        ],
-        "rowCount": 6000000
-      },
-      {
-        "id": "10",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
-        "table": [
-          "default",
           "customer"
         ],
         "table:alias": "customer",
@@ -1385,7 +1154,7 @@
         ]
       },
       {
-        "id": "11",
+        "id": "8",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
@@ -1438,7 +1207,7 @@
         "rowCount": 5.832000000000001E7
       },
       {
-        "id": "12",
+        "id": "9",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
           "c_customer_sk",
@@ -1467,7 +1236,446 @@
         "rowCount": 5.832000000000001E7
       },
       {
+        "id": "10",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
+        "table": [
+          "default",
+          "customer_address"
+        ],
+        "table:alias": "customer_address",
+        "inputs": [],
+        "rowCount": 40000000,
+        "avgRowSize": 607,
+        "rowType": {
+          "fields": [
+            {
+              "type": "BIGINT",
+              "nullable": false,
+              "name": "ca_address_sk"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 16,
+              "name": "ca_address_id"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 10,
+              "name": "ca_street_number"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 60,
+              "name": "ca_street_name"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 15,
+              "name": "ca_street_type"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 10,
+              "name": "ca_suite_number"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 60,
+              "name": "ca_city"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 30,
+              "name": "ca_county"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 2,
+              "name": "ca_state"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 10,
+              "name": "ca_zip"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 20,
+              "name": "ca_country"
+            },
+            {
+              "type": "DECIMAL",
+              "nullable": true,
+              "precision": 5,
+              "scale": 2,
+              "name": "ca_gmt_offset"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 20,
+              "name": "ca_location_type"
+            },
+            {
+              "type": "BIGINT",
+              "nullable": true,
+              "name": "BLOCK__OFFSET__INSIDE__FILE"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 2147483647,
+              "name": "INPUT__FILE__NAME"
+            },
+            {
+              "fields": [
+                {
+                  "type": "BIGINT",
+                  "nullable": true,
+                  "name": "writeid"
+                },
+                {
+                  "type": "INTEGER",
+                  "nullable": true,
+                  "name": "bucketid"
+                },
+                {
+                  "type": "BIGINT",
+                  "nullable": true,
+                  "name": "rowid"
+                }
+              ],
+              "nullable": true,
+              "name": "ROW__ID"
+            },
+            {
+              "type": "BOOLEAN",
+              "nullable": true,
+              "name": "ROW__IS__DELETED"
+            }
+          ],
+          "nullable": false
+        },
+        "colStats": [
+          {
+            "name": "ca_address_sk",
+            "ndv": 40618307,
+            "minValue": 1,
+            "maxValue": 40000000
+          },
+          {
+            "name": "ca_gmt_offset",
+            "ndv": 6,
+            "minValue": -10,
+            "maxValue": -5
+          },
+          {
+            "name": "ca_address_id",
+            "ndv": 39667899
+          },
+          {
+            "name": "ca_street_number",
+            "ndv": 1014
+          },
+          {
+            "name": "ca_street_name",
+            "ndv": 8358
+          },
+          {
+            "name": "ca_street_type",
+            "ndv": 21
+          },
+          {
+            "name": "ca_suite_number",
+            "ndv": 76
+          },
+          {
+            "name": "ca_city",
+            "ndv": 985
+          },
+          {
+            "name": "ca_county",
+            "ndv": 1930
+          },
+          {
+            "name": "ca_state",
+            "ndv": 53
+          },
+          {
+            "name": "ca_zip",
+            "ndv": 9538
+          },
+          {
+            "name": "ca_country",
+            "ndv": 2
+          },
+          {
+            "name": "ca_location_type",
+            "ndv": 4
+          }
+        ]
+      },
+      {
+        "id": "11",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
+        "condition": {
+          "op": {
+            "name": "=",
+            "kind": "EQUALS",
+            "syntax": "BINARY"
+          },
+          "operands": [
+            {
+              "input": 11,
+              "name": "$11"
+            },
+            {
+              "literal": -7,
+              "type": {
+                "type": "DECIMAL",
+                "nullable": false,
+                "precision": 1,
+                "scale": 0
+              }
+            }
+          ]
+        },
+        "rowCount": 6000000
+      },
+      {
+        "id": "12",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
+        "fields": [
+          "ca_address_sk"
+        ],
+        "exprs": [
+          {
+            "input": 0,
+            "name": "$0"
+          }
+        ],
+        "rowCount": 6000000
+      },
+      {
         "id": "13",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
+        "condition": {
+          "op": {
+            "name": "=",
+            "kind": "EQUALS",
+            "syntax": "BINARY"
+          },
+          "operands": [
+            {
+              "input": 4,
+              "name": "$4"
+            },
+            {
+              "input": 3,
+              "name": "$3"
+            }
+          ]
+        },
+        "joinType": "inner",
+        "algorithm": "none",
+        "cost": "not available",
+        "inputs": [
+          "9",
+          "12"
+        ],
+        "rowCount": 5.248800000000001E13
+      },
+      {
+        "id": "14",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
+        "table": [
+          "default",
+          "household_demographics"
+        ],
+        "table:alias": "household_demographics",
+        "inputs": [],
+        "rowCount": 7200,
+        "avgRowSize": 183,
+        "rowType": {
+          "fields": [
+            {
+              "type": "BIGINT",
+              "nullable": false,
+              "name": "hd_demo_sk"
+            },
+            {
+              "type": "BIGINT",
+              "nullable": true,
+              "name": "hd_income_band_sk"
+            },
+            {
+              "type": "CHAR",
+              "nullable": true,
+              "precision": 15,
+              "name": "hd_buy_potential"
+            },
+            {
+              "type": "INTEGER",
+              "nullable": true,
+              "name": "hd_dep_count"
+            },
+            {
+              "type": "INTEGER",
+              "nullable": true,
+              "name": "hd_vehicle_count"
+            },
+            {
+              "type": "BIGINT",
+              "nullable": true,
+              "name": "BLOCK__OFFSET__INSIDE__FILE"
+            },
+            {
+              "type": "VARCHAR",
+              "nullable": true,
+              "precision": 2147483647,
+              "name": "INPUT__FILE__NAME"
+            },
+            {
+              "fields": [
+                {
+                  "type": "BIGINT",
+                  "nullable": true,
+                  "name": "writeid"
+                },
+                {
+                  "type": "INTEGER",
+                  "nullable": true,
+                  "name": "bucketid"
+                },
+                {
+                  "type": "BIGINT",
+                  "nullable": true,
+                  "name": "rowid"
+                }
+              ],
+              "nullable": true,
+              "name": "ROW__ID"
+            },
+            {
+              "type": "BOOLEAN",
+              "nullable": true,
+              "name": "ROW__IS__DELETED"
+            }
+          ],
+          "nullable": false
+        },
+        "colStats": [
+          {
+            "name": "hd_demo_sk",
+            "ndv": 7225,
+            "minValue": 1,
+            "maxValue": 7200
+          },
+          {
+            "name": "hd_buy_potential",
+            "ndv": 6
+          },
+          {
+            "name": "hd_income_band_sk",
+            "ndv": 20,
+            "minValue": 1,
+            "maxValue": 20
+          },
+          {
+            "name": "hd_dep_count",
+            "ndv": 10,
+            "minValue": 0,
+            "maxValue": 9
+          },
+          {
+            "name": "hd_vehicle_count",
+            "ndv": 6,
+            "minValue": -1,
+            "maxValue": 4
+          }
+        ]
+      },
+      {
+        "id": "15",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
+        "condition": {
+          "op": {
+            "name": "LIKE",
+            "kind": "LIKE",
+            "syntax": "SPECIAL"
+          },
+          "operands": [
+            {
+              "input": 2,
+              "name": "$2"
+            },
+            {
+              "literal": "0-500%",
+              "type": {
+                "type": "VARCHAR",
+                "nullable": false,
+                "precision": 2147483647
+              }
+            }
+          ]
+        },
+        "rowCount": 1800
+      },
+      {
+        "id": "16",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
+        "fields": [
+          "hd_demo_sk"
+        ],
+        "exprs": [
+          {
+            "input": 0,
+            "name": "$0"
+          }
+        ],
+        "rowCount": 1800
+      },
+      {
+        "id": "17",
+        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
+        "condition": {
+          "op": {
+            "name": "=",
+            "kind": "EQUALS",
+            "syntax": "BINARY"
+          },
+          "operands": [
+            {
+              "input": 5,
+              "name": "$5"
+            },
+            {
+              "input": 2,
+              "name": "$2"
+            }
+          ]
+        },
+        "joinType": "inner",
+        "algorithm": "none",
+        "cost": "not available",
+        "inputs": [
+          "13",
+          "16"
+        ],
+        "rowCount": 14171760000000002
+      },
+      {
+        "id": "18",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
         "table": [
           "default",
@@ -1618,19 +1826,19 @@
         ]
       },
       {
-        "id": "14",
+        "id": "19",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
-            "syntax": "BINARY"
+            "name": "IN",
+            "kind": "OTHER_FUNCTION",
+            "syntax": "SPECIAL"
           },
           "operands": [
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
+                "name": "ROW",
+                "kind": "ROW",
                 "syntax": "SPECIAL"
               },
               "operands": [
@@ -1639,40 +1847,24 @@
                   "name": "$2"
                 },
                 {
-                  "literal": "M",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 1
-                  }
-                },
-                {
-                  "literal": "W",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 1
-                  }
+                  "input": 3,
+                  "name": "$3"
                 }
               ]
             },
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
+                "name": "ROW",
+                "kind": "ROW",
                 "syntax": "SPECIAL"
               },
               "operands": [
                 {
-                  "input": 3,
-                  "name": "$3"
-                },
-                {
-                  "literal": "Advanced Degree     ",
+                  "literal": "M",
                   "type": {
                     "type": "CHAR",
                     "nullable": false,
-                    "precision": 20
+                    "precision": 1
                   }
                 },
                 {
@@ -1687,86 +1879,35 @@
             },
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
+                "name": "ROW",
+                "kind": "ROW",
                 "syntax": "SPECIAL"
               },
               "operands": [
                 {
-                  "op": {
-                    "name": "ROW",
-                    "kind": "ROW",
-                    "syntax": "SPECIAL"
-                  },
-                  "operands": [
-                    {
-                      "input": 2,
-                      "name": "$2"
-                    },
-                    {
-                      "input": 3,
-                      "name": "$3"
-                    }
-                  ]
+                  "literal": "W",
+                  "type": {
+                    "type": "CHAR",
+                    "nullable": false,
+                    "precision": 1
+                  }
                 },
                 {
-                  "op": {
-                    "name": "ROW",
-                    "kind": "ROW",
-                    "syntax": "SPECIAL"
-                  },
-                  "operands": [
-                    {
-                      "literal": "M",
-                      "type": {
-                        "type": "CHAR",
-                        "nullable": false,
-                        "precision": 1
-                      }
-                    },
-                    {
-                      "literal": "Unknown             ",
-                      "type": {
-                        "type": "CHAR",
-                        "nullable": false,
-                        "precision": 20
-                      }
-                    }
-                  ]
-                },
-                {
-                  "op": {
-                    "name": "ROW",
-                    "kind": "ROW",
-                    "syntax": "SPECIAL"
-                  },
-                  "operands": [
-                    {
-                      "literal": "W",
-                      "type": {
-                        "type": "CHAR",
-                        "nullable": false,
-                        "precision": 1
-                      }
-                    },
-                    {
-                      "literal": "Advanced Degree     ",
-                      "type": {
-                        "type": "CHAR",
-                        "nullable": false,
-                        "precision": 20
-                      }
-                    }
-                  ]
+                  "literal": "Advanced Degree     ",
+                  "type": {
+                    "type": "CHAR",
+                    "nullable": false,
+                    "precision": 20
+                  }
                 }
               ]
             }
           ]
         },
-        "rowCount": 30012.5
+        "rowCount": 480200
       },
       {
-        "id": "15",
+        "id": "20",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
           "cd_demo_sk",
@@ -1787,215 +1928,7 @@
             "name": "$3"
           }
         ],
-        "rowCount": 30012.5
-      },
-      {
-        "id": "16",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
-        "condition": {
-          "op": {
-            "name": "=",
-            "kind": "EQUALS",
-            "syntax": "BINARY"
-          },
-          "operands": [
-            {
-              "input": 4,
-              "name": "$4"
-            },
-            {
-              "input": 1,
-              "name": "$1"
-            }
-          ]
-        },
-        "joinType": "inner",
-        "algorithm": "none",
-        "cost": "not available",
-        "inputs": [
-          "12",
-          "15"
-        ],
-        "rowCount": 2.6254935000000003E11
-      },
-      {
-        "id": "17",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
-        "condition": {
-          "op": {
-            "name": "=",
-            "kind": "EQUALS",
-            "syntax": "BINARY"
-          },
-          "operands": [
-            {
-              "input": 0,
-              "name": "$0"
-            },
-            {
-              "input": 4,
-              "name": "$4"
-            }
-          ]
-        },
-        "joinType": "inner",
-        "algorithm": "none",
-        "cost": "not available",
-        "inputs": [
-          "9",
-          "16"
-        ],
-        "rowCount": 236294415000000032
-      },
-      {
-        "id": "18",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
-        "table": [
-          "default",
-          "household_demographics"
-        ],
-        "table:alias": "household_demographics",
-        "inputs": [],
-        "rowCount": 7200,
-        "avgRowSize": 183,
-        "rowType": {
-          "fields": [
-            {
-              "type": "BIGINT",
-              "nullable": false,
-              "name": "hd_demo_sk"
-            },
-            {
-              "type": "BIGINT",
-              "nullable": true,
-              "name": "hd_income_band_sk"
-            },
-            {
-              "type": "CHAR",
-              "nullable": true,
-              "precision": 15,
-              "name": "hd_buy_potential"
-            },
-            {
-              "type": "INTEGER",
-              "nullable": true,
-              "name": "hd_dep_count"
-            },
-            {
-              "type": "INTEGER",
-              "nullable": true,
-              "name": "hd_vehicle_count"
-            },
-            {
-              "type": "BIGINT",
-              "nullable": true,
-              "name": "BLOCK__OFFSET__INSIDE__FILE"
-            },
-            {
-              "type": "VARCHAR",
-              "nullable": true,
-              "precision": 2147483647,
-              "name": "INPUT__FILE__NAME"
-            },
-            {
-              "fields": [
-                {
-                  "type": "BIGINT",
-                  "nullable": true,
-                  "name": "writeid"
-                },
-                {
-                  "type": "INTEGER",
-                  "nullable": true,
-                  "name": "bucketid"
-                },
-                {
-                  "type": "BIGINT",
-                  "nullable": true,
-                  "name": "rowid"
-                }
-              ],
-              "nullable": true,
-              "name": "ROW__ID"
-            },
-            {
-              "type": "BOOLEAN",
-              "nullable": true,
-              "name": "ROW__IS__DELETED"
-            }
-          ],
-          "nullable": false
-        },
-        "colStats": [
-          {
-            "name": "hd_demo_sk",
-            "ndv": 7225,
-            "minValue": 1,
-            "maxValue": 7200
-          },
-          {
-            "name": "hd_buy_potential",
-            "ndv": 6
-          },
-          {
-            "name": "hd_income_band_sk",
-            "ndv": 20,
-            "minValue": 1,
-            "maxValue": 20
-          },
-          {
-            "name": "hd_dep_count",
-            "ndv": 10,
-            "minValue": 0,
-            "maxValue": 9
-          },
-          {
-            "name": "hd_vehicle_count",
-            "ndv": 6,
-            "minValue": -1,
-            "maxValue": 4
-          }
-        ]
-      },
-      {
-        "id": "19",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
-        "condition": {
-          "op": {
-            "name": "LIKE",
-            "kind": "LIKE",
-            "syntax": "SPECIAL"
-          },
-          "operands": [
-            {
-              "input": 2,
-              "name": "$2"
-            },
-            {
-              "literal": "0-500%",
-              "type": {
-                "type": "VARCHAR",
-                "nullable": false,
-                "precision": 2147483647
-              }
-            }
-          ]
-        },
-        "rowCount": 1800
-      },
-      {
-        "id": "20",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
-        "fields": [
-          "hd_demo_sk"
-        ],
-        "exprs": [
-          {
-            "input": 0,
-            "name": "$0"
-          }
-        ],
-        "rowCount": 1800
+        "rowCount": 480200
       },
       {
         "id": "21",
@@ -2008,12 +1941,12 @@
           },
           "operands": [
             {
-              "input": 8,
-              "name": "$8"
+              "input": 6,
+              "name": "$6"
             },
             {
-              "input": 3,
-              "name": "$3"
+              "input": 1,
+              "name": "$1"
             }
           ]
         },
@@ -2024,21 +1957,21 @@
           "17",
           "20"
         ],
-        "rowCount": 6.379949205000001E19
+        "rowCount": 1.0207918728000002E21
       },
       {
         "id": "22",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
-          "ca_address_sk",
           "c_customer_sk",
           "c_current_cdemo_sk",
           "c_current_hdemo_sk",
           "c_current_addr_sk",
+          "ca_address_sk",
+          "hd_demo_sk",
           "cd_demo_sk",
           "cd_marital_status",
-          "cd_education_status",
-          "hd_demo_sk"
+          "cd_education_status"
         ],
         "exprs": [
           {
@@ -2078,7 +2011,7 @@
             "name": "$8"
           }
         ],
-        "rowCount": 6.379949205000001E19
+        "rowCount": 1.0207918728000002E21
       },
       {
         "id": "23",
@@ -2095,8 +2028,8 @@
               "name": "$0"
             },
             {
-              "input": 6,
-              "name": "$6"
+              "input": 5,
+              "name": "$5"
             }
           ]
         },
@@ -2107,7 +2040,7 @@
           "6",
           "22"
         ],
-        "rowCount": 7.432010708279955E30
+        "rowCount": 1.1891217133247928E32
       },
       {
         "id": "24",
@@ -2547,14 +2480,14 @@
           "23",
           "25"
         ],
-        "rowCount": 6.688809637451959E31
+        "rowCount": 1.0702095419923135E33
       },
       {
         "id": "27",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveAggregate",
         "group": [
-          11,
           12,
+          13,
           15,
           16,
           17
@@ -2579,7 +2512,7 @@
             "name": null
           }
         ],
-        "rowCount": 6.68880963745196E30
+        "rowCount": 1.0702095419923135E32
       },
       {
         "id": "28",
@@ -2613,7 +2546,7 @@
             "name": "$5"
           }
         ],
-        "rowCount": 6.68880963745196E30
+        "rowCount": 1.0702095419923135E32
       },
       {
         "id": "29",
@@ -2625,7 +2558,7 @@
             "nulls": "FIRST"
           }
         ],
-        "rowCount": 6.68880963745196E30
+        "rowCount": 1.0702095419923135E32
       },
       {
         "id": "30",
@@ -2654,7 +2587,7 @@
             "name": "$3"
           }
         ],
-        "rowCount": 6.68880963745196E30
+        "rowCount": 1.0702095419923135E32
       }
     ]
   }

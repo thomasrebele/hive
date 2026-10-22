@@ -196,120 +196,26 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "=",
+            "kind": "EQUALS",
             "syntax": "BINARY"
           },
           "operands": [
             {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 8,
-                  "name": "$8"
-                },
-                {
-                  "literal": "GA",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "IN",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "KY",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "MO",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "MT",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "NM",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "OR",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "WI",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "WV",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                }
-              ]
+              "input": 10,
+              "name": "$10"
             },
             {
-              "op": {
-                "name": "=",
-                "kind": "EQUALS",
-                "syntax": "BINARY"
-              },
-              "operands": [
-                {
-                  "input": 10,
-                  "name": "$10"
-                },
-                {
-                  "literal": "United States",
-                  "type": {
-                    "type": "VARCHAR",
-                    "nullable": false,
-                    "precision": 20
-                  }
-                }
-              ]
+              "literal": "United States",
+              "type": {
+                "type": "VARCHAR",
+                "nullable": false,
+                "precision": 20
+              }
             }
           ]
         },
-        "rowCount": 1500000
+        "rowCount": 6000000
       },
       {
         "id": "2",
@@ -437,7 +343,7 @@
             ]
           }
         ],
-        "rowCount": 1500000
+        "rowCount": 6000000
       },
       {
         "id": "3",
@@ -1052,19 +958,6 @@
               },
               "operands": [
                 {
-                  "input": 21,
-                  "name": "$21"
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IS NOT NULL",
-                "kind": "IS_NOT_NULL",
-                "syntax": "POSTFIX"
-              },
-              "operands": [
-                {
                   "input": 3,
                   "name": "$3"
                 }
@@ -1111,7 +1004,7 @@
             }
           ]
         },
-        "rowCount": 1.218046237379503E10
+        "rowCount": 1.3533847081994478E10
       },
       {
         "id": "8",
@@ -1257,7 +1150,7 @@
             ]
           }
         ],
-        "rowCount": 1.218046237379503E10
+        "rowCount": 1.3533847081994478E10
       },
       {
         "id": "9",
@@ -1678,7 +1571,7 @@
           "8",
           "11"
         ],
-        "rowCount": 2.0019838408725445E13
+        "rowCount": 2.224426489858383E13
       },
       {
         "id": "13",
@@ -1707,7 +1600,7 @@
           "5",
           "12"
         ],
-        "rowCount": 129782606452244448
+        "rowCount": 144202896058049376
       },
       {
         "id": "14",
@@ -1805,7 +1698,7 @@
           "2",
           "13"
         ],
-        "rowCount": 7.30027161293875E21
+        "rowCount": 3.244565161306111E22
       },
       {
         "id": "15",

@@ -696,502 +696,278 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "OR",
+            "kind": "OR",
             "syntax": "BINARY"
           },
           "operands": [
             {
               "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 8,
-                  "name": "$8"
-                },
-                {
-                  "literal": "amalgimporto #1                                   ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "edu packscholar #1                                ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "exportiimporto #1                                 ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "exportiunivamalg #9                               ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "importoamalg #1                                   ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "scholaramalgamalg #14                             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "scholaramalgamalg #7                              ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "scholaramalgamalg #9                              ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 10,
-                  "name": "$10"
-                },
-                {
-                  "literal": "accessories                                       ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "classical                                         ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "fragrances                                        ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "pants                                             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "personal                                          ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "portable                                          ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "reference                                         ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "self-help                                         ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 12,
-                  "name": "$12"
-                },
-                {
-                  "literal": "Books                                             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "Children                                          ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "Electronics                                       ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "Men                                               ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "Music                                             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                },
-                {
-                  "literal": "Women                                             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 50
-                  }
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "OR",
-                "kind": "OR",
+                "name": "AND",
+                "kind": "AND",
                 "syntax": "BINARY"
               },
               "operands": [
                 {
                   "op": {
-                    "name": "AND",
-                    "kind": "AND",
-                    "syntax": "BINARY"
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 12,
-                          "name": "$12"
-                        },
-                        {
-                          "literal": "Books                                             ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "Children                                          ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "Electronics                                       ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "input": 12,
+                      "name": "$12"
                     },
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 10,
-                          "name": "$10"
-                        },
-                        {
-                          "literal": "personal                                          ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "portable                                          ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "reference                                         ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "self-help                                         ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "literal": "Books                                             ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
                     },
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 8,
-                          "name": "$8"
-                        },
-                        {
-                          "literal": "exportiunivamalg #9                               ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "scholaramalgamalg #14                             ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "scholaramalgamalg #7                              ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "scholaramalgamalg #9                              ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "literal": "Children                                          ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "Electronics                                       ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
                     }
                   ]
                 },
                 {
                   "op": {
-                    "name": "AND",
-                    "kind": "AND",
-                    "syntax": "BINARY"
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
                   },
                   "operands": [
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 12,
-                          "name": "$12"
-                        },
-                        {
-                          "literal": "Men                                               ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "Music                                             ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "Women                                             ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "input": 10,
+                      "name": "$10"
                     },
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 10,
-                          "name": "$10"
-                        },
-                        {
-                          "literal": "accessories                                       ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "classical                                         ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "fragrances                                        ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "pants                                             ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "literal": "personal                                          ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
                     },
                     {
-                      "op": {
-                        "name": "IN",
-                        "kind": "OTHER_FUNCTION",
-                        "syntax": "SPECIAL"
-                      },
-                      "operands": [
-                        {
-                          "input": 8,
-                          "name": "$8"
-                        },
-                        {
-                          "literal": "amalgimporto #1                                   ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "edu packscholar #1                                ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "exportiimporto #1                                 ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        },
-                        {
-                          "literal": "importoamalg #1                                   ",
-                          "type": {
-                            "type": "CHAR",
-                            "nullable": false,
-                            "precision": 50
-                          }
-                        }
-                      ]
+                      "literal": "portable                                          ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "reference                                         ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "self-help                                         ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "input": 8,
+                      "name": "$8"
+                    },
+                    {
+                      "literal": "exportiunivamalg #9                               ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "scholaramalgamalg #14                             ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "scholaramalgamalg #7                              ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "scholaramalgamalg #9                              ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "op": {
+                "name": "AND",
+                "kind": "AND",
+                "syntax": "BINARY"
+              },
+              "operands": [
+                {
+                  "op": {
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "input": 12,
+                      "name": "$12"
+                    },
+                    {
+                      "literal": "Men                                               ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "Music                                             ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "Women                                             ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "input": 10,
+                      "name": "$10"
+                    },
+                    {
+                      "literal": "accessories                                       ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "classical                                         ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "fragrances                                        ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "pants                                             ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    }
+                  ]
+                },
+                {
+                  "op": {
+                    "name": "IN",
+                    "kind": "OTHER_FUNCTION",
+                    "syntax": "SPECIAL"
+                  },
+                  "operands": [
+                    {
+                      "input": 8,
+                      "name": "$8"
+                    },
+                    {
+                      "literal": "amalgimporto #1                                   ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "edu packscholar #1                                ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "exportiimporto #1                                 ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
+                    },
+                    {
+                      "literal": "importoamalg #1                                   ",
+                      "type": {
+                        "type": "CHAR",
+                        "nullable": false,
+                        "precision": 50
+                      }
                     }
                   ]
                 }
@@ -1199,7 +975,7 @@
             }
           ]
         },
-        "rowCount": 1804.6875
+        "rowCount": 115500
       },
       {
         "id": "5",
@@ -1218,7 +994,7 @@
             "name": "$13"
           }
         ],
-        "rowCount": 1804.6875
+        "rowCount": 115500
       },
       {
         "id": "6",
@@ -1247,7 +1023,7 @@
           "2",
           "5"
         ],
-        "rowCount": 1.809212196724956E13
+        "rowCount": 1.1578958059039718E15
       },
       {
         "id": "7",
@@ -1750,7 +1526,7 @@
           "6",
           "9"
         ],
-        "rowCount": 49560428159460488
+        "rowCount": 3171867402205471232
       },
       {
         "id": "11",
@@ -1779,7 +1555,7 @@
             "name": null
           }
         ],
-        "rowCount": 4956042815946049
+        "rowCount": 317186740220547136
       },
       {
         "id": "12",
@@ -1803,7 +1579,7 @@
             "name": "$2"
           }
         ],
-        "rowCount": 4956042815946049
+        "rowCount": 317186740220547136
       },
       {
         "id": "13",
@@ -1867,7 +1643,7 @@
             }
           }
         ],
-        "rowCount": 4956042815946049
+        "rowCount": 317186740220547136
       },
       {
         "id": "14",
@@ -1973,7 +1749,7 @@
             }
           ]
         },
-        "rowCount": 1.2390107039865122E15
+        "rowCount": 79296685055136784
       },
       {
         "id": "15",
@@ -1997,7 +1773,7 @@
             "name": "$2"
           }
         ],
-        "rowCount": 1.2390107039865122E15
+        "rowCount": 79296685055136784
       },
       {
         "id": "16",

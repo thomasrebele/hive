@@ -355,32 +355,6 @@
               },
               "operands": [
                 {
-                  "input": 21,
-                  "name": "$21"
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IS NOT NULL",
-                "kind": "IS_NOT_NULL",
-                "syntax": "POSTFIX"
-              },
-              "operands": [
-                {
-                  "input": 12,
-                  "name": "$12"
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IS NOT NULL",
-                "kind": "IS_NOT_NULL",
-                "syntax": "POSTFIX"
-              },
-              "operands": [
-                {
                   "input": 3,
                   "name": "$3"
                 }
@@ -440,7 +414,7 @@
             }
           ]
         },
-        "rowCount": 3.94646980910959E10
+        "rowCount": 4.872184949518012E10
       },
       {
         "id": "2",
@@ -718,7 +692,7 @@
             ]
           }
         ],
-        "rowCount": 3.94646980910959E10
+        "rowCount": 4.872184949518012E10
       },
       {
         "id": "3",
@@ -1139,7 +1113,7 @@
           "2",
           "5"
         ],
-        "rowCount": 6.486427644427045E13
+        "rowCount": 8.007935363490178E13
       },
       {
         "id": "7",
@@ -1336,120 +1310,26 @@
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
         "condition": {
           "op": {
-            "name": "AND",
-            "kind": "AND",
+            "name": "=",
+            "kind": "EQUALS",
             "syntax": "BINARY"
           },
           "operands": [
             {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 8,
-                  "name": "$8"
-                },
-                {
-                  "literal": "GA",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "IN",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "KY",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "MO",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "MT",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "NM",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "OR",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "WI",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                },
-                {
-                  "literal": "WV",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 2
-                  }
-                }
-              ]
+              "input": 10,
+              "name": "$10"
             },
             {
-              "op": {
-                "name": "=",
-                "kind": "EQUALS",
-                "syntax": "BINARY"
-              },
-              "operands": [
-                {
-                  "input": 10,
-                  "name": "$10"
-                },
-                {
-                  "literal": "United States",
-                  "type": {
-                    "type": "VARCHAR",
-                    "nullable": false,
-                    "precision": 20
-                  }
-                }
-              ]
+              "literal": "United States",
+              "type": {
+                "type": "VARCHAR",
+                "nullable": false,
+                "precision": 20
+              }
             }
           ]
         },
-        "rowCount": 1500000
+        "rowCount": 6000000
       },
       {
         "id": "9",
@@ -1577,7 +1457,7 @@
             ]
           }
         ],
-        "rowCount": 1500000
+        "rowCount": 6000000
       },
       {
         "id": "10",
@@ -1675,7 +1555,7 @@
           "6",
           "9"
         ],
-        "rowCount": 3648615549990212608
+        "rowCount": 1.80178545678529E19
       },
       {
         "id": "11",
@@ -1789,38 +1669,6 @@
       },
       {
         "id": "12",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
-        "condition": {
-          "op": {
-            "name": "IN",
-            "kind": "OTHER_FUNCTION",
-            "syntax": "SPECIAL"
-          },
-          "operands": [
-            {
-              "input": 3,
-              "name": "$3"
-            },
-            {
-              "literal": 1,
-              "type": {
-                "type": "INTEGER",
-                "nullable": false
-              }
-            },
-            {
-              "literal": 3,
-              "type": {
-                "type": "INTEGER",
-                "nullable": false
-              }
-            }
-          ]
-        },
-        "rowCount": 1800
-      },
-      {
-        "id": "13",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
           "hd_demo_sk",
@@ -1873,10 +1721,10 @@
             ]
           }
         ],
-        "rowCount": 1800
+        "rowCount": 7200
       },
       {
-        "id": "14",
+        "id": "13",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
         "condition": {
           "op": {
@@ -1900,12 +1748,12 @@
         "cost": "not available",
         "inputs": [
           "10",
-          "13"
+          "12"
         ],
-        "rowCount": 9.851261984973575E20
+        "rowCount": 1.9459282933281133E22
       },
       {
-        "id": "15",
+        "id": "14",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveTableScan",
         "table": [
           "default",
@@ -2056,95 +1904,7 @@
         ]
       },
       {
-        "id": "16",
-        "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter",
-        "condition": {
-          "op": {
-            "name": "AND",
-            "kind": "AND",
-            "syntax": "BINARY"
-          },
-          "operands": [
-            {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 2,
-                  "name": "$2"
-                },
-                {
-                  "literal": "D",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 1
-                  }
-                },
-                {
-                  "literal": "M",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 1
-                  }
-                },
-                {
-                  "literal": "U",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 1
-                  }
-                }
-              ]
-            },
-            {
-              "op": {
-                "name": "IN",
-                "kind": "OTHER_FUNCTION",
-                "syntax": "SPECIAL"
-              },
-              "operands": [
-                {
-                  "input": 3,
-                  "name": "$3"
-                },
-                {
-                  "literal": "4 yr Degree         ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 20
-                  }
-                },
-                {
-                  "literal": "Advanced Degree     ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 20
-                  }
-                },
-                {
-                  "literal": "Primary             ",
-                  "type": {
-                    "type": "CHAR",
-                    "nullable": false,
-                    "precision": 20
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "rowCount": 120050
-      },
-      {
-        "id": "17",
+        "id": "15",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
           "cd_demo_sk",
@@ -2287,10 +2047,10 @@
             ]
           }
         ],
-        "rowCount": 120050
+        "rowCount": 1920800
       },
       {
-        "id": "18",
+        "id": "16",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin",
         "condition": {
           "op": {
@@ -2406,13 +2166,13 @@
         "algorithm": "none",
         "cost": "not available",
         "inputs": [
-          "14",
-          "17"
+          "13",
+          "15"
         ],
-        "rowCount": 4.4349150048602914E24
+        "rowCount": 1.4016521496842399E27
       },
       {
-        "id": "19",
+        "id": "17",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveAggregate",
         "group": [],
         "aggs": [
@@ -2520,7 +2280,7 @@
         "rowCount": 1
       },
       {
-        "id": "20",
+        "id": "18",
         "relOp": "org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveProject",
         "fields": [
           "_c0",
